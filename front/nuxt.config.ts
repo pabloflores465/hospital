@@ -8,4 +8,7 @@ export default defineNuxtConfig({
       tailwindcss(),
     ],
   },
+  app: {
+    pageTransition: { name: 'fade', mode: 'out-in' }
+  }
 });

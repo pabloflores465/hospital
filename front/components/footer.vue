@@ -1,0 +1,98 @@
+<script setup lang="ts"></script>
+<template>
+  <footer class="bg-blue-500 text-white py-8 shadow-2xl">
+    <div class="container mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div>
+        <h3 class="flex justify-center text-xl font-semibold mb-4">
+          Hospital High Sierra
+        </h3>
+        <p class="text-white">
+          Welcome to Hospital High Sierra, your trusted partner in health and
+          wellness. Our Mission At Hospital High Sierra, our mission
+          is to deliver compassionate, high-quality healthcare that meets the
+          diverse needs of our patients. We strive to improve lives through
+          innovative treatments, advanced technology, and a commitment to
+          excellence in every aspect of our services.
+        </p>
+      </div>
+      <div>
+        <h3 class="text-xl font-semibold mb-4 flex justify-center">Go to</h3>
+        <ul>
+          <li class="mb-2">
+            <NuxtLink
+              href="#"
+              class="hover:underline text-white flex justify-center"
+              >Begin</NuxtLink
+            >
+          </li>
+          <li class="mb-2">
+            <NuxtLink
+              href="#"
+              class="hover:underline text-white flex justify-center"
+              >Services</NuxtLink
+            >
+          </li>
+          <li class="mb-2">
+            <NuxtLink
+              href="#"
+              class="hover:underline text-white flex justify-center"
+              >Contacts</NuxtLink
+            >
+          </li>
+          <li class="mb-2">
+            <NuxtLink
+              href="#"
+              class="hover:underline text-white flex justify-center"
+              >About Us</NuxtLink
+            >
+          </li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="text-xl font-semibold mb-4 flex justify-center">
+          Follow Us
+        </h3>
+        <ul>
+          <li class="mb-2">
+            <NuxtLink
+              href="#"
+              class="hover:underline text-white flex justify-center"
+            >
+              <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path
+                  d="M22 12.073C22 6.486 17.523 2 12 2S2 6.486 2 12.073c0 4.991 3.657 9.128 8.438 9.878v-6.988H7.898v-2.89h2.54V9.845c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.242 0-1.63.771-1.63 1.562v1.875h2.773l-.443 2.89h-2.33v6.988C18.343 21.2 22 17.063 22 12.073z"
+                />
+              </svg>
+            </NuxtLink>
+          </li>
+          <li class="mb-2">
+            <NuxtLink
+              href="#"
+              class="hover:underline text-white flex justify-center"
+            >
+              <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path
+                  d="M22.46 6c-.77.35-1.6.58-2.46.69a4.3 4.3 0 001.88-2.37 8.59 8.59 0 01-2.72 1.04 4.28 4.28 0 00-7.3 3.9A12.15 12.15 0 013 5.1a4.28 4.28 0 001.33 5.72 4.26 4.26 0 01-1.94-.54v.05a4.28 4.28 0 003.44 4.19 4.3 4.3 0 01-1.93.07 4.28 4.28 0 003.99 2.97A8.6 8.6 0 012 19.54a12.13 12.13 0 006.56 1.92c7.88 0 12.2-6.53 12.2-12.2 0-.19 0-.39-.01-.58A8.72 8.72 0 0024 5.5a8.5 8.5 0 01-2.54.7z"
+                />
+              </svg>
+            </NuxtLink>
+          </li>
+          <li class="mb-2">
+            <NuxtLink
+              href="#"
+              class="hover:underline text-white flex justify-center"
+            >
+              <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path
+                  d="M7.75 2h8.5A5.75 5.75 0 0122 7.75v8.5A5.75 5.75 0 0116.25 22h-8.5A5.75 5.75 0 012 16.25v-8.5A5.75 5.75 0 017.75 2zm0 1.5A4.25 4.25 0 003.5 7.75v8.5A4.25 4.25 0 007.75 20.5h8.5a4.25 4.25 0 004.25-4.25v-8.5A4.25 4.25 0 0016.25 3.5h-8.5zM12 7a5 5 0 100 10 5 5 0 000-10zm0 1.5a3.5 3.5 0 110 7 3.5 3.5 0 010-7zm5.25-.75a1.25 1.25 0 100 2.5 1.25 1.25 0 000-2.5z"
+                /></svg
+            ></NuxtLink>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="mt-8 border-t border-white pt-4 text-center text-white">
+      &copy; 2025 Hospital High Sierra. All rights reserved.
+    </div>
+  </footer>
+</template>
