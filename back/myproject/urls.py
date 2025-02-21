@@ -16,7 +16,20 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+# from myproject.views import obtener_Hospital  # Importar las vistas
+# from myproject.views import register
+# from myproject.views import obtener_csrf
+from myproject.views import insertar_paciente
+from .views import obtener_Hospital
+from myproject.views import SendEmailAPIView
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # path('Hospital/', obtener_Hospital, name='obtener_Hospital'),  # API de hospitales
+    # path('register/', register, name='register'),  # API de registro
+    # path('obtener_csrf/', obtener_csrf, name='obtener_csrf'),
+    path("insertar_usuario/", insertar_paciente, name="insertar_paciente"),
+     path('obtener_Hospital/', obtener_Hospital, name='obtener_Hospital'),
+    path('send-email/', SendEmailAPIView.as_view(), name='send-email'),
 ]
