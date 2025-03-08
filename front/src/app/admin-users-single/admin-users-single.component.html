@@ -1,0 +1,86 @@
+<div
+  class="flex justify-center items-center bg-gray-100 min-h-screen bg-[url('/patient.jpg')] bg-cover bg-center fade-in"
+>
+  <div class="bg-white shadow-md rounded-2xl p-6 w-full max-w-sm">
+    <div class="ms-2 me-2 mt-2 mb-4 flex items-center justify-center text-xl">
+      @if (isNewUser()) {
+      <strong>Creando usuario</strong>
+      }@else {
+      <strong>Modificando @if(user === ""){usuario}@else{ {{ user }} }</strong>
+      }
+    </div>
+
+    @if (errorMessage()) {
+    <div class="text-red-500 text-center mb-4">
+      {{ errorMessage() }}
+    </div>
+    } @if (isNewUser()) {
+    <div class="flex items-center">
+      <input
+        [(ngModel)]="user"
+        type="text"
+        placeholder="Usuario"
+        class="p-2 rounded-full focus:outline-none focus:bg-blue-100 border-0 w-full"
+      />
+    </div>
+    }
+
+    <div class="flex items-center">
+      <input
+        [(ngModel)]="email"
+        type="email"
+        placeholder="Email"
+        class="p-2 rounded-full focus:outline-none focus:bg-blue-100 border-0 w-full"
+      />
+    </div>
+
+    <div class="flex items-center">
+      <select
+        [(ngModel)]="rol"
+        class="p-2 rounded-full focus:outline-none focus:bg-blue-100 border-0 w-full"
+        [disabled]="force_admin()"
+      >
+        <option value="paciente">Paciente</option>
+        <option value="doctor">Doctor</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+
+    @if (rol === "doctor") {
+    <div class="flex items-center">
+      <input
+        [(ngModel)]="noLicencia"
+        placeholder="Número de licencia"
+        class="p-2 rounded-full focus:outline-none focus:bg-blue-100 border-0 w-full"
+      />
+    </div>
+    }
+
+    <div class="flex items-center">
+      <input
+        [(ngModel)]="password"
+        type="password"
+        placeholder="Password"
+        class="p-2 rounded-full focus:outline-none focus:bg-blue-100 border-0 w-full"
+      />
+    </div>
+
+    <app-button (click)="submitForm()" class="mt-2">
+      <svg
+        class="me-2"
+        stroke="currentColor"
+        fill="currentColor"
+        stroke-width="0"
+        viewBox="0 0 512 512"
+        height="25px"
+        width="25px"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zM227.314 387.314l184-184c6.248-6.248 6.248-16.379 0-22.627l-22.627-22.627c-6.248-6.249-16.379-6.249-22.628 0L216 308.118l-70.059-70.059c-6.248-6.248-16.379-6.248-22.628 0l-22.627 22.627c-6.248 6.248-6.248 16.379 0 22.627l104 104c6.249 6.249 16.379 6.249 22.628.001z"
+        ></path>
+      </svg>
+      Save
+    </app-button>
+  </div>
+</div>

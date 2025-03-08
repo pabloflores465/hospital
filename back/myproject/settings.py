@@ -29,10 +29,10 @@ SECRET_KEY = 'django-insecure--0(x7(4f32pd$00ts2hbn9t_xbp6tmeb^10=*9p8i-)&1rb)h0
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost' , "localhost:3000"]
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost' , "localhost:3000" , "localhost:4200"]
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # Permitir peticiones desde tu frontend
+    "http://localhost:4200",  # Permitir peticiones desde tu frontend
 ]
 
 CORS_ALLOW_CREDENTIALS = True  # Permite enviar cookies y headers de autenticación
@@ -146,5 +146,5 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True  # Usa TLS para la conexión segura
 EMAIL_USE_SSL = False  # No usar SSL, solo TLS
 EMAIL_HOST_USER = "rr36693904@gmail.com"  # Tu dirección de Gmail
-EMAIL_HOST_PASSWORD = "chwe vdus blwv kfab"
+EMAIL_HOST_PASSWORD = "chwevdusblwvkfab"
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER

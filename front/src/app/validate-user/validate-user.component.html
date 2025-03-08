@@ -1,0 +1,30 @@
+<div
+  class="flex justify-center items-center min-h-screen bg-[url('/emergency.jpg')] bg-cover bg-center fade-in"
+>
+  <div class="bg-white shadow-md rounded-2xl p-6 w-full max-w-sm">
+    <div class="ms-2 me-2 mt-2 mb-4 flex items-center justify-center text-xl">
+      <strong>Validando...</strong>
+    </div>
+
+    @if (errorMessage()) {
+    <div class="text-red-500 text-center mb-4">
+      {{ errorMessage() }}
+    </div>
+    }
+  </div>
+</div>
+
+<style>
+  @keyframes fade-in {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  .fade-in {
+    animation: fade-in 1s ease-in forwards;
+  }
+</style>

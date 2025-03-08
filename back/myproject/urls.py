@@ -19,9 +19,8 @@ from django.urls import path
 # from myproject.views import obtener_Hospital  # Importar las vistas
 # from myproject.views import register
 # from myproject.views import obtener_csrf
-from myproject.views import insertar_paciente
-from .views import obtener_Hospital
-from myproject.views import SendEmailAPIView
+from .views import actualizar_paciente, borrar_paciente, insertar_paciente, login_paciente, lista_pacientes, obtener_paciente, registrar_paciente, validar_paciente
+# from myproject.views import SendEmailAPIView
 
 
 urlpatterns = [
@@ -29,7 +28,13 @@ urlpatterns = [
     # path('Hospital/', obtener_Hospital, name='obtener_Hospital'),  # API de hospitales
     # path('register/', register, name='register'),  # API de registro
     # path('obtener_csrf/', obtener_csrf, name='obtener_csrf'),
+    path("registrar_usuario/", registrar_paciente, name="registrar_paciente"),
+    path("validar_usuario/", validar_paciente, name="validar_paciente"),
     path("insertar_usuario/", insertar_paciente, name="insertar_paciente"),
-     path('obtener_Hospital/', obtener_Hospital, name='obtener_Hospital'),
-    path('send-email/', SendEmailAPIView.as_view(), name='send-email'),
+    path("login_usuario/", login_paciente, name="login_paciente"),
+    path("actualizar_usuario/<user_id>", actualizar_paciente, name="actualizar_paciente"),
+    path("borrar_usuario/<user_id>", borrar_paciente, name="borrar_paciente"),
+     path('lista_usuarios/', lista_pacientes, name='lista_pacientes'),
+     path('obtener_usuario/<user_id>', obtener_paciente, name='obtener_paciente'),
+    # path('send-email/', SendEmailAPIView.as_view(), name='send-email'),
 ]

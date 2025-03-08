@@ -1,0 +1,26 @@
+<div [class]="layout()">
+  <button
+    [class]="
+      [
+        'bg-blue-500',
+        'hover:bg-blue-600',
+        'text-white',
+        'font-semibold',
+        'py-2',
+        'px-4',
+        'rounded-full',
+        'shadow',
+        'transition',
+        'duration-300',
+        'ease-in-out',
+        'transform',
+        'hover:scale-105'
+      ].concat(styles().split(' '))
+    "
+    [disabled]="disabled()"
+  >
+    <div class="flex items-center">
+      <ng-content />
+    </div>
+  </button>
+</div>
