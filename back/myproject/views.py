@@ -18,7 +18,7 @@ import json
 MONGO_URI = "mongodb+srv://admin:123@cluster0.iuspf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 client = MongoClient(MONGO_URI)
 db = client["hospital_db"]
-paciente_collection = db["paciente"]
+paciente_collection = db["users"]
 
 
 @csrf_exempt  # Desactiva CSRF temporalmente para pruebas (⚠️ Seguridad en producción)
@@ -28,10 +28,9 @@ def registrar_paciente(request):
             # Obtener los datos del body de la petición
             data = json.loads(request.body)
 
-            existing_user = paciente_collection.find_one({ "username": data["username"] })
+            existing_user = paciente_collection.find_one({"username": data["username"]})
             if existing_user and existing_user["validated"]:
                 return JsonResponse({"mensaje": "El usuario ya existe"}, status=400)
-            
 
             cantidad = paciente_collection.count_documents({})
             if cantidad == 0:
@@ -44,7 +43,9 @@ def registrar_paciente(request):
 
             # Insertar en MongoDB
             if existing_user:
-                resultado = paciente_collection.replace_one({ "_id": existing_user["_id"] }, data)
+                resultado = paciente_collection.replace_one(
+                    {"_id": existing_user["_id"]}, data
+                )
                 inserted = existing_user["_id"]
             else:
                 resultado = paciente_collection.insert_one(data)
@@ -58,7 +59,9 @@ def registrar_paciente(request):
             )
 
             # Responder con el ID del documento insertado
-            return JsonResponse({"mensaje": "Paciente insertado correctamente"}, status=201)
+            return JsonResponse(
+                {"mensaje": "Paciente insertado correctamente"}, status=201
+            )
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
     else:
@@ -71,18 +74,33 @@ def validar_paciente(request):
         try:
             # Obtener los datos del body de la petición
             data = json.loads(request.body)
-            user = paciente_collection.find_one({ "username": data["username"], "validated": False })
+            user = paciente_collection.find_one(
+                {"username": data["username"], "validated": False}
+            )
             if not user:
-                return JsonResponse({"mensaje": "No hay un usuario que se encuentre pendiente de validación"}, status=400)
+                return JsonResponse(
+                    {
+                        "mensaje": "No hay un usuario que se encuentre pendiente de validación"
+                    },
+                    status=400,
+                )
             if not check_password(data["validation_code"], user["validation_code"]):
-                return JsonResponse({"mensaje": "No se pudo validar el usuario"}, status=400)
-            resultado = paciente_collection.update_one({ "username": data["username"] }, { "$set": {"validation_code": None, "validated": True} })
+                return JsonResponse(
+                    {"mensaje": "No se pudo validar el usuario"}, status=400
+                )
+            resultado = paciente_collection.update_one(
+                {"username": data["username"]},
+                {"$set": {"validation_code": None, "validated": True}},
+            )
 
-            return JsonResponse({"mensaje": "Paciente validado correctamente"}, status=200)
+            return JsonResponse(
+                {"mensaje": "Paciente validado correctamente"}, status=200
+            )
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
     else:
         return JsonResponse({"error": "Método no permitido"}, status=405)
+
 
 @csrf_exempt  # Desactiva CSRF temporalmente para pruebas (⚠️ Seguridad en producción)
 def insertar_paciente(request):
@@ -91,7 +109,7 @@ def insertar_paciente(request):
             # Obtener los datos del body de la petición
             data = json.loads(request.body)
 
-            existing_user = paciente_collection.find_one({ "username": data["username"] })
+            existing_user = paciente_collection.find_one({"username": data["username"]})
             if existing_user:
                 return JsonResponse({"mensaje": "El usuario ya existe"}, status=400)
 
@@ -101,32 +119,45 @@ def insertar_paciente(request):
 
             resultado = paciente_collection.insert_one(data)
 
-            return JsonResponse({"mensaje": "Paciente insertado correctamente"}, status=201)
+            return JsonResponse(
+                {"mensaje": "Paciente insertado correctamente"}, status=201
+            )
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
     else:
         return JsonResponse({"error": "Método no permitido"}, status=405)
+
 
 @csrf_exempt
 def login_paciente(request):
     if request.method == "POST":
         try:
             data = json.loads(request.body)
-            resultado = paciente_collection.find_one({ "username": data["username"], "validated": True })
+            resultado = paciente_collection.find_one(
+                {"username": data["username"], "validated": True}
+            )
             if resultado is None:
-                return JsonResponse({"mensaje": "Usuario o contraseña incorrectos"}, status=401)
+                return JsonResponse(
+                    {"mensaje": "Usuario o contraseña incorrectos"}, status=401
+                )
             if not check_password(data["password"], resultado["password"]):
-                return JsonResponse({"mensaje": "Usuario o contraseña incorrectos"}, status=401)
+                return JsonResponse(
+                    {"mensaje": "Usuario o contraseña incorrectos"}, status=401
+                )
 
             resultado["_id"] = str(resultado["_id"])
             del resultado["password"]
             del resultado["validated"]
             del resultado["validation_code"]
-            return JsonResponse({"mensaje": "Paciente identificado", "user": resultado}, status=200)
+            return JsonResponse(
+                {"mensaje": "Paciente identificado", "user": resultado}, status=200
+            )
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
     else:
         return JsonResponse({"error": "Método no permitido"}, status=405)
+
+
 @csrf_exempt  # Desactiva CSRF temporalmente para pruebas (⚠️ Seguridad en producción)
 def actualizar_paciente(request, user_id):
     if request.method == "PUT":
@@ -141,30 +172,40 @@ def actualizar_paciente(request, user_id):
                     data["password"] = make_password(data["password"])
                 else:
                     del data["password"]
-            resultado = paciente_collection.update_one({ "_id": ObjectId(user_id) }, { "$set": data })
-            return JsonResponse({"mensaje": "Paciente actualizado correctamente"}, status=200)
+            resultado = paciente_collection.update_one(
+                {"_id": ObjectId(user_id)}, {"$set": data}
+            )
+            return JsonResponse(
+                {"mensaje": "Paciente actualizado correctamente"}, status=200
+            )
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
     else:
         return JsonResponse({"error": "Método no permitido"}, status=405)
+
 
 @csrf_exempt  # Desactiva CSRF temporalmente para pruebas (⚠️ Seguridad en producción)
 def borrar_paciente(request, user_id):
     if request.method == "DELETE":
         try:
-            resultado = paciente_collection.delete_one({ "_id": ObjectId(user_id) })
-            return JsonResponse({"mensaje": "Paciente borrado correctamente"}, status=200)
+            resultado = paciente_collection.delete_one({"_id": ObjectId(user_id)})
+            return JsonResponse(
+                {"mensaje": "Paciente borrado correctamente"}, status=200
+            )
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
     else:
         return JsonResponse({"error": "Método no permitido"}, status=405)
-    
+
 
 def lista_pacientes(request):
     if request.method == "GET":
         try:
             # Obtener todos los documentos de la colección
-            hospitales = [paciente | { "_id": str(paciente["_id"]) } for paciente in paciente_collection.find({})]
+            hospitales = [
+                paciente | {"_id": str(paciente["_id"])}
+                for paciente in paciente_collection.find({})
+            ]
 
             # Responder con la lista de hospitales
             return JsonResponse(hospitales, safe=False, status=200)
@@ -173,13 +214,14 @@ def lista_pacientes(request):
     else:
         return JsonResponse({"error": "Método no permitido"}, status=405)
 
+
 def obtener_paciente(request, user_id):
     if request.method == "GET":
         try:
             # Obtener todos los documentos de la colección
-            paciente = paciente_collection.find_one({ "_id": ObjectId(user_id) })
+            paciente = paciente_collection.find_one({"_id": ObjectId(user_id)})
             if paciente is None:
-                return JsonResponse({ "mensaje": "Paciente no encontrado" }, status=404)
+                return JsonResponse({"mensaje": "Paciente no encontrado"}, status=404)
 
             paciente["_id"] = str(paciente["_id"])
             # Responder con la lista de hospitales
@@ -188,6 +230,8 @@ def obtener_paciente(request, user_id):
             return JsonResponse({"error": str(e)}, status=400)
     else:
         return JsonResponse({"error": "Método no permitido"}, status=405)
+
+
 # class SendEmailAPIView(APIView):
 #     def post(self, request, format=None):
 #         subject = request.data.get('subject')
