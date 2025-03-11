@@ -6,6 +6,7 @@ import { LoginComponent } from './login/login.component';
 import { MainPageComponent } from './main-page/main-page.component';
 import { SignupComponent } from './signup/signup.component';
 import { ValidateUserComponent } from './validate-user/validate-user.component';
+import { AppointmentsComponent } from './appointments/appointments.component';
 
 export const routes: Routes = [
   {
@@ -18,6 +19,7 @@ export const routes: Routes = [
       { path: 'validate', component: ValidateUserComponent },
       { path: 'admin/users', component: AdminUsersComponent },
       { path: 'admin/users/:id', component: AdminUsersSingleComponent },
+      { path: 'appointments', component: AppointmentsComponent },
     ],
   }, 
 ];
