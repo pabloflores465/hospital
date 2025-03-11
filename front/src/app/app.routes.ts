@@ -8,6 +8,7 @@ import { SignupComponent } from './signup/signup.component';
 import { ValidateUserComponent } from './validate-user/validate-user.component';
 import { AppointmentsComponent } from './appointments/appointments.component';
 import { DoctorsComponent } from './doctors/doctors.component';
+import { PrescriptionsComponent } from './prescriptions/prescriptions.component';
 
 export const routes: Routes = [
   {
@@ -22,6 +23,7 @@ export const routes: Routes = [
       { path: 'admin/users/:id', component: AdminUsersSingleComponent },
       { path: 'appointments', component: AppointmentsComponent },
       { path: 'admin/doctors', component: DoctorsComponent },
+      { path: 'doctor/prescriptions', component: PrescriptionsComponent },
     ],
   }, 
 ];
