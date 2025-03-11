@@ -232,26 +232,3 @@ def obtener_paciente(request, user_id):
         return JsonResponse({"error": "Método no permitido"}, status=405)
 
 
-# class SendEmailAPIView(APIView):
-#     def post(self, request, format=None):
-#         subject = request.data.get('subject')
-#         message = request.data.get('message')
-#         recipient_list = request.data.get('recipient_list')  # Se espera una lista de correos
-
-#         if not subject or not message or not recipient_list:
-#             return Response(
-#                 {'error': 'Faltan parámetros (subject, message o recipient_list)'},
-#                 status=status.HTTP_400_BAD_REQUEST
-#             )
-
-#         try:
-#             send_mail(
-#                 subject,
-#                 message,
-#                 settings.EMAIL_HOST_USER,  # Asegúrate de tenerlo configurado en settings.py
-#                 recipient_list,
-#                 fail_silently=False,
-#             )
-#             return Response({'success': 'Correo enviado correctamente'})
-#         except Exception as e:
-#             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

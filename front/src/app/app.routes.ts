@@ -7,6 +7,7 @@ import { MainPageComponent } from './main-page/main-page.component';
 import { SignupComponent } from './signup/signup.component';
 import { ValidateUserComponent } from './validate-user/validate-user.component';
 import { AppointmentsComponent } from './appointments/appointments.component';
+import { DoctorsComponent } from './doctors/doctors.component';
 
 export const routes: Routes = [
   {
@@ -20,6 +21,7 @@ export const routes: Routes = [
       { path: 'admin/users', component: AdminUsersComponent },
       { path: 'admin/users/:id', component: AdminUsersSingleComponent },
       { path: 'appointments', component: AppointmentsComponent },
+      { path: 'admin/doctors', component: DoctorsComponent },
     ],
   }, 
 ];
