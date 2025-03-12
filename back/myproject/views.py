@@ -11,6 +11,7 @@ from rest_framework import status
 from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib.auth.hashers import make_password, check_password
+from .myfunctions.convert_objectid import convert_objectid
 
 import json
 
@@ -149,6 +150,10 @@ def login_paciente(request):
             del resultado["password"]
             del resultado["validated"]
             del resultado["validation_code"]
+
+            if "profile" in resultado and isinstance(resultado["profile"], ObjectId):
+                resultado["profile"] = str(resultado["profile"])
+
             return JsonResponse(
                 {"mensaje": "Paciente identificado", "user": resultado}, status=200
             )
@@ -201,14 +206,18 @@ def borrar_paciente(request, user_id):
 def lista_pacientes(request):
     if request.method == "GET":
         try:
-            # Obtener todos los documentos de la colección
-            hospitales = [
-                paciente | {"_id": str(paciente["_id"])}
-                for paciente in paciente_collection.find({})
-            ]
+            patients = []
+            for patient in paciente_collection.find({}):
+                patient["_id"] = convert_objectid(patient["_id"])
+                if "profile" in patient:
+                    patient["profile"] = convert_objectid(patient["profile"])
+                patients.append(patient)
 
-            # Responder con la lista de hospitales
-            return JsonResponse(hospitales, safe=False, status=200)
+            return JsonResponse(
+                patients,
+                safe=False,
+                status=200,
+            )
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
     else:
@@ -230,5 +239,3 @@ def obtener_paciente(request, user_id):
             return JsonResponse({"error": str(e)}, status=400)
     else:
         return JsonResponse({"error": "Método no permitido"}, status=405)
-
-

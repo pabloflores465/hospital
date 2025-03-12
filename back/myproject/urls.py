@@ -33,7 +33,11 @@ from .views import (
 )
 
 from .myfunctions.categories import get_cat_sub
-from .myfunctions.recipes import get_recipes
+from .myfunctions.recipes import (
+    get_recipes,
+    get_recipes_by_patient_id,
+    get_recipes_by_doctor_id,
+)
 
 # from myproject.views import SendEmailAPIView
 
@@ -53,7 +57,10 @@ urlpatterns = [
     path("borrar_usuario/<user_id>", borrar_paciente, name="borrar_paciente"),
     path("lista_usuarios/", lista_pacientes, name="lista_pacientes"),
     path("obtener_usuario/<user_id>", obtener_paciente, name="obtener_paciente"),
+    # my apis
     path("categories", get_cat_sub),
     path("recipes", get_recipes),
+    path("recipes/<user_id>", get_recipes_by_patient_id),
+    path("recipes/<doctor_id>", get_recipes_by_doctor_id),
     # path('send-email/', SendEmailAPIView.as_view(), name='send-email'),
 ]

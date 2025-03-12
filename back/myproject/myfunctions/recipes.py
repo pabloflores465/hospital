@@ -1,7 +1,9 @@
 from django.http import JsonResponse
+from bson import ObjectId
 from .config import recipes_collection, medicines_collection, users_collection
 from .get_list import get_list
 from copy import deepcopy
+from .convert_objectid import convert_objectid
 
 
 def get_recipes(request):
@@ -53,7 +55,103 @@ def get_recipes(request):
                     if patient["_id"] == recipe["patient"]:
                         recipe["patient"] = patient["username"]
 
-            return JsonResponse({"categories": recipes_medicines}, status=200)
+            return JsonResponse({"recipes": recipes_medicines}, status=200)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+    else:
+        return JsonResponse({"error": "Método no permitido"}, status=405)
+
+
+def get_recipes_by_patient_id(request, user_id):
+    if request.method == "GET":
+        try:
+            recipes = []
+
+            if not recipes:
+                cursor = recipes_collection.find({"patient": ObjectId(user_id)})
+                for doc in cursor:
+                    doc = convert_objectid(doc)
+                    recipes.append(doc)
+
+            for recipe in recipes:
+
+                if recipe.get("medicines"):
+                    for index, medicine_id in enumerate(recipe["medicines"]):
+                        medicine = medicines_collection.find_one(
+                            {"_id": ObjectId(medicine_id)}
+                        )
+                        medicine = convert_objectid(medicine)
+                        if medicine:
+                            recipe["medicines"][index] = medicine
+
+                if recipe.get("patient"):
+                    patient = users_collection.find_one(
+                        {"_id": ObjectId(recipe["patient"])}
+                    )
+                    if patient:
+                        recipe["patient"] = patient["username"]
+
+                if recipe.get("doctor"):
+                    doctor = users_collection.find_one(
+                        {"_id": ObjectId(recipe["doctor"])}
+                    )
+                    if doctor:
+                        recipe["doctor"] = doctor["username"]
+
+                code_string = ""
+                for code in recipe["code"]:
+                    code_string = f"{code_string}-{code}"
+                recipe["code"] = code_string[1:]
+
+            return JsonResponse({"recipes": recipes}, status=200)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+    else:
+        return JsonResponse({"error": "Método no permitido"}, status=405)
+
+
+def get_recipes_by_doctor_id(request, user_id):
+    if request.method == "GET":
+        try:
+            recipes = []
+
+            if not recipes:
+                cursor = recipes_collection.find({"doctor": ObjectId(user_id)})
+                for doc in cursor:
+                    doc = convert_objectid(doc)
+                    recipes.append(doc)
+
+            for recipe in recipes:
+
+                if recipe.get("medicines"):
+                    for index, medicine_id in enumerate(recipe["medicines"]):
+                        medicine = medicines_collection.find_one(
+                            {"_id": ObjectId(medicine_id)}
+                        )
+                        medicine = convert_objectid(medicine)
+                        if medicine:
+                            recipe["medicines"][index] = medicine
+
+                if recipe.get("patient"):
+                    patient = users_collection.find_one(
+                        {"_id": ObjectId(recipe["patient"])}
+                    )
+                    if patient:
+                        recipe["patient"] = patient["username"]
+
+                if recipe.get("doctor"):
+                    doctor = users_collection.find_one(
+                        {"_id": ObjectId(recipe["doctor"])}
+                    )
+                    if doctor:
+                        recipe["doctor"] = doctor["username"]
+
+                code_string = ""
+                for code in recipe["code"]:
+                    code_string = f"{code_string}-{code}"
+                recipe["code"] = code_string[1:]
+
+            return JsonResponse({"recipes": recipes}, status=200)
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
     else:
