@@ -53,4 +53,30 @@ export class LoginComponent {
       this.loading.set(false);
     }
   }
+
+  async onSubmit() {
+    try {
+      // Simular una respuesta del backend
+      const mockUser = {
+        id: 1,
+        username: this.user,
+        email: `${this.user}@example.com`,
+        rol: 'admin' // Esto vendría del backend
+      };
+
+      // Guardar el usuario en el servicio (esto persistirá en localStorage)
+      this.userService.setUser(mockUser);
+      
+      // Redirigir según el rol
+      if (mockUser.rol === 'admin') {
+        this.router.navigate(['/admin/users']);
+      } else if (mockUser.rol === 'doctor') {
+        this.router.navigate(['/doctor/prescriptions']);
+      } else {
+        this.router.navigate(['/appointments']);
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+    }
+  }
 }

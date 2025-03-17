@@ -10,6 +10,10 @@ import { AppointmentsComponent } from './appointments/appointments.component';
 import { DoctorsComponent } from './doctors/doctors.component';
 import { PrescriptionsComponent } from './prescriptions/prescriptions.component';
 import { RecipesPage } from './recipes/recipes-page';
+import { authGuard } from './guards/auth.guard';
+import { DoctorAgendaComponent } from './doctor-agenda/doctor-agenda.component';
+import { PatientHistoryComponent } from './patient-history/patient-history.component';
+import { DoctorDashboardComponent } from './doctor-dashboard/doctor-dashboard.component';
 
 export const routes: Routes = [
   {
@@ -20,12 +24,55 @@ export const routes: Routes = [
       { path: 'login', component: LoginComponent },
       { path: 'signup', component: SignupComponent },
       { path: 'validate', component: ValidateUserComponent },
-      { path: 'admin/users', component: AdminUsersComponent },
+      { 
+        path: 'admin/users', 
+        component: AdminUsersComponent,
+        canActivate: [authGuard],
+        data: { roles: ['admin'] }
+      },
       { path: 'admin/users/:id', component: AdminUsersSingleComponent },
-      { path: 'appointments', component: AppointmentsComponent },
-      { path: 'admin/doctors', component: DoctorsComponent },
-      { path: 'doctor/prescriptions', component: PrescriptionsComponent },
+      { 
+        path: 'appointments', 
+        component: AppointmentsComponent,
+        canActivate: [authGuard],
+        data: { roles: ['patient'] }
+      },
+      { 
+        path: 'admin/doctors', 
+        component: DoctorsComponent,
+        canActivate: [authGuard],
+        data: { roles: ['admin'] }
+      },
+      { 
+        path: 'doctor/prescriptions', 
+        component: PrescriptionsComponent,
+        canActivate: [authGuard],
+        data: { roles: ['doctor'] }
+      },
       { path: 'recipes', component: RecipesPage },
+      { 
+        path: 'doctor/agenda', 
+        component: DoctorAgendaComponent,
+        canActivate: [authGuard],
+        data: { roles: ['doctor'] }
+      },
+      { 
+        path: 'doctor/patient-history', 
+        component: PatientHistoryComponent,
+        canActivate: [authGuard],
+        data: { roles: ['doctor'] }
+      },
+      { 
+        path: 'doctor/dashboard', 
+        component: DoctorDashboardComponent,
+        canActivate: [authGuard],
+        data: { roles: ['doctor'] },
+        children: [
+          { path: 'agenda', component: DoctorAgendaComponent, canActivate: [authGuard], data: { roles: ['doctor'] } },
+          { path: 'patient-history', component: PatientHistoryComponent, canActivate: [authGuard], data: { roles: ['doctor'] } },
+          { path: '', redirectTo: 'agenda', pathMatch: 'full' }
+        ]
+      },
     ],
   },
 ];
