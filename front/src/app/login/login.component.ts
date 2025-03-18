@@ -31,49 +31,43 @@ export class LoginComponent {
         throw new Error('Por favor ingrese usuario y contraseña');
       }
 
-      // Simulación de login exitoso - Aquí normalmente iría la llamada al backend
-      let mockUser: User;
+      // Realizar la petición de login al backend
+      const response = await fetch('http://127.0.0.1:8000/login_usuario/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: this.username,
+          password: this.password
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.mensaje || 'Error al iniciar sesión');
+      }
+
+      if (!data.user) {
+        throw new Error('Datos de usuario no válidos');
+      }
+
+      console.log('Respuesta del servidor:', data);
       
-      // Simular diferentes roles basados en el nombre de usuario
-      switch (this.username.toLowerCase()) {
-        case 'admin':
-          mockUser = {
-            _id: '1',
-            username: 'admin',
-            email: 'admin@hospital.com',
-            rol: 'admin'
-          };
-          break;
-        case 'doctor':
-          mockUser = {
-            _id: '2',
-            username: 'doctor',
-            email: 'doctor@hospital.com',
-            rol: 'doctor',
-            noLicencia: 'MED-123'
-          };
-          break;
-        case 'paciente':
-          mockUser = {
-            _id: '3',
-            username: 'paciente',
-            email: 'paciente@hospital.com',
-            rol: 'paciente'
-          };
-          break;
-        default:
-          throw new Error('Usuario no encontrado');
-      }
+      // Transformar la respuesta del backend al formato User
+      const user: User = {
+        _id: data.user._id,
+        username: data.user.username,
+        email: data.user.email,
+        rol: data.user.rol.toLowerCase(),
+        noLicencia: data.user.noLicencia || undefined
+      };
 
-      // Validar la contraseña (simulado)
-      if (this.password !== '123456') {
-        throw new Error('Contraseña incorrecta');
-      }
-
-      console.log('Usuario autenticado:', mockUser);
+      console.log('Usuario autenticado:', user);
       
       // Guardar el usuario en el servicio
-      this.userService.setUser(mockUser);
+      this.userService.setUser(user);
       
       // La redirección se maneja en el servicio
     } catch (error: any) {
