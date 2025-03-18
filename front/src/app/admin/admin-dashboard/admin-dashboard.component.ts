@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import axios from 'axios';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -32,7 +33,7 @@ import { RouterModule } from '@angular/router';
                         <dl>
                           <dt class="text-sm font-medium text-gray-500 truncate">Total Doctores</dt>
                           <dd class="flex items-baseline">
-                            <div class="text-2xl font-semibold text-gray-900">12</div>
+                            <div class="text-2xl font-semibold text-gray-900">{{doctor_count()}}</div>
                           </dd>
                         </dl>
                       </div>
@@ -58,7 +59,7 @@ import { RouterModule } from '@angular/router';
                         <dl>
                           <dt class="text-sm font-medium text-gray-500 truncate">Total Pacientes</dt>
                           <dd class="flex items-baseline">
-                            <div class="text-2xl font-semibold text-gray-900">45</div>
+                            <div class="text-2xl font-semibold text-gray-900">{{ patient_count() }}</div>
                           </dd>
                         </dl>
                       </div>
@@ -141,5 +142,27 @@ import { RouterModule } from '@angular/router';
 export class AdminDashboardComponent implements OnInit {
   constructor() {}
 
-  ngOnInit() {}
+  doctor_count = signal(0);
+  patient_count = signal(0);
+
+  async ngOnInit() {
+    await this.getDoctorCount()
+    await this.getPatientCount()
+  }
+
+  async getDoctorCount(){
+    axios.get('http://127.0.0.1:8000/doctors/count').then(response => {
+      this.doctor_count.set(response.data.doctor_count);
+    }).catch(error => {
+      console.error(error);
+    });
+  }
+
+  async getPatientCount(){
+    axios.get('http://127.0.0.1:8000/patients/count').then(response => {
+      this.patient_count.set(response.data.patient_count);
+    }).catch(error => {
+      console.error(error);
+    });
+  }
 } 
