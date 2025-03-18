@@ -90,9 +90,7 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 # Database (MongoDB Connection)
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-
-
-MONGO_URI = "mongodb+srv://admin:123@cluster0.iuspf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+MONGO_URI = "mongodb+srv://admin:123@cluster0.iuspf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0&tls=true&tlsAllowInvalidCertificates=true&serverSelectionTimeoutMS=5000&connectTimeoutMS=10000"
 client = MongoClient(MONGO_URI)
 db = client["hospital_db"]  # Nombre de la base de datos
 collection = db["Hospital"]  # Nombre de la colección

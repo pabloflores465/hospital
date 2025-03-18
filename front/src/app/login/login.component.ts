@@ -2,10 +2,11 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ButtonComponent } from '../button/button.component';
-import { UserService } from '../user.service';
+import { UserService } from '../services/user.service';
 
 @Component({
   selector: 'app-login',
+  standalone: true,
   imports: [ButtonComponent, FormsModule],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css',
@@ -45,7 +46,6 @@ export class LoginComponent {
       }
 
       this.userService.setUser(data.user);
-      this.router.navigate(['/']);
       this.loading.set(false);
     } catch (error) {
       console.error(error);
