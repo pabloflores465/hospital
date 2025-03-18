@@ -15,49 +15,67 @@ import { CommonModule } from '@angular/common';
 export class LoginComponent {
   private router = inject(Router);
   private userService = inject(UserService);
-  user = '';
+  username = '';
   password = '';
   errorMessage = signal('');
   loading = signal(false);
 
-  async submitForm() {
+  async onSubmit() {
     if (this.loading()) return;
     
     this.loading.set(true);
     this.errorMessage.set('');
 
     try {
-      // Simulación de login exitoso
-      const mockUser: User = {
-        _id: '1',
-        username: 'doctor',
-        email: 'doctor@example.com',
-        rol: 'doctor'
+      if (!this.username || !this.password) {
+        throw new Error('Por favor ingrese usuario y contraseña');
+      }
+
+      // Realizar la petición de login al backend
+      const response = await fetch('http://127.0.0.1:8000/login_usuario/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: this.username,
+          password: this.password
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.mensaje || 'Error al iniciar sesión');
+      }
+
+      if (!data.user) {
+        throw new Error('Datos de usuario no válidos');
+      }
+
+      console.log('Respuesta del servidor:', data);
+      
+      // Transformar la respuesta del backend al formato User
+      const user: User = {
+        _id: data.user._id,
+        username: data.user.username,
+        email: data.user.email,
+        rol: data.user.rol.toLowerCase(),
+        noLicencia: data.user.noLicencia || undefined
       };
 
-      this.userService.setUser(mockUser);
-      this.userService.redirectBasedOnRole();
-    } catch (error) {
+      console.log('Usuario autenticado:', user);
+      
+      // Guardar el usuario en el servicio
+      this.userService.setUser(user);
+      
+      // La redirección se maneja en el servicio
+    } catch (error: any) {
       console.error('Error en login:', error);
-      this.errorMessage.set('Error al iniciar sesión');
+      this.errorMessage.set(error.message || 'Error al iniciar sesión');
+      this.userService.logOut(); // Limpiar cualquier dato residual
     } finally {
       this.loading.set(false);
-    }
-  }
-
-  async onSubmit() {
-    try {
-      const mockUser: User = {
-        _id: '1',
-        username: this.user,
-        email: `${this.user}@example.com`,
-        rol: 'admin'
-      };
-
-      this.userService.setUser(mockUser);
-      this.userService.redirectBasedOnRole();
-    } catch (error) {
-      console.error('Login error:', error);
     }
   }
 }
