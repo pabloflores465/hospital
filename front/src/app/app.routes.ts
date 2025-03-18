@@ -14,7 +14,9 @@ import { authGuard } from './guards/auth.guard';
 import { DoctorAgendaComponent } from './doctor-agenda/doctor-agenda.component';
 import { PatientHistoryComponent } from './patient-history/patient-history.component';
 import { DoctorDashboardComponent } from './doctor-dashboard/doctor-dashboard.component';
+import { PatientDashboardComponent } from './patient-dashboard/patient-dashboard.component';
 import { roleGuard } from './guards/role.guard';
+import { AddPrescriptionComponent } from './prescriptions/add-prescription/add-prescription.component';
 
 export const routes: Routes = [
   {
@@ -36,7 +38,7 @@ export const routes: Routes = [
         path: 'appointments', 
         component: AppointmentsComponent,
         canActivate: [authGuard],
-        data: { roles: ['patient'] }
+        data: { roles: ['patient', 'doctor'] }
       },
       { 
         path: 'admin/doctors', 
@@ -44,54 +46,53 @@ export const routes: Routes = [
         canActivate: [authGuard],
         data: { roles: ['admin'] }
       },
-      { 
-        path: 'doctor/prescriptions', 
-        component: PrescriptionsComponent,
-        canActivate: [authGuard],
-        data: { roles: ['doctor'] }
-      },
-      { path: 'recipes', component: RecipesPage },
-      { 
-        path: 'doctor/agenda', 
-        component: DoctorAgendaComponent,
-        canActivate: [authGuard],
-        data: { roles: ['doctor'] }
-      },
-      { 
-        path: 'doctor/patient-history', 
-        component: PatientHistoryComponent,
-        canActivate: [authGuard],
-        data: { roles: ['doctor'] }
-      },
-      { 
-        path: 'doctor/dashboard', 
-        component: DoctorDashboardComponent,
+      {
+        path: 'doctor',
         canActivate: [authGuard],
         data: { roles: ['doctor'] },
         children: [
-          { path: 'agenda', component: DoctorAgendaComponent, canActivate: [authGuard], data: { roles: ['doctor'] } },
-          { path: 'patient-history', component: PatientHistoryComponent, canActivate: [authGuard], data: { roles: ['doctor'] } },
-          { path: '', redirectTo: 'agenda', pathMatch: 'full' }
+          {
+            path: 'dashboard',
+            component: DoctorDashboardComponent,
+            children: [
+              { path: '', redirectTo: 'agenda', pathMatch: 'full' },
+              { path: 'agenda', component: DoctorAgendaComponent },
+              { path: 'patient-history', component: PatientHistoryComponent }
+            ]
+          },
+          { path: 'agenda', component: DoctorAgendaComponent },
+          { path: 'patient-history', component: PatientHistoryComponent },
+          { path: 'prescriptions', component: PrescriptionsComponent },
+          { path: 'prescriptions/new', component: AddPrescriptionComponent }
         ]
       },
-    ],
-  },
-  {
-    path: 'admin/dashboard',
-    loadComponent: () => import('./admin/admin-dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent),
-    canActivate: [() => authGuard(), (route: ActivatedRouteSnapshot) => roleGuard(route)],
-    data: { roles: ['admin'] }
-  },
-  {
-    path: 'prescriptions',
-    loadComponent: () => import('./prescriptions/prescriptions.component').then(m => m.PrescriptionsComponent),
-    canActivate: [() => authGuard(), (route: ActivatedRouteSnapshot) => roleGuard(route)],
-    data: { roles: ['doctor'] }
-  },
-  {
-    path: 'prescriptions/new',
-    loadComponent: () => import('./prescriptions/add-prescription/add-prescription.component').then(m => m.AddPrescriptionComponent),
-    canActivate: [() => authGuard(), (route: ActivatedRouteSnapshot) => roleGuard(route)],
-    data: { roles: ['doctor'] }
+      {
+        path: 'patient',
+        canActivate: [authGuard],
+        data: { roles: ['patient', 'paciente'] },
+        children: [
+          {
+            path: 'dashboard',
+            component: PatientDashboardComponent,
+            children: [
+              { path: '', redirectTo: 'appointments', pathMatch: 'full' },
+              { path: 'appointments', component: AppointmentsComponent },
+              { path: 'history', component: PatientHistoryComponent },
+              { path: 'prescriptions', component: PrescriptionsComponent }
+            ]
+          },
+          { path: 'appointments', component: AppointmentsComponent },
+          { path: 'history', component: PatientHistoryComponent },
+          { path: 'prescriptions', component: PrescriptionsComponent }
+        ]
+      },
+      {
+        path: 'admin/dashboard',
+        loadComponent: () => import('./admin/admin-dashboard/admin-dashboard.component')
+          .then(m => m.AdminDashboardComponent),
+        canActivate: [authGuard],
+        data: { roles: ['admin'] }
+      }
+    ]
   }
 ];

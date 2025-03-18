@@ -1,16 +1,20 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DoctorService, Recipe } from '../services/doctor.service';
+import { DoctorService } from '../services/doctor.service';
 import { UserService } from '../services/user.service';
+import { ButtonComponent } from '../button/button.component';
 
 @Component({
   selector: 'app-prescriptions',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ButtonComponent],
   template: `
     <div class="container mx-auto p-6">
-      <h2 class="text-2xl font-bold mb-6">Mis Recetas Médicas</h2>
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold">Recetas Médicas</h2>
+        <app-button routerLink="/prescriptions/new">Nueva Receta</app-button>
+      </div>
 
       @if (errorMessage()) {
         <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -66,7 +70,7 @@ import { UserService } from '../services/user.service';
   `]
 })
 export class PrescriptionsComponent implements OnInit {
-  recipes: Recipe[] = [];
+  recipes: any[] = [];
   loading = signal(false);
   errorMessage = signal('');
 

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DoctorService } from '../../services/doctor.service';
 import { ButtonComponent } from '../../button/button.component';
+import { RouterModule } from '@angular/router';
 
 interface Medicine {
   name: string;
@@ -14,10 +15,13 @@ interface Medicine {
 @Component({
   selector: 'app-add-prescription',
   standalone: true,
-  imports: [CommonModule, FormsModule, ButtonComponent],
+  imports: [CommonModule, FormsModule, ButtonComponent, RouterModule],
   template: `
     <div class="container mx-auto p-6">
-      <h2 class="text-2xl font-bold mb-6">Nueva Receta Médica</h2>
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold">Nueva Receta Médica</h2>
+        <app-button routerLink="/prescriptions">Volver a Recetas</app-button>
+      </div>
 
       @if (errorMessage()) {
         <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -113,13 +117,15 @@ interface Medicine {
                 </div>
               </div>
 
-              <button
-                type="button"
-                (click)="removeMedicine($index)"
-                class="mt-2 text-red-600 hover:text-red-800"
-              >
-                Eliminar Medicamento
-              </button>
+              @if (medicines.length > 1) {
+                <button
+                  type="button"
+                  (click)="removeMedicine($index)"
+                  class="mt-2 text-red-600 hover:text-red-800"
+                >
+                  Eliminar Medicamento
+                </button>
+              }
             </div>
           }
 
@@ -166,7 +172,9 @@ export class AddPrescriptionComponent {
   }
 
   removeMedicine(index: number) {
-    this.medicines.splice(index, 1);
+    if (this.medicines.length > 1) {
+      this.medicines.splice(index, 1);
+    }
   }
 
   async onSubmit() {

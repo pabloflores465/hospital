@@ -12,7 +12,7 @@
     </div>
     }
 
-    <div class="flex flex-col gap-4">
+    <form (ngSubmit)="onSubmit()" #loginForm="ngForm" class="flex flex-col gap-4">
       <div class="flex items-center">
         <svg
           class="pe-2"
@@ -29,11 +29,13 @@
           ></path>
         </svg>
         <input
-          [(ngModel)]="user"
+          [(ngModel)]="username"
+          name="username"
           type="text"
           placeholder="User"
           class="p-2 rounded-full focus:outline-none focus:bg-blue-100 border-0 w-full"
           [disabled]="loading()"
+          required
         />
       </div>
       <div class="flex items-center">
@@ -53,13 +55,19 @@
         </svg>
         <input
           [(ngModel)]="password"
+          name="password"
           type="password"
           placeholder="Password"
           class="p-2 rounded-full focus:outline-none focus:bg-blue-100 border-0 w-100"
           [disabled]="loading()"
+          required
         />
       </div>
-      <app-button (click)="submitForm()" [disabled]="loading()">
+      <button 
+        type="submit"
+        class="flex items-center justify-center p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50"
+        [disabled]="loading() || !loginForm.form.valid"
+      >
         <svg
           class="me-2"
           stroke="currentColor"
@@ -74,8 +82,8 @@
             d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zM227.314 387.314l184-184c6.248-6.248 6.248-16.379 0-22.627l-22.627-22.627c-6.248-6.249-16.379-6.249-22.628 0L216 308.118l-70.059-70.059c-6.248-6.248-16.379-6.248-22.628 0l-22.627 22.627c-6.248 6.248-6.248 16.379 0 22.627l104 104c6.249 6.249 16.379 6.249 22.628.001z"
           ></path>
         </svg>
-        Ready
-      </app-button>
-    </div>
+        {{ loading() ? 'Iniciando sesión...' : 'Iniciar Sesión' }}
+      </button>
+    </form>
   </div>
 </div>
