@@ -1,4 +1,3 @@
-import re
 from django.http import JsonResponse
 from bson import ObjectId
 from .config import recipes_collection, medicines_collection, users_collection
