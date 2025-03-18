@@ -1,4 +1,4 @@
-import { Routes } from '@angular/router';
+import { Routes, ActivatedRouteSnapshot } from '@angular/router';
 import { AdminUsersSingleComponent } from './admin-users-single/admin-users-single.component';
 import { AdminUsersComponent } from './admin-users/admin-users.component';
 import { DefaultLayoutComponent } from './default-layout/default-layout.component';
@@ -14,6 +14,7 @@ import { authGuard } from './guards/auth.guard';
 import { DoctorAgendaComponent } from './doctor-agenda/doctor-agenda.component';
 import { PatientHistoryComponent } from './patient-history/patient-history.component';
 import { DoctorDashboardComponent } from './doctor-dashboard/doctor-dashboard.component';
+import { roleGuard } from './guards/role.guard';
 
 export const routes: Routes = [
   {
@@ -75,4 +76,22 @@ export const routes: Routes = [
       },
     ],
   },
+  {
+    path: 'admin/dashboard',
+    loadComponent: () => import('./admin/admin-dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent),
+    canActivate: [() => authGuard(), (route: ActivatedRouteSnapshot) => roleGuard(route)],
+    data: { roles: ['admin'] }
+  },
+  {
+    path: 'prescriptions',
+    loadComponent: () => import('./prescriptions/prescriptions.component').then(m => m.PrescriptionsComponent),
+    canActivate: [() => authGuard(), (route: ActivatedRouteSnapshot) => roleGuard(route)],
+    data: { roles: ['doctor'] }
+  },
+  {
+    path: 'prescriptions/new',
+    loadComponent: () => import('./prescriptions/add-prescription/add-prescription.component').then(m => m.AddPrescriptionComponent),
+    canActivate: [() => authGuard(), (route: ActivatedRouteSnapshot) => roleGuard(route)],
+    data: { roles: ['doctor'] }
+  }
 ];

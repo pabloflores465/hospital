@@ -146,3 +146,7 @@ EMAIL_USE_SSL = False  # No usar SSL, solo TLS
 EMAIL_HOST_USER = "rr36693904@gmail.com"  # Tu dirección de Gmail
 EMAIL_HOST_PASSWORD = "chwevdusblwvkfab"
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# MongoDB Configuration
+MONGODB_URI = 'mongodb://localhost:27017/'
+MONGODB_NAME = 'hospital'

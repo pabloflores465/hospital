@@ -11,58 +11,117 @@
   margin-bottom: 2rem;
 }
 
-.add-btn {
-  background-color: #4CAF50;
-  color: white;
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+.header h2 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.error-message {
+  background-color: #fee2e2;
+  border: 1px solid #ef4444;
+  color: #dc2626;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
 }
 
 .doctor-form {
   background-color: white;
   padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   margin-bottom: 2rem;
+}
+
+.doctor-form h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: #2c3e50;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  background-color: #f9fafb;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  ring: 2px;
+  ring-color: #93c5fd;
+}
+
+.button-group {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
 }
 
 .doctors-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
 .doctor-card {
   background-color: white;
-  padding: 1rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  display: flex;
-  justify-content: space-between;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  transition: all 0.2s ease;
+}
+
+.doctor-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.doctor-info h4 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.doctor-info p {
+  color: #4b5563;
+  margin-bottom: 0.25rem;
 }
 
 .doctor-actions {
   display: flex;
-  flex-direction: column;
   gap: 0.5rem;
+  margin-top: 1rem;
+  justify-content: flex-end;
 }
 
-.edit-btn {
-  background-color: #2196F3;
-  color: white;
-  padding: 0.5rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: #6b7280;
+  font-size: 1.125rem;
 }
 
-.delete-btn {
-  background-color: #f44336;
-  color: white;
-  padding: 0.5rem;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+.no-doctors {
+  text-align: center;
+  padding: 2rem;
+  color: #6b7280;
+  font-size: 1.125rem;
+  grid-column: 1 / -1;
 }

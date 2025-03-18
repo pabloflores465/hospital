@@ -1,58 +1,108 @@
 <div class="doctors-container">
   <div class="header">
     <h2>Gestión de Doctores</h2>
-    <button *ngIf="!showForm" (click)="showForm = true" class="add-btn">Añadir Doctor</button>
+    @if (!showForm()) {
+      <app-button (click)="showForm.set(true)">Añadir Doctor</app-button>
+    }
   </div>
+
+  @if (errorMessage()) {
+    <div class="error-message">
+      {{ errorMessage() }}
+    </div>
+  }
 
   <!-- Formulario para añadir/editar doctor -->
-  <div *ngIf="showForm" class="doctor-form">
-    <h3>{{ isEditing ? 'Editar' : 'Añadir' }} Doctor</h3>
-    <form (ngSubmit)="addDoctor()">
-      <div class="form-group">
-        <label for="name">Nombre</label>
-        <input type="text" id="name" [(ngModel)]="newDoctor.name" name="name" required>
-      </div>
+  @if (showForm()) {
+    <div class="doctor-form">
+      <h3>{{ isEditing() ? 'Editar' : 'Añadir' }} Doctor</h3>
+      <form (ngSubmit)="addDoctor()">
+        <div class="form-group">
+          <label for="username">Nombre de Usuario</label>
+          <input 
+            type="text" 
+            id="username" 
+            [(ngModel)]="newDoctor.username" 
+            name="username" 
+            required
+            [disabled]="isEditing()"
+          >
+        </div>
 
-      <div class="form-group">
-        <label for="specialty">Especialidad</label>
-        <select id="specialty" [(ngModel)]="newDoctor.specialty" name="specialty" required>
-          <option value="">Seleccione una especialidad</option>
-          <option *ngFor="let specialty of specialties" [value]="specialty">
-            {{specialty}}
-          </option>
-        </select>
-      </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input 
+            type="email" 
+            id="email" 
+            [(ngModel)]="newDoctor.email" 
+            name="email" 
+            required
+          >
+        </div>
 
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input type="email" id="email" [(ngModel)]="newDoctor.email" name="email" required>
-      </div>
+        <div class="form-group">
+          <label for="noLicencia">Número de Licencia</label>
+          <input 
+            type="text" 
+            id="noLicencia" 
+            [(ngModel)]="newDoctor.noLicencia" 
+            name="noLicencia" 
+            required
+          >
+        </div>
 
-      <div class="form-group">
-        <label for="phone">Teléfono</label>
-        <input type="tel" id="phone" [(ngModel)]="newDoctor.phone" name="phone" required>
-      </div>
-
-      <div class="button-group">
-        <button type="submit" class="submit-btn">{{ isEditing ? 'Actualizar' : 'Añadir' }}</button>
-        <button type="button" class="cancel-btn" (click)="resetForm()">Cancelar</button>
-      </div>
-    </form>
-  </div>
+        <div class="button-group">
+          <app-button 
+            type="submit" 
+            [disabled]="loading()"
+          >
+            {{ isEditing() ? 'Actualizar' : 'Añadir' }}
+          </app-button>
+          <app-button 
+            type="button" 
+            (click)="resetForm()"
+            [disabled]="loading()"
+          >
+            Cancelar
+          </app-button>
+        </div>
+      </form>
+    </div>
+  }
 
   <!-- Lista de doctores -->
-  <div class="doctors-list">
-    <div *ngFor="let doctor of doctors" class="doctor-card">
-      <div class="doctor-info">
-        <h4>{{ doctor.name }}</h4>
-        <p>{{ doctor.specialty }}</p>
-        <p>{{ doctor.email }}</p>
-        <p>{{ doctor.phone }}</p>
-      </div>
-      <div class="doctor-actions">
-        <button (click)="editDoctor(doctor)" class="edit-btn">Editar</button>
-        <button (click)="deleteDoctor(doctor.id)" class="delete-btn">Eliminar</button>
-      </div>
+  @if (loading()) {
+    <div class="loading">Cargando...</div>
+  } @else {
+    <div class="doctors-list">
+      @for (doctor of doctors; track doctor._id) {
+        <div class="doctor-card">
+          <div class="doctor-info">
+            <h4>{{ doctor.username }}</h4>
+            <p>{{ doctor.email }}</p>
+            <p>Licencia: {{ doctor.noLicencia }}</p>
+          </div>
+          <div class="doctor-actions">
+            <app-button 
+              (click)="editDoctor(doctor)"
+              [disabled]="loading()"
+            >
+              Editar
+            </app-button>
+            <app-button 
+              (click)="deleteDoctor(doctor._id)"
+              [disabled]="loading()"
+              styles="bg-red-500 hover:bg-red-600"
+            >
+              Eliminar
+            </app-button>
+          </div>
+        </div>
+      } @empty {
+        <div class="no-doctors">
+          No hay doctores registrados
+        </div>
+      }
     </div>
-  </div>
+  }
 </div>

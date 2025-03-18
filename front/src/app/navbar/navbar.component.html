@@ -1,95 +1,32 @@
-<div
-  class="p-2 flex w-full items-center justify-between bg-white border-b-2 border-blue-300 shadow-2xl"
->
-  <div class="flex items-center">
-    <a routerLink="/" class="w-16 h-16 me-4">
-      <img
-        src="/logo.webp"
-        alt="Description"
-        class="rounded-full border-gray-300 object-cover w-full h-full"
-      />
-    </a>
-    
-    @if (userService.getUser()) {
-      <nav class="flex items-center gap-4">
-        @for (item of menuItems; track item.path) {
-          <a [routerLink]="item.path" routerLinkActive="text-blue-600 font-bold">
-            <app-button layout="pe-2">{{ item.label }}</app-button>
-          </a>
+<nav class="bg-white shadow">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between h-16">
+      <div class="flex">
+        <div class="flex-shrink-0 flex items-center">
+          <h1 class="text-xl font-bold text-gray-800">Hospital App</h1>
+        </div>
+        
+        @if (userService.getUser()) {
+          <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+            @for (item of menuItems; track item.route) {
+              <a [routerLink]="item.route" 
+                 routerLinkActive="text-blue-600 border-b-2 border-blue-600"
+                 class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-blue-600">
+                {{ item.label }}
+              </a>
+            }
+          </div>
         }
-      </nav>
-    }
-  </div>
-
-  <div class="flex items-center gap-4">
-    @if (userService.getUser()) {
-      <div class="flex items-center gap-2">
-        <span class="text-sm font-medium">
-          {{ userService.getRolLabel(userService.getUser()?.rol || '') }}:
-        </span>
-        <span class="font-bold">{{ userService.getUser()?.username }}</span>
       </div>
 
-      <app-button layout="pe-2" (click)="logOut()">
-        <svg
-          class="me-2"
-          stroke="currentColor"
-          fill="currentColor"
-          stroke-width="0"
-          viewBox="0 0 24 24"
-          height="25px"
-          width="25px"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path fill="none" d="M0 0h24v24H0z"></path>
-          <path
-            d="M11 7 9.6 8.4l2.6 2.6H2v2h10.2l-2.6 2.6L11 17l5-5-5-5zm9 12h-8v2h8c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-8v2h8v14z"
-          ></path>
-        </svg>
-        Cerrar Sesión
-      </app-button>
-    } @else {
-      <div class="flex items-center gap-2">
-        <a routerLink="/login">
-          <app-button layout="pe-2">
-            <svg
-              class="me-2"
-              stroke="currentColor"
-              fill="currentColor"
-              stroke-width="0"
-              viewBox="0 0 24 24"
-              height="25px"
-              width="25px"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path fill="none" d="M0 0h24v24H0z"></path>
-              <path
-                d="M11 7 9.6 8.4l2.6 2.6H2v2h10.2l-2.6 2.6L11 17l5-5-5-5zm9 12h-8v2h8c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-8v2h8v14z"
-              ></path>
-            </svg>
-            Iniciar Sesión
-          </app-button>
-        </a>
-        <a routerLink="/signup">
-          <app-button>
-            <svg
-              class="pe-2"
-              stroke="currentColor"
-              fill="currentColor"
-              stroke-width="0"
-              viewBox="0 0 512 512"
-              height="25px"
-              width="25px"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M512 176.001C512 273.203 433.202 352 336 352c-11.22 0-22.19-1.062-32.827-3.069l-24.012 27.014A23.999 23.999 0 0 1 261.223 384H224v40c0 13.255-10.745 24-24 24h-40v40c0 13.255-10.745 24-24 24H24c-13.255 0-24-10.745-24-24v-78.059c0-6.365 2.529-12.47 7.029-16.971l161.802-161.802C163.108 213.814 160 195.271 160 176 160 78.798 238.797.001 335.999 0 433.488-.001 512 78.511 512 176.001zM336 128c0 26.51 21.49 48 48 48s48-21.49 48-48-21.49-48-48-48-48 21.49-48 48z"
-              ></path>
-            </svg>
-            Registrarse
-          </app-button>
-        </a>
+      <div class="flex items-center">
+        @if (userService.getUser()) {
+          <button (click)="userService.logOut()" 
+                  class="ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700">
+            Cerrar Sesión
+          </button>
+        }
       </div>
-    }
+    </div>
   </div>
-</div>
+</nav>

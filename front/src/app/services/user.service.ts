@@ -3,12 +3,17 @@ import { Router } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
 
 export interface User {
-  id: number;
+  _id: string;
   username: string;
   email: string;
   rol: string;
   validated?: boolean;
   noLicencia?: string;
+}
+
+export interface MenuItem {
+  label: string;
+  route: string;
 }
 
 @Injectable({
@@ -25,7 +30,7 @@ export class UserService {
     
     // Verificar la sesión al inicio
     if (this.validateSession()) {
-      this.redirectBasedOnRole(this.userSubject.value!);
+      this.redirectBasedOnRole();
     }
   }
 
@@ -50,7 +55,7 @@ export class UserService {
     if (user) {
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
       this.userSubject.next(user);
-      this.redirectBasedOnRole(user);
+      this.redirectBasedOnRole();
     } else {
       this.logOut();
     }
@@ -75,17 +80,23 @@ export class UserService {
     return false;
   }
 
-  private redirectBasedOnRole(user: User): void {
+  redirectBasedOnRole(): void {
+    const user = this.getUser();
+    if (!user) {
+      this.router.navigate(['/login']);
+      return;
+    }
+
     switch (user.rol) {
       case 'admin':
-        this.router.navigate(['/admin/users']);
+        this.router.navigate(['/admin/dashboard']);
         break;
       case 'doctor':
         this.router.navigate(['/doctor/dashboard']);
         break;
       case 'patient':
       case 'paciente':
-        this.router.navigate(['/appointments']);
+        this.router.navigate(['/patient/dashboard']);
         break;
       default:
         this.router.navigate(['/']);
@@ -93,40 +104,50 @@ export class UserService {
   }
 
   getRolLabel(rol: string): string {
-    const roles = {
-      'admin': 'Administrador',
-      'doctor': 'Doctor',
-      'patient': 'Paciente',
-      'paciente': 'Paciente'
-    };
-    return roles[rol as keyof typeof roles] || rol;
+    switch (rol) {
+      case 'admin':
+        return 'Administrador';
+      case 'doctor':
+        return 'Doctor';
+      case 'patient':
+      case 'paciente':
+        return 'Paciente';
+      default:
+        return rol;
+    }
   }
 
-  getMenuItems(): { path: string, label: string }[] {
+  getMenuItems(): MenuItem[] {
     const user = this.getUser();
     if (!user) return [];
 
     switch (user.rol) {
       case 'admin':
         return [
-          { path: '/admin/users', label: 'Usuarios' },
-          { path: '/admin/doctors', label: 'Doctores' }
+          { label: 'Dashboard', route: '/admin/dashboard' },
+          { label: 'Doctores', route: '/admin/doctors' },
+          { label: 'Pacientes', route: '/admin/patients' },
+          { label: 'Citas', route: '/admin/appointments' }
         ];
       case 'doctor':
         return [
-          { path: '/doctor/dashboard', label: 'Dashboard' },
-          { path: '/doctor/prescriptions', label: 'Recetas' },
-          { path: '/doctor/agenda', label: 'Agenda' },
-          { path: '/doctor/patient-history', label: 'Historial de Pacientes' }
+          { label: 'Dashboard', route: '/doctor/dashboard' },
+          { label: 'Recetas', route: '/prescriptions' },
+          { label: 'Nueva Receta', route: '/prescriptions/new' },
+          { label: 'Historial de Pacientes', route: '/doctor/patient-history' }
         ];
       case 'patient':
       case 'paciente':
         return [
-          { path: '/appointments', label: 'Mis Citas' },
-          { path: '/recipes', label: 'Mis Recetas' }
+          { label: 'Mi Historial', route: '/patient/history' },
+          { label: 'Mis Citas', route: '/patient/appointments' }
         ];
       default:
         return [];
     }
+  }
+
+  isAuthenticated(): boolean {
+    return !!this.getUser();
   }
 }

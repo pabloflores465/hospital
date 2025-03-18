@@ -1,30 +1,25 @@
 import { Component, OnInit } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
-import { ButtonComponent } from '../button/button.component';
-import { UserService } from '../services/user.service';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { UserService, MenuItem } from '../services/user.service';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [RouterLink, ButtonComponent, CommonModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './navbar.component.html',
-  styleUrl: './navbar.component.css',
+  styleUrls: ['./navbar.component.css']
 })
 export class NavbarComponent implements OnInit {
-  menuItems: { path: string; label: string }[] = [];
+  menuItems: MenuItem[] = [];
 
-  constructor(public userService: UserService, private router: Router) {
-    this.userService.user$.subscribe(() => {
-      this.menuItems = this.userService.getMenuItems();
-    });
-  }
+  constructor(public userService: UserService) {}
 
-  ngOnInit(): void {
+  ngOnInit() {
     this.menuItems = this.userService.getMenuItems();
   }
 
-  logOut() {
-    this.userService.logOut();
+  onUserChange() {
+    this.menuItems = this.userService.getMenuItems();
   }
 }

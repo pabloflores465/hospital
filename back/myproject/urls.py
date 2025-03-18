@@ -60,7 +60,7 @@ urlpatterns = [
     # my apis
     path("categories", get_cat_sub),
     path("recipes", get_recipes),
-    path("recipes/<user_id>", get_recipes_by_patient_id),
-    path("recipes/<doctor_id>", get_recipes_by_doctor_id),
+    path("recipes/doctor/<str:doctor_id>", get_recipes_by_doctor_id),
+    path("recipes/patient/<str:patient_id>", get_recipes_by_patient_id),
     # path('send-email/', SendEmailAPIView.as_view(), name='send-email'),
 ]
