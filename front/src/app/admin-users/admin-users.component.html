@@ -1,0 +1,41 @@
+<div
+  class="flex justify-center items-center bg-gray-100 min-h-screen bg-[url('/patient.jpg')] bg-cover bg-center fade-in"
+>
+  <div class="bg-white shadow-md rounded-2xl p-6 w-full max-w-7xl">
+    <table>
+      <thead>
+        <tr class="py-2">
+          <th class="px-2">Usuario</th>
+          <th class="px-2">Correo</th>
+          <th class="px-2">Rol</th>
+          <th class="px-2">Validado</th>
+          <th class="px-2"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (user of users(); track $index) {
+        <tr class="py-2">
+          <td class="px-2">{{ user.username }}</td>
+          <td class="px-2">{{ user.email }}</td>
+          <td class="px-2">
+            @if (user.rol === "admin") {Admin} @else if (user.rol === "doctor")
+            {Doctor} @else {Paciente}
+          </td>
+          <td class="px-2">@if (user.validated) {Sí} @else {No}</td>
+          <td class="px-2">
+            <a [routerLink]="'/admin/users/' + user._id">
+              <app-button class="inline-block">Editar</app-button>
+            </a>
+            <app-button class="inline-block" (click)="borrarUsuario(user._id)"
+              >Borrar</app-button
+            >
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+    <a routerLink="/admin/users/new">
+      <app-button>Nuevo</app-button>
+    </a>
+  </div>
+</div>

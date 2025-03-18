@@ -1,0 +1,95 @@
+<div
+  class="flex justify-center items-center bg-gray-100 min-h-screen bg-[url('/patient.jpg')] bg-cover bg-center fade-in"
+>
+  <div class="bg-white shadow-md rounded-2xl p-6 w-full max-w-sm">
+    <div class="ms-2 me-2 mt-2 mb-4 flex items-center justify-center text-xl">
+      <strong>Hi!!! Please Tell Us About You</strong>
+    </div>
+
+    @if (errorMessage()) {
+    <div class="text-red-500 text-center mb-4">
+      {{ errorMessage() }}
+    </div>
+    }
+
+    <div class="flex flex-col gap-4">
+      <div class="flex items-center">
+        <input
+          [(ngModel)]="user"
+          type="text"
+          placeholder="User"
+          class="p-2 rounded-full focus:outline-none focus:bg-blue-100 border-0 w-full"
+          [disabled]="loading()"
+        />
+      </div>
+
+      <div class="flex items-center">
+        <input
+          [(ngModel)]="email"
+          type="email"
+          placeholder="Email"
+          class="p-2 rounded-full focus:outline-none focus:bg-blue-100 border-0 w-full"
+          [disabled]="loading()"
+        />
+      </div>
+
+      <div class="flex items-center">
+        <input
+          [(ngModel)]="password"
+          type="password"
+          placeholder="Password"
+          class="p-2 rounded-full focus:outline-none focus:bg-blue-100 border-0 w-full"
+          [disabled]="loading()"
+        />
+      </div>
+
+      <div class="flex items-center">
+        <input
+          [(ngModel)]="confirmPassword"
+          type="password"
+          placeholder="Confirm Password"
+          class="p-2 rounded-full focus:outline-none focus:bg-blue-100 border-0 w-full"
+          [disabled]="loading()"
+        />
+      </div>
+
+      <div class="flex items-center">
+        <app-switch
+          class="me-2"
+          (update_checked)="doctorCheck.set($event)"
+          [disabled]="loading()"
+        />
+        Soy doctor
+      </div>
+
+      @if (doctorCheck()) {
+      <div class="flex items-center">
+        <input
+          [(ngModel)]="noLicencia"
+          placeholder="Número de licencia"
+          class="p-2 rounded-full focus:outline-none focus:bg-blue-100 border-0 w-full"
+          [disabled]="loading()"
+        />
+      </div>
+      }
+
+      <app-button (click)="submitForm()" [disabled]="loading()">
+        <svg
+          class="me-2"
+          stroke="currentColor"
+          fill="currentColor"
+          stroke-width="0"
+          viewBox="0 0 512 512"
+          height="25px"
+          width="25px"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M504 256c0 136.967-111.033 248-248 248S8 392.967 8 256 119.033 8 256 8s248 111.033 248 248zM227.314 387.314l184-184c6.248-6.248 6.248-16.379 0-22.627l-22.627-22.627c-6.248-6.249-16.379-6.249-22.628 0L216 308.118l-70.059-70.059c-6.248-6.248-16.379-6.248-22.628 0l-22.627 22.627c-6.248 6.248-6.248 16.379 0 22.627l104 104c6.249 6.249 16.379 6.249 22.628.001z"
+          ></path>
+        </svg>
+        Ready
+      </app-button>
+    </div>
+  </div>
+</div>

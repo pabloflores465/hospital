@@ -11,6 +11,10 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+from pymongo.server_api import ServerApi
+from pymongo import MongoClient
+
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,8 +29,15 @@ SECRET_KEY = 'django-insecure--0(x7(4f32pd$00ts2hbn9t_xbp6tmeb^10=*9p8i-)&1rb)h0
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost' , "localhost:3000" , "localhost:4200"]
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:4200",  # Permitir peticiones desde tu frontend
+]
+
+CORS_ALLOW_CREDENTIALS = True  # Permite enviar cookies y headers de autenticación
+CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+CORS_ALLOW_HEADERS = ["*"]  # Permite todos los headers
 
 # Application definition
 
@@ -37,9 +48,14 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',  
+    'rest_framework' 
+
+    
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware', 
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -47,6 +63,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
 ]
 
 ROOT_URLCONF = 'myproject.urls'
@@ -70,16 +87,15 @@ TEMPLATES = [
 WSGI_APPLICATION = 'myproject.wsgi.application'
 
 
-# Database
+# Database (MongoDB Connection)
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-
+MONGO_URI = "mongodb+srv://admin:123@cluster0.iuspf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0&tls=true&tlsAllowInvalidCertificates=true&serverSelectionTimeoutMS=5000&connectTimeoutMS=10000"
+client = MongoClient(MONGO_URI)
+db = client["hospital_db"]  # Nombre de la base de datos
+collection = db["Hospital"]  # Nombre de la colección
+MONGO_COLLECTION_PACIENTES = db["Hospital"]
+ 
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -105,7 +121,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Mexico_City'  # Cambia esto según tu ubicación
 
 USE_I18N = True
 
@@ -121,3 +137,16 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True  # Usa TLS para la conexión segura
+EMAIL_USE_SSL = False  # No usar SSL, solo TLS
+EMAIL_HOST_USER = "rr36693904@gmail.com"  # Tu dirección de Gmail
+EMAIL_HOST_PASSWORD = "chwevdusblwvkfab"
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# MongoDB Configuration
+MONGODB_URI = 'mongodb://localhost:27017/'
+MONGODB_NAME = 'hospital'

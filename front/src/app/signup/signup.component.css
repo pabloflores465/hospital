@@ -1,0 +1,30 @@
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.fade-in {
+  animation: fade-in 1s ease-in forwards;
+}
+
+input {
+  background: #f5f5f5;
+  padding: 10px;
+  border-radius: 20px;
+  width: 100%;
+  border: 1px solid #ccc;
+}
+
+input:focus {
+  background: #e0f2ff;
+  outline: none;
+  border-color: #007bff;
+}
+
+.text-red-500 {
+  color: red;
+}

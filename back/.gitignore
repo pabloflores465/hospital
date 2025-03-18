@@ -1,0 +1,18 @@
+.venv/
+__pycache__/
+myproject/__pycache__/
+db.sqlite3
+
+# Logs
+logs
+*.log
+
+# Misc
+.DS_Store
+.fleet
+.idea
+
+# Local env files
+.env
+.env.*
+!.env.example

@@ -1,0 +1,14 @@
+<div class="history-container">
+  <h2>Ficha Histórica de Pacientes</h2>
+  <div class="search-box">
+    <input type="text" [(ngModel)]="searchTerm" placeholder="Buscar paciente..." (input)="searchHistories()">
+  </div>
+  <div class="history-list">
+    <div *ngFor="let history of filteredHistories" class="history-card">
+      <h3>{{ history.name }}</h3>
+      <p><strong>Diagnósticos:</strong> {{ history.diagnoses.join(', ') }}</p>
+      <p><strong>Procedimientos:</strong> {{ history.procedures.join(', ') }}</p>
+      <p><strong>Exámenes:</strong> {{ history.examResults }}</p>
+    </div>
+  </div>
+</div>
