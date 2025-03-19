@@ -138,13 +138,13 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "smtp.gmail.com"
+# Configuración del correo electrónico
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # O el servidor SMTP que uses
 EMAIL_PORT = 587
-EMAIL_USE_TLS = True  # Usa TLS para la conexión segura
-EMAIL_USE_SSL = False  # No usar SSL, solo TLS
-EMAIL_HOST_USER = "rr36693904@gmail.com"  # Tu dirección de Gmail
-EMAIL_HOST_PASSWORD = "chwevdusblwvkfab"
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'rr36693904@gmail.com'  # REEMPLAZAR con tu correo real
+EMAIL_HOST_PASSWORD = 'chwevdusblwvkfab'  # REEMPLAZAR con tu contraseña de aplicación
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # MongoDB Configuration

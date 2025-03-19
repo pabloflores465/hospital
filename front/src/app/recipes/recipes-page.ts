@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 
 interface Medicamento {
   principioActivo: string;
@@ -25,10 +26,28 @@ interface Receta {
   tieneSeguro: boolean;
 }
 
+interface User {
+  _id: string;
+  username: string;
+  email: string;
+  rol: string;
+  noLicencia?: string;
+  especialidad?: string;
+  validated: boolean;
+}
+
+interface ApiResponse {
+  appointments: User[];
+}
+
+interface DoctorResponse {
+  doctor: User;
+}
+
 @Component({
   selector: 'recipes-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, HttpClientModule],
   template: `
     <div class="container mx-auto p-4">
       <h1 class="text-2xl font-bold mb-4">Generación de Recetas Médicas</h1>
@@ -41,7 +60,9 @@ interface Receta {
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label class="block text-sm font-medium mb-1">Nombre del Médico</label>
-                <input type="text" formControlName="nombreMedico" class="w-full p-2 border rounded bg-gray-100" readonly>
+                <input type="text" [value]="doctorActual?.username || 'Cargando...'" class="w-full p-2 border rounded bg-gray-100" readonly>
+                <!-- Guardamos el ID en un campo oculto -->
+                <input type="hidden" formControlName="nombreMedico">
               </div>
               <div>
                 <label class="block text-sm font-medium mb-1">Número de Colegiado</label>
@@ -66,8 +87,8 @@ interface Receta {
                 <label class="block text-sm font-medium mb-1">Paciente</label>
                 <select formControlName="paciente" class="w-full p-2 border rounded">
                   <option value="">Seleccione un paciente</option>
-                  <option *ngFor="let paciente of pacientes" [value]="paciente.nombre">
-                    {{paciente.nombre}}
+                  <option *ngFor="let paciente of pacientes" [value]="paciente._id">
+                    {{paciente.username}}
                   </option>
                 </select>
               </div>
@@ -146,7 +167,7 @@ interface Receta {
           <h2 class="text-xl font-semibold">Vista Previa de Receta</h2>
           <div>
             <button class="px-4 py-2 bg-green-600 text-white rounded mr-2">Descargar PDF</button>
-            <button class="px-4 py-2 bg-blue-600 text-white rounded">Enviar por Email</button>
+            <button class="px-4 py-2 bg-blue-600 text-white rounded" (click)="enviarPorEmail()">Enviar por Email</button>
           </div>
         </div>
         
@@ -197,20 +218,20 @@ export class RecipesPage implements OnInit {
   // Datos de ejemplo
   codigoHospital = '00256';
   
-  pacientes = [
-    { id: 1, nombre: 'Juan Pérez', tieneSeguro: true, codigoSeguro: '23423' },
-    { id: 2, nombre: 'María García', tieneSeguro: false },
-    { id: 3, nombre: 'Carlos López', tieneSeguro: true, codigoSeguro: '45678' }
-  ];
+  pacientes: any[] = [];
+  doctorActual: any = null;
   
-  constructor(private fb: FormBuilder) {
+  // Variable para almacenar el ID de la receta generada
+  recetaGeneradaId: string = '';
+  
+  constructor(private fb: FormBuilder, private http: HttpClient) {
     // Inicializar formulario
     this.recetaForm = this.fb.group({
       fecha: [new Date().toISOString().split('T')[0], Validators.required],
       paciente: ['', Validators.required],
-      nombreMedico: ['Dr. Ejemplo Médico', Validators.required], // Automático
-      numeroColegiado: ['MED-12345', Validators.required], // Automático
-      especialidad: ['Medicina General', Validators.required], // Automático
+      nombreMedico: ['', Validators.required],
+      numeroColegiado: ['', Validators.required],
+      especialidad: ['', Validators.required],
       tieneSeguro: [false],
       codigoSeguro: [''],
       medicamento: this.fb.group({
@@ -239,42 +260,111 @@ export class RecipesPage implements OnInit {
   }
   
   ngOnInit(): void {
-    // Aquí consumiríamos la API para obtener datos del doctor logueado
-    console.log('Componente de recetas inicializado - datos del doctor cargados');
+    // Cargar el doctor actual
+    this.cargarDoctorActual();
+    
+    // Cargar los pacientes
+    this.cargarPacientes();
+  }
+  
+  cargarDoctorActual(): void {
+    // Para pruebas, puedes pasar el ID como parámetro
+    // En producción, el backend debería obtener el ID del token/sesión
+    const doctorId = '67cd3224d8c7c0ed8f0c01fe'; // Este ID debería venir de tu sistema de autenticación
+    
+    this.http.get<DoctorResponse>(`http://127.0.0.1:8000/users/current-doctor?doctor_id=${doctorId}`).subscribe({
+      next: (response) => {
+        this.doctorActual = response.doctor;
+        console.log('Doctor cargado:', this.doctorActual);
+        
+        // Actualizar el formulario con los datos del doctor
+        this.recetaForm.patchValue({
+          nombreMedico: this.doctorActual._id, // Guardamos el ID, no el nombre
+          numeroColegiado: this.doctorActual.noLicencia || 'MED-' + Math.floor(Math.random() * 10000),
+          especialidad: this.doctorActual.especialidad || 'Medicina General'
+        });
+      },
+      error: (error) => {
+        console.error('Error al cargar el doctor:', error);
+      }
+    });
+  }
+  
+  cargarPacientes(): void {
+    this.http.get<ApiResponse>('http://127.0.0.1:8000/users').subscribe({
+      next: (response) => {
+        this.pacientes = response.appointments.filter((user: User) => user.rol === 'paciente');
+        console.log('Pacientes cargados:', this.pacientes);
+      },
+      error: (error) => {
+        console.error('Error al cargar los pacientes:', error);
+      }
+    });
   }
   
   generarReceta(): void {
     if (this.recetaForm.valid) {
       const formData = this.recetaForm.value;
       
-      // Generar código de receta
-      let codigo = '';
-      if (formData.tieneSeguro) {
-        codigo = `${this.codigoHospital}-${formData.codigoSeguro}-${this.generarIdUnico()}`;
-      } else {
-        codigo = `${this.codigoHospital}-${this.generarIdUnico()}`;
-      }
-      
-      // Crear objeto de receta para vista previa
-      this.recetaPreview = {
-        ...formData,
-        codigo,
-        fecha: new Date(formData.fecha)
+      // Crear objeto para enviar al API
+      const recetaData = {
+        paciente: formData.paciente, // Ahora esto contiene el ID del paciente
+        nombreMedico: formData.nombreMedico, // ID del médico
+        tieneSeguro: formData.tieneSeguro,
+        codigoSeguro: formData.tieneSeguro ? formData.codigoSeguro : null,
+        codigoHospital: this.codigoHospital,
+        medicamento: {
+          principioActivo: formData.medicamento.principioActivo,
+          concentracion: formData.medicamento.concentracion,
+          presentacion: formData.medicamento.presentacion,
+          formaFarmaceutica: formData.medicamento.formaFarmaceutica,
+          dosis: formData.medicamento.dosis,
+          frecuencia: formData.medicamento.frecuencia,
+          duracion: formData.medicamento.duracion,
+          diagnostico: formData.medicamento.diagnostico
+        },
+        notasEspeciales: formData.notasEspeciales
       };
       
-      this.recetaGenerada = true;
+      console.log('Datos a enviar:', recetaData);
       
-      // Aquí iría el código para enviar los datos al backend
-      console.log('Receta generada:', this.recetaPreview);
+      // Enviar datos al API
+      this.http.post('http://127.0.0.1:8000/recipes/save', recetaData).subscribe({
+        next: (response: any) => {
+          console.log('Receta guardada:', response);
+          
+          // Guardar el ID de la receta generada
+          this.recetaGeneradaId = response.recipe_id;
+          
+          // Para la vista previa, buscar el nombre del paciente según su ID
+          const pacienteSeleccionado = this.pacientes.find(p => p._id === formData.paciente);
+          
+          // Crear objeto de receta para vista previa
+          this.recetaPreview = {
+            ...formData,
+            codigo: response.code,
+            fecha: new Date(formData.fecha),
+            // Mostrar nombres en la vista previa
+            nombreMedico: this.doctorActual?.username || 'Médico',
+            paciente: pacienteSeleccionado?.username || 'Paciente'
+          };
+          
+          this.recetaGenerada = true;
+        },
+        error: (error) => {
+          console.error('Error al guardar la receta:', error);
+          alert('Error al guardar la receta: ' + (error.error?.error || 'Error desconocido'));
+        }
+      });
     }
   }
   
   cancelar(): void {
     this.recetaForm.reset({
       fecha: new Date().toISOString().split('T')[0],
-      nombreMedico: 'Dr. Ejemplo Médico',
-      numeroColegiado: 'MED-12345',
-      especialidad: 'Medicina General',
+      nombreMedico: '',
+      numeroColegiado: '',
+      especialidad: '',
       tieneSeguro: false
     });
     this.recetaGenerada = false;
@@ -283,5 +373,24 @@ export class RecipesPage implements OnInit {
   // Método para generar un ID único (ejemplo simplificado)
   generarIdUnico(): string {
     return '1000' + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+  }
+  
+  // Método para enviar la receta por email
+  enviarPorEmail(): void {
+    if (!this.recetaGeneradaId) {
+      alert('No hay una receta generada para enviar');
+      return;
+    }
+    
+    this.http.post(`http://127.0.0.1:8000/recipes/send-email/${this.recetaGeneradaId}`, {}).subscribe({
+      next: (response: any) => {
+        console.log('Receta enviada por email:', response);
+        alert('Receta enviada por email correctamente');
+      },
+      error: (error) => {
+        console.error('Error al enviar la receta por email:', error);
+        alert('Error al enviar la receta por email: ' + (error.error?.error || 'Error desconocido'));
+      }
+    });
   }
 }
