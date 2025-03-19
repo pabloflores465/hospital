@@ -1,6 +1,7 @@
 from django.http import JsonResponse
 from .config import users_collection
 
+
 def get_patient_count(request):
     if request.method == "GET":
         try:
@@ -10,6 +11,7 @@ def get_patient_count(request):
             return JsonResponse({"error": str(e)}, status=500)
     else:
         return JsonResponse({"error": "Method not allowed"}, status=405)
+
 
 def get_patient_history(request, user_id):
     if request.method == "GET":
@@ -27,3 +29,18 @@ def get_patient_history(request, user_id):
             return JsonResponse({"error": str(e)}, status=500)
     else:
         return JsonResponse({"error": "Método no permitido"}, status=405)
+
+
+def get_users(request):
+    if request.method == "GET":
+        try:
+            users = list(users_collection.find({"rol": "paciente"}))
+            for user in users:
+                user["_id"] = str(user["_id"])
+                if "profile" in user:
+                    user.pop("profile", None)
+            return JsonResponse({"appointments": users}, status=200)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+    else:
+        return JsonResponse({"error": "Method not allowed"}, status=405)
