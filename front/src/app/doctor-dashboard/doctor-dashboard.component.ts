@@ -23,12 +23,13 @@ import { RouterModule } from '@angular/router';
                class="block px-4 py-2 rounded-md hover:bg-gray-100">
               Historial de Pacientes
             </a>
-            <a routerLink="/doctor/prescriptions" 
+            <a routerLink="/doctor/recipes" 
                routerLinkActive="bg-blue-100 text-blue-700"
                class="block px-4 py-2 rounded-md hover:bg-gray-100">
               Recetas
             </a>
           </nav>
+          <a routerLink="/doctor/recipes" class="btn btn-primary">Nueva Receta</a>
         </div>
 
         <!-- Contenido principal -->
