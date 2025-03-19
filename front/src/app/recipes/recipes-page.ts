@@ -112,7 +112,12 @@ interface DoctorResponse {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium mb-1">Principio Activo</label>
-                <input type="text" formControlName="principioActivo" class="w-full p-2 border rounded">
+                <select formControlName="principioActivo" class="w-full p-2 border rounded">
+                  <option value="">Seleccione un principio activo</option>
+                  <option *ngFor="let principio of principiosActivos" [value]="principio.nombre || principio.name">
+                    {{principio.nombre || principio.name}}
+                  </option>
+                </select>
               </div>
               <div>
                 <label class="block text-sm font-medium mb-1">Concentración</label>
@@ -214,15 +219,14 @@ export class RecipesPage implements OnInit {
   recetaForm: FormGroup;
   recetaGenerada = false;
   recetaPreview: any = {};
+  recetaGeneradaId: string = '';
   
   // Datos de ejemplo
   codigoHospital = '00256';
   
   pacientes: any[] = [];
   doctorActual: any = null;
-  
-  // Variable para almacenar el ID de la receta generada
-  recetaGeneradaId: string = '';
+  principiosActivos: any[] = [];
   
   constructor(private fb: FormBuilder, private http: HttpClient) {
     // Inicializar formulario
@@ -265,6 +269,9 @@ export class RecipesPage implements OnInit {
     
     // Cargar los pacientes
     this.cargarPacientes();
+    
+    // Cargar los principios activos
+    this.cargarPrincipiosActivos();
   }
   
   cargarDoctorActual(): void {
@@ -298,6 +305,18 @@ export class RecipesPage implements OnInit {
       },
       error: (error) => {
         console.error('Error al cargar los pacientes:', error);
+      }
+    });
+  }
+  
+  cargarPrincipiosActivos(): void {
+    this.http.get<any>('http://127.0.0.1:8000/medicines/principios-activos').subscribe({
+      next: (response) => {
+        this.principiosActivos = response.principios_activos;
+        console.log('Principios activos cargados:', this.principiosActivos);
+      },
+      error: (error) => {
+        console.error('Error al cargar los principios activos:', error);
       }
     });
   }

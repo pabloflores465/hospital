@@ -47,6 +47,7 @@ from .myfunctions.doctors import get_doctors, get_doctor_count
 from .myfunctions.patients import get_patient_count, get_users
 from .myfunctions.appointments import get_appointments
 from myproject.myfunctions.users import get_current_doctor
+from myproject.myfunctions.medicines import get_principios_activos
 
 # from myproject.views import SendEmailAPIView
 
@@ -84,4 +85,5 @@ urlpatterns = [
     path("appointments/doctor/<doctor_id>", get_appointments),
     path("users", get_users),
     path('users/current-doctor', get_current_doctor, name='get_current_doctor'),
+    path('medicines/principios-activos', get_principios_activos, name='get_principios_activos'),
 ]
