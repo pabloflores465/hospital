@@ -67,6 +67,7 @@ export const routes: Routes = [
           { path: 'patient-history', component: PatientHistoryComponent },
           { path: 'prescriptions', component: PrescriptionsComponent },
           { path: 'prescriptions/new', component: AddPrescriptionComponent },
+          { path: 'recipes', component: RecipesPage }
         ]
       },
       {
