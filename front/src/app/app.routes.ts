@@ -17,12 +17,15 @@ import { DoctorDashboardComponent } from './doctor-dashboard/doctor-dashboard.co
 import { PatientDashboardComponent } from './patient-dashboard/patient-dashboard.component';
 import { roleGuard } from './guards/role.guard';
 import { AddPrescriptionComponent } from './prescriptions/add-prescription/add-prescription.component';
+import { DoctorList } from './doctor_list/doctor_list';
 
 export const routes: Routes = [
   {
     path: '',
     component: DefaultLayoutComponent,
     children: [
+      
+      { path: 'doctor-list', component: DoctorList},
       { path: '', component: MainPageComponent },
       { path: 'login', component: LoginComponent },
       { path: 'signup', component: SignupComponent },
@@ -57,13 +60,13 @@ export const routes: Routes = [
             children: [
               { path: '', redirectTo: 'agenda', pathMatch: 'full' },
               { path: 'agenda', component: DoctorAgendaComponent },
-              { path: 'patient-history', component: PatientHistoryComponent }
+              { path: 'patient-history', component: PatientHistoryComponent },
             ]
           },
           { path: 'agenda', component: DoctorAgendaComponent },
           { path: 'patient-history', component: PatientHistoryComponent },
           { path: 'prescriptions', component: PrescriptionsComponent },
-          { path: 'prescriptions/new', component: AddPrescriptionComponent }
+          { path: 'prescriptions/new', component: AddPrescriptionComponent },
         ]
       },
       {

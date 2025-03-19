@@ -42,6 +42,7 @@ from .myfunctions.recipes import (
 from.myfunctions.services import get_all_services
 from.myfunctions.doctors import get_doctors, get_doctor_count
 from .myfunctions.patients import get_patient_count
+from .myfunctions.appointments import get_appointments
 
 # from myproject.views import SendEmailAPIView
 
@@ -73,4 +74,8 @@ urlpatterns = [
     path("doctors", get_doctors),
     path("doctors/count", get_doctor_count),
     path("patients/count", get_patient_count),
+
+    path("appointments", get_appointments),
+    path("appointments/patient/<patient_id>", get_appointments),
+    path("appointments/doctor/<doctor_id>", get_appointments),
 ]
