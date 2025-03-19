@@ -39,9 +39,9 @@ from .myfunctions.recipes import (
     get_recipes_by_doctor_id,
 )
 
-from.myfunctions.services import get_all_services
-from.myfunctions.doctors import get_doctors, get_doctor_count
-from .myfunctions.patients import get_patient_count
+from .myfunctions.services import get_all_services
+from .myfunctions.doctors import get_doctors, get_doctor_count
+from .myfunctions.patients import get_patient_count, get_users
 from .myfunctions.appointments import get_appointments
 
 # from myproject.views import SendEmailAPIView
@@ -68,14 +68,12 @@ urlpatterns = [
     path("recipes/doctor/<user_id>", get_recipes_by_doctor_id),
     path("recipes/patient/<user_id>", get_recipes_by_patient_id),
     # path('send-email/', SendEmailAPIView.as_view(), name='send-email'),
-
     path("services", get_all_services),
-
     path("doctors", get_doctors),
     path("doctors/count", get_doctor_count),
     path("patients/count", get_patient_count),
-
     path("appointments", get_appointments),
     path("appointments/patient/<patient_id>", get_appointments),
     path("appointments/doctor/<doctor_id>", get_appointments),
+    path("users", get_users),
 ]
