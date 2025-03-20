@@ -18,6 +18,8 @@ import { PatientDashboardComponent } from './patient-dashboard/patient-dashboard
 import { roleGuard } from './guards/role.guard';
 import { AddPrescriptionComponent } from './prescriptions/add-prescription/add-prescription.component';
 import { DoctorList } from './doctor_list/doctor_list';
+import { MisRecetasComponent } from './dashboard/mis-recetas/mis-recetas.component';
+import { UserRecipesComponent } from './patient-dashboard/user-recipes/user-recipes.component';
 
 export const routes: Routes = [
   {
@@ -82,7 +84,8 @@ export const routes: Routes = [
               { path: '', redirectTo: 'appointments', pathMatch: 'full' },
               { path: 'appointments', component: AppointmentsComponent },
               { path: 'history', component: PatientHistoryComponent },
-              { path: 'prescriptions', component: PrescriptionsComponent }
+              { path: 'prescriptions', component: PrescriptionsComponent },
+              { path: 'recipes', component: UserRecipesComponent }
             ]
           },
           { path: 'appointments', component: AppointmentsComponent },
@@ -96,6 +99,11 @@ export const routes: Routes = [
           .then(m => m.AdminDashboardComponent),
         canActivate: [authGuard],
         data: { roles: ['admin'] }
+      },
+      {
+        path: 'dashboard/mis-recetas',
+        component: MisRecetasComponent,
+        title: 'Mis Recetas Médicas'
       }
     ]
   }

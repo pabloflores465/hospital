@@ -82,7 +82,9 @@ def get_recipes_by_patient_id(request, user_id):
             recipes = []
 
             # Buscar todas las recetas del paciente
-            cursor = recipes_collection.find({"patient": ObjectId(user_id)})
+            # Usar sort por created_at para ordenar en MongoDB
+            cursor = recipes_collection.find({"patient": ObjectId(user_id)}).sort("created_at", -1)
+            
             for doc in cursor:
                 doc = convert_objectid(doc)
                 recipes.append(doc)

@@ -6,69 +6,35 @@ import { UserService } from '../services/user.service';
 @Component({
   selector: 'app-patient-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [RouterModule, CommonModule],
   template: `
-    <div class="container mx-auto p-6">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <!-- Panel lateral de navegación -->
-        <div class="md:col-span-1 bg-white rounded-lg shadow p-6">
-          <h2 class="text-xl font-bold mb-4">Panel del Paciente</h2>
+    <div class="container mx-auto p-4">
+      <div class="flex flex-col md:flex-row gap-4">
+        <!-- Panel de navegación lateral -->
+        <div class="md:w-1/4 bg-white p-4 rounded-lg shadow">
           <nav class="space-y-2">
-            <a routerLink="/patient/appointments" 
-               routerLinkActive="bg-blue-100 text-blue-700"
-               class="block px-4 py-2 rounded-md hover:bg-gray-100">
-              Mis Citas
+            <a routerLink="appointments" routerLinkActive="bg-blue-100 text-blue-700" 
+               class="block p-2 rounded hover:bg-gray-100">
+              Citas
             </a>
-            <a routerLink="/patient/history" 
-               routerLinkActive="bg-blue-100 text-blue-700"
-               class="block px-4 py-2 rounded-md hover:bg-gray-100">
-              Mi Historial Médico
+            <a routerLink="history" routerLinkActive="bg-blue-100 text-blue-700" 
+               class="block p-2 rounded hover:bg-gray-100">
+              Historial
             </a>
-            <a routerLink="/patient/prescriptions" 
-               routerLinkActive="bg-blue-100 text-blue-700"
-               class="block px-4 py-2 rounded-md hover:bg-gray-100">
+            <a routerLink="prescriptions" routerLinkActive="bg-blue-100 text-blue-700" 
+               class="block p-2 rounded hover:bg-gray-100">
+              Prescripciones
+            </a>
+            <a routerLink="recipes" routerLinkActive="bg-blue-100 text-blue-700" 
+               class="block p-2 rounded hover:bg-gray-100">
               Mis Recetas
             </a>
           </nav>
         </div>
-
+        
         <!-- Contenido principal -->
-        <div class="md:col-span-3">
-          <!-- Resumen -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div class="bg-white rounded-lg shadow p-6">
-              <h3 class="text-lg font-semibold mb-4">Próxima Cita</h3>
-              @if (nextAppointment) {
-                <div>
-                  <p class="text-gray-600">Fecha: {{ nextAppointment.date | date }}</p>
-                  <p class="text-gray-600">Doctor: {{ nextAppointment.doctor }}</p>
-                  <p class="text-gray-600">Especialidad: {{ nextAppointment.specialty }}</p>
-                </div>
-              } @else {
-                <p class="text-gray-500">No tienes citas programadas</p>
-              }
-            </div>
-
-            <div class="bg-white rounded-lg shadow p-6">
-              <h3 class="text-lg font-semibold mb-4">Últimas Recetas</h3>
-              @if (recentPrescriptions.length > 0) {
-                <ul class="space-y-2">
-                  @for (prescription of recentPrescriptions; track prescription.id) {
-                    <li class="text-gray-600">
-                      {{ prescription.date | date }}: {{ prescription.medication }}
-                    </li>
-                  }
-                </ul>
-              } @else {
-                <p class="text-gray-500">No hay recetas recientes</p>
-              }
-            </div>
-          </div>
-
-          <!-- Router Outlet para contenido anidado -->
-          <div class="bg-white rounded-lg shadow p-6">
-            <router-outlet></router-outlet>
-          </div>
+        <div class="md:w-3/4 bg-white p-4 rounded-lg shadow">
+          <router-outlet></router-outlet>
         </div>
       </div>
     </div>
