@@ -48,6 +48,8 @@ from .myfunctions.patients import get_patient_count, get_users
 from .myfunctions.appointments import get_appointments
 from myproject.myfunctions.users import get_current_doctor
 from myproject.myfunctions.medicines import get_principios_activos
+from .myfunctions.comments import get_comments
+from .myfunctions.comments import post_comment
 
 # from myproject.views import SendEmailAPIView
 
@@ -74,7 +76,11 @@ urlpatterns = [
     path("recipes/patient/<user_id>", get_recipes_by_patient_id),
     path("recipes/save", save_recipe, name="save_recipe"),
     path("recipes/detail/<str:recipe_id>", get_recipe_detail, name="get_recipe_detail"),
-    path("recipes/send-email/<str:recipe_id>", send_recipe_by_email, name="send_recipe_by_email"),
+    path(
+        "recipes/send-email/<str:recipe_id>",
+        send_recipe_by_email,
+        name="send_recipe_by_email",
+    ),
     # path('send-email/', SendEmailAPIView.as_view(), name='send-email'),
     path("services", get_all_services),
     path("doctors", get_doctors),
@@ -84,6 +90,13 @@ urlpatterns = [
     path("appointments/patient/<patient_id>", get_appointments),
     path("appointments/doctor/<doctor_id>", get_appointments),
     path("users", get_users),
-    path('users/current-doctor', get_current_doctor, name='get_current_doctor'),
-    path('medicines/principios-activos', get_principios_activos, name='get_principios_activos'),
+    path("comments/<parent_id>", get_comments),
+    path("addcomment/", post_comment),
+    path("addcomment/<parent_id>", post_comment),
+    path("users/current-doctor", get_current_doctor, name="get_current_doctor"),
+    path(
+        "medicines/principios-activos",
+        get_principios_activos,
+        name="get_principios_activos",
+    ),
 ]

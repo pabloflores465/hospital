@@ -20,36 +20,37 @@ import { AddPrescriptionComponent } from './prescriptions/add-prescription/add-p
 import { DoctorList } from './doctor_list/doctor_list';
 import { MisRecetasComponent } from './dashboard/mis-recetas/mis-recetas.component';
 import { UserRecipesComponent } from './patient-dashboard/user-recipes/user-recipes.component';
+import { Comments } from './comments/comments';
 
 export const routes: Routes = [
   {
     path: '',
     component: DefaultLayoutComponent,
     children: [
-      
-      { path: 'doctor-list', component: DoctorList},
+      { path: 'doctor-list', component: DoctorList },
+      { path: 'comments', component: Comments },
       { path: '', component: MainPageComponent },
       { path: 'login', component: LoginComponent },
       { path: 'signup', component: SignupComponent },
       { path: 'validate', component: ValidateUserComponent },
-      { 
-        path: 'admin/users', 
+      {
+        path: 'admin/users',
         component: AdminUsersComponent,
         canActivate: [authGuard],
-        data: { roles: ['admin'] }
+        data: { roles: ['admin'] },
       },
       { path: 'admin/users/:id', component: AdminUsersSingleComponent },
-      { 
-        path: 'appointments', 
+      {
+        path: 'appointments',
         component: AppointmentsComponent,
         canActivate: [authGuard],
-        data: { roles: ['patient', 'doctor'] }
+        data: { roles: ['patient', 'doctor'] },
       },
-      { 
-        path: 'admin/doctors', 
+      {
+        path: 'admin/doctors',
         component: DoctorsComponent,
         canActivate: [authGuard],
-        data: { roles: ['admin'] }
+        data: { roles: ['admin'] },
       },
       {
         path: 'doctor',
@@ -63,14 +64,14 @@ export const routes: Routes = [
               { path: '', redirectTo: 'agenda', pathMatch: 'full' },
               { path: 'agenda', component: DoctorAgendaComponent },
               { path: 'patient-history', component: PatientHistoryComponent },
-            ]
+            ],
           },
           { path: 'agenda', component: DoctorAgendaComponent },
           { path: 'patient-history', component: PatientHistoryComponent },
           { path: 'prescriptions', component: PrescriptionsComponent },
           { path: 'prescriptions/new', component: AddPrescriptionComponent },
-          { path: 'recipes', component: RecipesPage }
-        ]
+          { path: 'recipes', component: RecipesPage },
+        ],
       },
       {
         path: 'patient',
@@ -85,26 +86,28 @@ export const routes: Routes = [
               { path: 'appointments', component: AppointmentsComponent },
               { path: 'history', component: PatientHistoryComponent },
               { path: 'prescriptions', component: PrescriptionsComponent },
-              { path: 'recipes', component: UserRecipesComponent }
-            ]
+              { path: 'recipes', component: UserRecipesComponent },
+            ],
           },
           { path: 'appointments', component: AppointmentsComponent },
           { path: 'history', component: PatientHistoryComponent },
-          { path: 'prescriptions', component: PrescriptionsComponent }
-        ]
+          { path: 'prescriptions', component: PrescriptionsComponent },
+        ],
       },
       {
         path: 'admin/dashboard',
-        loadComponent: () => import('./admin/admin-dashboard/admin-dashboard.component')
-          .then(m => m.AdminDashboardComponent),
+        loadComponent: () =>
+          import('./admin/admin-dashboard/admin-dashboard.component').then(
+            (m) => m.AdminDashboardComponent
+          ),
         canActivate: [authGuard],
-        data: { roles: ['admin'] }
+        data: { roles: ['admin'] },
       },
       {
         path: 'dashboard/mis-recetas',
         component: MisRecetasComponent,
-        title: 'Mis Recetas Médicas'
-      }
-    ]
-  }
+        title: 'Mis Recetas Médicas',
+      },
+    ],
+  },
 ];
