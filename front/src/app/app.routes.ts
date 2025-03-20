@@ -21,13 +21,16 @@ import { DoctorList } from './doctor_list/doctor_list';
 import { MisRecetasComponent } from './dashboard/mis-recetas/mis-recetas.component';
 import { UserRecipesComponent } from './patient-dashboard/user-recipes/user-recipes.component';
 import { Comments } from './comments/comments';
+import { ImportServicesPage } from './import-services/import-services';
 
 export const routes: Routes = [
   {
     path: '',
     component: DefaultLayoutComponent,
     children: [
-      { path: 'doctor-list', component: DoctorList },
+
+      { path: 'import-services', component: ImportServicesPage },
+      { path: 'doctor-list', component: DoctorList},
       { path: 'comments', component: Comments },
       { path: '', component: MainPageComponent },
       { path: 'login', component: LoginComponent },

@@ -50,6 +50,14 @@ from myproject.myfunctions.users import get_current_doctor
 from myproject.myfunctions.medicines import get_principios_activos
 from .myfunctions.comments import get_comments
 from .myfunctions.comments import post_comment
+from .myfunctions.services_ensurance import get_services_ensurance, import_services_ensurance
+from .myfunctions.services_crud import (
+    create_service, get_services, update_service, delete_service
+)
+from .myfunctions.categories_crud import create_category, get_categories, update_category, delete_category
+from .myfunctions.ensurances_crud import create_ensurance, get_ensurances, update_ensurance, delete_ensurance
+from .myfunctions.subcategories_crud import create_subcategory, get_subcategories, update_subcategory, delete_subcategory
+
 
 # from myproject.views import SendEmailAPIView
 
@@ -82,7 +90,7 @@ urlpatterns = [
         name="send_recipe_by_email",
     ),
     # path('send-email/', SendEmailAPIView.as_view(), name='send-email'),
-    path("services", get_all_services),
+    # path("services", get_all_services),
     path("doctors", get_doctors),
     path("doctors/count", get_doctor_count),
     path("patients/count", get_patient_count),
@@ -99,4 +107,22 @@ urlpatterns = [
         get_principios_activos,
         name="get_principios_activos",
     ),
+    path('api/services_ensurance/', get_services_ensurance),
+    path('api/services_ensurance/import/', import_services_ensurance),
+    path('api/services/', get_services),
+    path('api/services/create/', create_service),
+    path('api/services/<str:service_id>/update/', update_service),
+    path('api/services/<str:service_id>/delete/', delete_service),
+    path('api/categories/', get_categories),
+    path('api/categories/create/', create_category),
+    path('api/categories/<str:category_id>/update/', update_category),
+    path('api/categories/<str:category_id>/delete/', delete_category),
+    path('api/ensurances/', get_ensurances),
+    path('api/ensurances/create/', create_ensurance),
+    path('api/ensurances/<str:ensurance_id>/update/', update_ensurance),
+    path('api/ensurances/<str:ensurance_id>/delete/', delete_ensurance),
+    path('api/subcategories/', get_subcategories),
+    path('api/subcategories/create/', create_subcategory),
+    path('api/subcategories/<str:subcategory_id>/update/', update_subcategory),
+    path('api/subcategories/<str:subcategory_id>/delete/', delete_subcategory),
 ]
