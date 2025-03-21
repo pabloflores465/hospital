@@ -25,7 +25,7 @@ import { UserService } from '../services/user.service';
               class="slot"
               *ngFor="let day of weekDays"
               [class.taken]="isSlotTaken(day, time)"
-              [class.selected]="selectedSlot?.date.toDateString() === day.toDateString() && selectedSlot?.time === time"
+              [class.selected]="selectedSlot?.date?.toDateString() === day.toDateString() && selectedSlot?.time === time"
               (click)="isSlotTaken(day, time) ? onSlotClick(day, time) : selectSlot(day, time)"
             >
               <span *ngIf="isSlotTaken(day, time)">Ocupado</span>
