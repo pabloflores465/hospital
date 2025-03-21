@@ -25,12 +25,22 @@ import { ImportServicesPage } from './import-services/import-services';
 import { PatientServicesComponent } from './patient/patient-services';
 import { MedicalRecordComponent } from './medical-record/medical-record.component';
 import { PatientSelectorComponent } from './medical-record/patient-selector.component';
+import { FaqComponent } from './faq/faq';
+import { HospitalHistoryComponent } from './history/history';
+import { HospitalContactComponent } from './contact/contact';
+import { HospitalMisionComponent } from './mission/mission';
+import { HospitalVisionComponent } from './vision/vision';
 
 export const routes: Routes = [
   {
     path: '',
     component: DefaultLayoutComponent,
     children: [
+      { path: 'mission', component: HospitalMisionComponent },
+      { path: 'vision', component: HospitalVisionComponent },
+      { path: 'history', component: HospitalHistoryComponent },
+      { path: 'contact', component: HospitalContactComponent },
+      { path: 'faq', component: FaqComponent },
       { path: 'import-services', component: ImportServicesPage },
       { path: 'patient-services', component: PatientServicesComponent },
       { path: 'doctor-list', component: DoctorList },
@@ -92,13 +102,13 @@ export const routes: Routes = [
               { path: 'appointments', component: AppointmentsComponent },
               { path: 'history', component: PatientHistoryComponent },
               { path: 'recipes', component: UserRecipesComponent },
-              { path: 'medical-record', component: MedicalRecordComponent }
+              { path: 'medical-record', component: MedicalRecordComponent },
             ],
           },
           { path: 'appointments', component: AppointmentsComponent },
           { path: 'history', component: PatientHistoryComponent },
           { path: 'recipes', component: UserRecipesComponent },
-          { path: 'medical-record', component: MedicalRecordComponent }
+          { path: 'medical-record', component: MedicalRecordComponent },
         ],
       },
       {

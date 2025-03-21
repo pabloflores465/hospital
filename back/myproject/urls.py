@@ -107,7 +107,7 @@ from .myfunctions.medical_records import (
     get_patient_record,
     upload_attachment,
     get_attachment,
-    get_doctor_patients
+    get_doctor_patients,
 )
 
 # Eliminamos la importación errónea
@@ -117,7 +117,26 @@ from .myfunctions.appointments_crud import (
     update_appointment,
     delete_appointment,
     list_appointments,
-    complete_appointment
+    complete_appointment,
+)
+from .myfunctions.history import (
+    get_history,
+    post_history,
+    put_moderation_history,
+    put_audit_history,
+)
+from .myfunctions.mission import (
+    get_mission,
+    post_mission,
+    put_moderation_mission,
+    put_audit_mission,
+)
+
+from .myfunctions.vision import (
+    get_vision,
+    post_vision,
+    put_moderation_vision,
+    put_audit_vision,
 )
 
 
@@ -127,8 +146,8 @@ from .myfunctions.appointments_crud import (
 urlpatterns = [
     path("admin/", admin.site.urls),
     # path('Hospital/', obtener_Hospital, name='obtener_Hospital'),  # API de hospitales
-    path('register/', registrar_paciente, name='register'), 
-    path('login_usuario/', login_paciente, name='login'),
+    path("register/", registrar_paciente, name="register"),
+    path("login_usuario/", login_paciente, name="login"),
     # path('api/send-msg/<int:chat_id>/', send_message, name='send_message'),  # Comentamos esta ruta que usa una función que no existe
     # path('obtener_csrf/', obtener_csrf, name='obtener_csrf'),
     path("registrar_usuario/", registrar_paciente, name="registrar_paciente"),
@@ -141,7 +160,11 @@ urlpatterns = [
     path("borrar_usuario/<user_id>", borrar_paciente, name="borrar_paciente"),
     path("lista_usuarios/", lista_pacientes, name="lista_pacientes"),
     path("obtener_usuario/<user_id>", obtener_paciente, name="obtener_paciente"),
-    path("recetas/usuario/<user_id>", obtener_recetas_usuario, name="obtener_recetas_usuario"),
+    path(
+        "recetas/usuario/<user_id>",
+        obtener_recetas_usuario,
+        name="obtener_recetas_usuario",
+    ),
     # my apis
     path("categories", get_cat_sub),
     path("recipes", get_recipes),
@@ -159,9 +182,9 @@ urlpatterns = [
     path("doctors", get_doctors),
     path("doctors/count", get_doctor_count),
     path("patients/count", get_patient_count),
-    #path("appointments", get_appointments),
-    #path("appointments/patient/<patient_id>", get_appointments),
-    #path("appointments/doctor/<doctor_id>", get_appointments),
+    # path("appointments", get_appointments),
+    # path("appointments/patient/<patient_id>", get_appointments),
+    # path("appointments/doctor/<doctor_id>", get_appointments),
     path("users", get_users),
     path("comments/<parent_id>", get_comments),
     path("addcomment/", post_comment),
@@ -197,13 +220,46 @@ urlpatterns = [
     path("api/appointments/<str:appointment_id>/update/", update_appointment),
     path("api/appointments/<str:appointment_id>/delete/", delete_appointment),
     path("api/appointments/<str:appointment_id>/complete/", complete_appointment),
-
     # Rutas para la ficha histórica
-    path('medical-records/create/', create_medical_record, name='create_medical_record'),
-    path('medical-records/procedure/add/', add_medical_procedure, name='add_medical_procedure'),
-    path('medical-records/comment/add/', add_comment, name='add_comment'),
-    path('medical-records/patient/<str:patient_id>/', get_patient_record, name='get_patient_record'),
-    path('medical-records/attachment/upload/', upload_attachment, name='upload_attachment'),
-    path('medical-records/attachment/<str:attachment_id>/', get_attachment, name='get_attachment'),
-    path('medical-records/doctor/<str:doctor_id>/patients/', get_doctor_patients, name='get_doctor_patients'),
+    path(
+        "medical-records/create/", create_medical_record, name="create_medical_record"
+    ),
+    path(
+        "medical-records/procedure/add/",
+        add_medical_procedure,
+        name="add_medical_procedure",
+    ),
+    path("medical-records/comment/add/", add_comment, name="add_comment"),
+    path(
+        "medical-records/patient/<str:patient_id>/",
+        get_patient_record,
+        name="get_patient_record",
+    ),
+    path(
+        "medical-records/attachment/upload/",
+        upload_attachment,
+        name="upload_attachment",
+    ),
+    path(
+        "medical-records/attachment/<str:attachment_id>/",
+        get_attachment,
+        name="get_attachment",
+    ),
+    path(
+        "medical-records/doctor/<str:doctor_id>/patients/",
+        get_doctor_patients,
+        name="get_doctor_patients",
+    ),
+    path("history/", get_history),
+    path("history/update/", post_history),
+    path("history/moderation/", put_moderation_history),
+    path("history/audit/", put_audit_history),
+    path("mission/", get_mission),
+    path("mission/update/", post_mission),
+    path("mission/moderation/", put_moderation_mission),
+    path("mission/audit/", put_audit_mission),
+    path("vision/", get_vision),
+    path("vision/update/", post_vision),
+    path("vision/moderation/", put_moderation_vision),
+    path("vision/audit/", put_audit_vision),
 ]
