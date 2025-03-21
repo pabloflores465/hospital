@@ -30,12 +30,16 @@ import { HospitalHistoryComponent } from './history/history';
 import { HospitalContactComponent } from './contact/contact';
 import { HospitalMisionComponent } from './mission/mission';
 import { HospitalVisionComponent } from './vision/vision';
+import { AuditComponent } from './audit/audit';
+import { ModerationComponent } from './moderation/moderation';
 
 export const routes: Routes = [
   {
     path: '',
     component: DefaultLayoutComponent,
     children: [
+      { path: 'moderation', component: ModerationComponent },
+      { path: 'audit', component: AuditComponent },
       { path: 'mission', component: HospitalMisionComponent },
       { path: 'vision', component: HospitalVisionComponent },
       { path: 'history', component: HospitalHistoryComponent },

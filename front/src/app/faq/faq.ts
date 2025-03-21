@@ -1,91 +1,188 @@
+import { Component, signal } from '@angular/core';
+import axios from 'axios';
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-
-interface FAQ {
-  question: string;
-  answer: string;
-}
 
 @Component({
   selector: 'app-faq',
+  standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="container mx-auto p-6">
-      <h1 class="text-4xl font-bold mb-8 text-center">Preguntas Frecuentes</h1>
+    <!-- Vista modo lectura (cuando edit() === false) -->
+    <ng-container *ngIf="!edit()">
+      <div class="container mx-auto p-6">
+        <h1 class="text-4xl font-bold mb-8 text-center">
+          Preguntas Frecuentes
+        </h1>
 
-      <!-- Formulario para agregar nueva pregunta -->
-      <div class="mb-8 p-4 border rounded bg-gray-50">
-        <h2 class="text-2xl font-bold mb-4">Agregar Nueva Pregunta</h2>
+        <div class="mb-6 border-b border-gray-300 pb-4">
+          <h2 class="text-2xl font-semibold text-gray-800">
+            {{ faq().question1 }}
+          </h2>
+          <p class="mt-2 text-gray-600">{{ faq().answer1 }}</p>
+        </div>
+
+        <div class="mb-6 border-b border-gray-300 pb-4">
+          <h2 class="text-2xl font-semibold text-gray-800">
+            {{ faq().question2 }}
+          </h2>
+          <p class="mt-2 text-gray-600">{{ faq().answer2 }}</p>
+        </div>
+
+        <div class="mb-6 border-b border-gray-300 pb-4">
+          <h2 class="text-2xl font-semibold text-gray-800">
+            {{ faq().question3 }}
+          </h2>
+          <p class="mt-2 text-gray-600">{{ faq().answer3 }}</p>
+        </div>
+
+        <div class="text-center mt-6">
+          <button
+            (click)="enableEdit()"
+            class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          >
+            Editar
+          </button>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- Vista modo edición (cuando edit() === true) -->
+    <ng-container *ngIf="edit()">
+      <div class="container mx-auto p-6">
+        <h1 class="text-4xl font-bold mb-8 text-center">
+          Editar Preguntas Frecuentes
+        </h1>
+
+        <!-- Question 1 -->
         <div class="mb-4">
-          <label class="block text-gray-700">Pregunta:</label>
+          <label class="block text-gray-700">Pregunta 1:</label>
           <input
             type="text"
-            [(ngModel)]="newQuestion"
+            [(ngModel)]="faq().question1"
             class="w-full border rounded px-3 py-2"
-            placeholder="Escribe la pregunta"
           />
         </div>
         <div class="mb-4">
-          <label class="block text-gray-700">Respuesta:</label>
+          <label class="block text-gray-700">Respuesta 1:</label>
           <textarea
-            [(ngModel)]="newAnswer"
+            [(ngModel)]="faq().answer1"
             class="w-full border rounded px-3 py-2"
-            placeholder="Escribe la respuesta"
+            rows="3"
           ></textarea>
         </div>
-        <button
-          (click)="addFAQ()"
-          class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        >
-          Agregar Pregunta
-        </button>
-      </div>
 
-      <!-- Listado de preguntas frecuentes -->
-      <div *ngFor="let faq of faqs" class="mb-6 border-b border-gray-300 pb-4">
-        <h2 class="text-2xl font-semibold text-gray-800">{{ faq.question }}</h2>
-        <p class="mt-2 text-gray-600" [innerHTML]="faq.answer"></p>
+        <!-- Question 2 -->
+        <div class="mb-4">
+          <label class="block text-gray-700">Pregunta 2:</label>
+          <input
+            type="text"
+            [(ngModel)]="faq().question2"
+            class="w-full border rounded px-3 py-2"
+          />
+        </div>
+        <div class="mb-4">
+          <label class="block text-gray-700">Respuesta 2:</label>
+          <textarea
+            [(ngModel)]="faq().answer2"
+            class="w-full border rounded px-3 py-2"
+            rows="3"
+          ></textarea>
+        </div>
+
+        <!-- Question 3 -->
+        <div class="mb-4">
+          <label class="block text-gray-700">Pregunta 3:</label>
+          <input
+            type="text"
+            [(ngModel)]="faq().question3"
+            class="w-full border rounded px-3 py-2"
+          />
+        </div>
+        <div class="mb-4">
+          <label class="block text-gray-700">Respuesta 3:</label>
+          <textarea
+            [(ngModel)]="faq().answer3"
+            class="w-full border rounded px-3 py-2"
+            rows="3"
+          ></textarea>
+        </div>
+
+        <div class="text-center mt-6">
+          <button
+            (click)="save()"
+            class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 mr-4"
+          >
+            Guardar
+          </button>
+          <button
+            (click)="cancel()"
+            class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+          >
+            Cancelar
+          </button>
+        </div>
       </div>
-    </div>
+    </ng-container>
   `,
-  styles: [
-    `
-      /* Puedes agregar estilos personalizados adicionales aquí si lo deseas */
-    `,
-  ],
+  styles: [],
 })
 export class FaqComponent {
-  faqs: FAQ[] = [
-    {
-      question: '¿Cómo instalo la aplicación?',
-      answer:
-        'Puedes instalar la aplicación ejecutando el comando <code>npm install</code> en la terminal.',
-    },
-    {
-      question: '¿Cómo uso la aplicación?',
-      answer:
-        'Inicia el servidor de desarrollo con <code>ng serve</code> y visita <code>http://localhost:4200</code> en tu navegador.',
-    },
-    {
-      question: '¿Dónde encuentro la documentación?',
-      answer:
-        'La documentación se encuentra en el repositorio oficial o en el sitio web del proyecto.',
-    },
-  ];
+  faq = signal<any>({});
+  edit = signal(false);
 
-  newQuestion: string = '';
-  newAnswer: string = '';
+  ngOnInit() {
+    this.getFaq();
+  }
 
-  addFAQ(): void {
-    if (this.newQuestion.trim() && this.newAnswer.trim()) {
-      this.faqs.push({
-        question: this.newQuestion.trim(),
-        answer: this.newAnswer.trim(),
+  async getFaq() {
+    try {
+      const response = await axios.get('http://127.0.0.1:8000/faq');
+      // Se asume que la respuesta viene como { history: { ... } }
+      this.faq.set(response.data.history);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  enableEdit() {
+    this.edit.set(true);
+  }
+
+  cancel() {
+    // Recarga los datos originales para descartar cambios
+    this.getFaq();
+    this.edit.set(false);
+  }
+
+  async save() {
+    try {
+      const response = await axios.put(
+        'http://127.0.0.1:8000/faq/moderation/',
+        {
+          _id: this.faq()._id,
+          question1: this.faq().question1,
+          answer1: this.faq().answer1,
+          question2: this.faq().question2,
+          answer2: this.faq().answer2,
+          question3: this.faq().question3,
+          answer3: this.faq().answer3,
+        }
+      );
+      const response2 = await axios.put('http://127.0.0.1:8000/faq/audit/', {
+        _id: this.faq()._id,
+        question1: this.faq().question1,
+        answer1: this.faq().answer1,
+        question2: this.faq().question2,
+        answer2: this.faq().answer2,
+        question3: this.faq().question3,
+        answer3: this.faq().answer3,
       });
-      // Limpiar campos después de agregar
-      this.newQuestion = '';
-      this.newAnswer = '';
+      console.log(response.data.message);
+      console.log(response2.data.message);
+      this.edit.set(false);
+    } catch (error) {
+      console.error(error);
     }
   }
 }

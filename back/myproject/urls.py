@@ -148,6 +148,10 @@ from .myfunctions.contact import (
 
 from .myfunctions.faq import get_faq, post_faq, put_moderation_faq, put_audit_faq
 
+from .myfunctions.moderation import clear_history, get_changes
+
+from .myfunctions.audit import get_all_changes
+
 # from myproject.views import SendEmailAPIView
 
 
@@ -278,4 +282,7 @@ urlpatterns = [
     path("faq/update/", post_faq),
     path("faq/moderation/", put_moderation_faq),
     path("faq/audit/", put_audit_faq),
+    path("moderation/clear/<page_id>", clear_history),
+    path("moderation/", get_changes),
+    path("audit", get_all_changes),
 ]
