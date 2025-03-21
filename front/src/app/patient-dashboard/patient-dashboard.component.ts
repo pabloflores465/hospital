@@ -29,6 +29,10 @@ import { UserService } from '../services/user.service';
                class="block p-2 rounded hover:bg-gray-100">
               Mis Recetas
             </a>
+            <a routerLink="medical-record" routerLinkActive="bg-blue-100 text-blue-700" 
+               class="block p-2 rounded hover:bg-gray-100">
+              Ficha Médica
+            </a>
           </nav>
         </div>
         

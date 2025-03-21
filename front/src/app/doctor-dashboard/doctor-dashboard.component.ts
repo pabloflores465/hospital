@@ -28,6 +28,11 @@ import { RouterModule } from '@angular/router';
                class="block px-4 py-2 rounded-md hover:bg-gray-100">
               Recetas
             </a>
+            <a routerLink="/medical-record/patients" 
+               routerLinkActive="bg-blue-100 text-blue-700"
+               class="block px-4 py-2 rounded-md hover:bg-gray-100">
+              Ficha Médica
+            </a>
           </nav>
           <a routerLink="/doctor/recipes" class="btn btn-primary">Nueva Receta</a>
         </div>

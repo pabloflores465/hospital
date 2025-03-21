@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { UserService } from '../../services/user.service';
 
 @Component({
   selector: 'app-user-recipes',
@@ -8,7 +9,9 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
   imports: [CommonModule, HttpClientModule],
   template: `
     <div class="p-4">
-      <h2 class="text-xl font-bold mb-4">Mis Recetas Médicas</h2>
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">Mis Recetas Médicas</h2>
+      </div>
       
       <!-- Estado de carga -->
       <div *ngIf="loading" class="text-center py-6">
@@ -82,7 +85,10 @@ export class UserRecipesComponent implements OnInit {
   loading = true;
   error = '';
   
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private userService: UserService
+  ) {}
   
   ngOnInit(): void {
     this.loadRecipes();
@@ -92,8 +98,8 @@ export class UserRecipesComponent implements OnInit {
     this.loading = true;
     this.error = '';
     
-    // Obtener el usuario del localStorage (ajusta esto según tu implementación de autenticación)
-    const user = this.getUserFromStorage();
+    const user = this.userService.getUser();
+    console.log('Usuario actual:', user);
     
     if (!user || !user._id) {
       this.error = 'No se pudo identificar al usuario actual';
@@ -101,8 +107,11 @@ export class UserRecipesComponent implements OnInit {
       return;
     }
     
+    console.log('Cargando recetas para el usuario:', user._id);
+    
     this.http.get<any>(`http://127.0.0.1:8000/recipes/patient/${user._id}`).subscribe({
       next: (response) => {
+        console.log('Respuesta del servidor:', response);
         if (response && response.recipes) {
           this.recipes = response.recipes;
           
@@ -133,20 +142,5 @@ export class UserRecipesComponent implements OnInit {
         alert('Error al enviar el correo. Inténtalo más tarde.');
       }
     });
-  }
-  
-  // Método para obtener el usuario del localStorage
-  private getUserFromStorage(): any {
-    try {
-      // Para pruebas, usamos un ID fijo
-      return { _id: '67d985d0ba17ad09ee384993' };
-      
-      // En producción, deberías usar esto:
-      // const userStr = localStorage.getItem('user');
-      // return userStr ? JSON.parse(userStr) : null;
-    } catch (e) {
-      console.error('Error al obtener usuario del storage:', e);
-      return null;
-    }
   }
 } 

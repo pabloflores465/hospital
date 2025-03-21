@@ -23,6 +23,8 @@ import { UserRecipesComponent } from './patient-dashboard/user-recipes/user-reci
 import { Comments } from './comments/comments';
 import { ImportServicesPage } from './import-services/import-services';
 import { PatientServicesComponent } from './patient/patient-services';
+import { MedicalRecordComponent } from './medical-record/medical-record.component';
+import { PatientSelectorComponent } from './medical-record/patient-selector.component';
 
 export const routes: Routes = [
   {
@@ -89,13 +91,14 @@ export const routes: Routes = [
               { path: '', redirectTo: 'appointments', pathMatch: 'full' },
               { path: 'appointments', component: AppointmentsComponent },
               { path: 'history', component: PatientHistoryComponent },
-              { path: 'prescriptions', component: PrescriptionsComponent },
               { path: 'recipes', component: UserRecipesComponent },
+              { path: 'medical-record', component: MedicalRecordComponent }
             ],
           },
           { path: 'appointments', component: AppointmentsComponent },
           { path: 'history', component: PatientHistoryComponent },
-          { path: 'prescriptions', component: PrescriptionsComponent },
+          { path: 'recipes', component: UserRecipesComponent },
+          { path: 'medical-record', component: MedicalRecordComponent }
         ],
       },
       {
@@ -111,6 +114,24 @@ export const routes: Routes = [
         path: 'dashboard/mis-recetas',
         component: MisRecetasComponent,
         title: 'Mis Recetas Médicas',
+      },
+      {
+        path: 'medical-record/patients',
+        component: PatientSelectorComponent,
+        canActivate: [authGuard],
+        data: { roles: ['doctor', 'admin'] },
+      },
+      {
+        path: 'medical-record/:patientId',
+        component: MedicalRecordComponent,
+        canActivate: [authGuard],
+        data: { roles: ['patient', 'paciente', 'doctor', 'admin'] },
+      },
+      {
+        path: 'medical-record',
+        component: MedicalRecordComponent,
+        canActivate: [authGuard],
+        data: { roles: ['patient', 'paciente', 'doctor', 'admin'] },
       },
     ],
   },

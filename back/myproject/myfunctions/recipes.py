@@ -49,25 +49,15 @@ def get_recipes(request):
                     code_string = f"{code_string}-{code}"
                 recipe["code"] = code_string[1:]
 
-            for recipe in recipes_medicines:
-                for doctor in doctors:
-                    if doctor["_id"] == recipe["doctor"]:
-                        recipe["doctor"] = doctor["username"]
-
-            for recipe in recipes_medicines:
-                for patient in patients:
-                    if patient["_id"] == recipe["patient"]:
-                        recipe["patient"] = patient["username"]
-
-            for recipe in recipes_medicines:
-                patient = users_collection.find_one({"_id": recipe["patient"]})
+                # Verificar si hay un paciente asociado y convertir su ID a string
+                patient = users_collection.find_one({"_id": ObjectId(recipe["patient"])})
                 if patient:
                     patient["_id"] = str(patient["_id"])
-                    patient.pop("profile", None)
+                    if patient.get("profile"):
+                        patient.pop("profile", None)
                 else:
-                    recipe["patient"] = ""
+                    recipe["patient"] = {}
                 recipe["patient"] = patient
-
 
             return JsonResponse({"recipes": recipes_medicines}, status=200)
         except Exception as e:
@@ -183,6 +173,7 @@ def get_recipes_by_doctor_id(request, user_id):
                     code_string = f"{code_string}-{code}"
                 recipe["code"] = code_string[1:]
 
+                # Verificar si hay un paciente asociado y convertir su ID a string
                 patient = users_collection.find_one({"_id": ObjectId(recipe["patient"])})
                 if patient:
                     patient["_id"] = str(patient["_id"])

@@ -58,8 +58,39 @@ interface DoctorResponse {
   imports: [CommonModule, FormsModule, ReactiveFormsModule, HttpClientModule],
   template: `
     <div class="container mx-auto p-4">
-      <h1 class="text-2xl font-bold mb-4">Generación de Recetas Médicas</h1>
+      <h1 class="text-2xl font-bold mb-4">Recetas Médicas</h1>
 
+      <!-- Lista de Recetas -->
+      <div class="mb-8">
+        <h2 class="text-xl font-semibold mb-4">Mis Recetas</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div *ngFor="let receta of recetas" class="bg-white rounded-lg shadow p-4">
+            <div class="border-b pb-2 mb-2">
+              <p class="font-semibold">Fecha: {{receta.fecha | date:'dd/MM/yyyy'}}</p>
+              <p>Código: {{receta.codigo}}</p>
+            </div>
+            <div class="mb-2">
+              <p class="font-medium">Médico: {{receta.nombreMedico}}</p>
+              <p>Especialidad: {{receta.especialidad}}</p>
+            </div>
+            <div class="mb-2">
+              <h3 class="font-medium">Medicamentos:</h3>
+              <ul class="list-disc list-inside">
+                <li *ngFor="let medicamento of receta.medicamentos">
+                  {{medicamento.principioActivo}} - {{medicamento.dosis}}
+                </li>
+              </ul>
+            </div>
+            <div class="flex justify-end space-x-2">
+              <button (click)="generarPDF(receta)" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                Descargar PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formulario de Generación de Receta -->
       <div class="bg-white rounded-lg shadow p-6">
         <form [formGroup]="recetaForm" (ngSubmit)="generarReceta()">
           <!-- Datos del médico (automáticos) -->
@@ -288,12 +319,6 @@ interface DoctorResponse {
             <button class="px-4 py-2 bg-green-600 text-white rounded mr-2">
               Descargar PDF
             </button>
-            <button
-              class="px-4 py-2 bg-blue-600 text-white rounded"
-              (click)="enviarPorEmail()"
-            >
-              Enviar por Email
-            </button>
           </div>
         </div>
 
@@ -368,6 +393,7 @@ export class RecipesPage implements OnInit {
   pacientes: any[] = [];
   doctorActual: any = null;
   principiosActivos: any[] = [];
+  recetas: any[] = [];
 
   constructor(private fb: FormBuilder, private http: HttpClient) {
     // Inicializar formulario
@@ -433,14 +459,10 @@ export class RecipesPage implements OnInit {
   }
 
   ngOnInit(): void {
-    // Cargar el doctor actual
     this.cargarDoctorActual();
-
-    // Cargar los pacientes
     this.cargarPacientes();
-
-    // Cargar los principios activos
     this.cargarPrincipiosActivos();
+    this.cargarRecetas();
   }
 
   cargarDoctorActual(): void {
@@ -500,6 +522,31 @@ export class RecipesPage implements OnInit {
       });
   }
 
+  cargarRecetas(): void {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user.rol === 'patient') {
+      // Si es paciente, cargar solo sus recetas
+      this.http.get(`http://localhost:8000/recetas/usuario/${user._id}`).subscribe({
+        next: (response: any) => {
+          this.recetas = response;
+        },
+        error: (error) => {
+          console.error('Error al cargar las recetas:', error);
+        }
+      });
+    } else if (user.rol === 'doctor') {
+      // Si es doctor, cargar las recetas que ha generado
+      this.http.get(`http://localhost:8000/recipes/doctor/${user._id}`).subscribe({
+        next: (response: any) => {
+          this.recetas = response;
+        },
+        error: (error) => {
+          console.error('Error al cargar las recetas:', error);
+        }
+      });
+    }
+  }
+
   generarReceta(): void {
     if (this.recetaForm.valid) {
       const formData = this.recetaForm.value;
@@ -537,6 +584,18 @@ export class RecipesPage implements OnInit {
 
             // Guardar el ID de la receta generada
             this.recetaGeneradaId = response.recipe_id;
+
+            // Enviar automáticamente por email
+            this.http.post(`http://127.0.0.1:8000/recipes/send-email/${this.recetaGeneradaId}`, {}).subscribe({
+              next: () => {
+                console.log('Receta enviada por email exitosamente');
+                alert('La receta ha sido guardada y enviada al correo del paciente.');
+              },
+              error: (err) => {
+                console.error('Error al enviar el email:', err);
+                alert('La receta se guardó correctamente, pero hubo un error al enviar el correo.');
+              }
+            });
 
             // Para la vista previa, buscar el nombre del paciente según su ID
             const pacienteSeleccionado = this.pacientes.find(

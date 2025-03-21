@@ -239,3 +239,22 @@ def obtener_paciente(request, user_id):
             return JsonResponse({"error": str(e)}, status=400)
     else:
         return JsonResponse({"error": "Método no permitido"}, status=405)
+
+
+def obtener_recetas_usuario(request, user_id):
+    if request.method == "GET":
+        try:
+            # Obtener las recetas del usuario específico
+            recetas = list(db.recetas.find({"paciente": user_id}))
+            
+            # Convertir los ObjectId a string
+            for receta in recetas:
+                receta["_id"] = str(receta["_id"])
+                if "paciente" in receta:
+                    receta["paciente"] = str(receta["paciente"])
+            
+            return JsonResponse(recetas, safe=False, status=200)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+    else:
+        return JsonResponse({"error": "Método no permitido"}, status=405)

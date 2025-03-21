@@ -2,7 +2,8 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ButtonComponent } from '../button/button.component';
-import { UserService, User } from '../services/user.service';
+import { UserService } from '../services/user.service';
+import { User } from '../models/user.model';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -58,10 +59,11 @@ export class LoginComponent {
       // Transformar la respuesta del backend al formato User
       const user: User = {
         _id: data.user._id,
+        name: data.user.username,
         username: data.user.username,
         email: data.user.email,
         rol: data.user.rol.toLowerCase(),
-        noLicencia: data.user.noLicencia || undefined
+        license: data.user.noLicencia || undefined
       };
 
       console.log('Usuario autenticado:', user);
@@ -69,7 +71,8 @@ export class LoginComponent {
       // Guardar el usuario en el servicio
       this.userService.setUser(user);
       
-      // La redirección se maneja en el servicio
+      // Redireccionar según el rol del usuario
+      this.userService.redirectBasedOnRole();
     } catch (error: any) {
       console.error('Error en login:', error);
       this.errorMessage.set(error.message || 'Error al iniciar sesión');
