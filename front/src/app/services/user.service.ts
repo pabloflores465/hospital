@@ -145,7 +145,8 @@ export class UserService {
           { label: 'Doctores', route: '/admin/doctors' },
           { label: 'Pacientes', route: '/admin/users' },
           { label: 'Citas', route: '/appointments' },
-          { label: 'Ficha Médica', route: '/medical-record/patients' }
+          { label: 'Ficha Médica', route: '/medical-record/patients' },
+          { label: 'Servicios del Usuario', route: '/patient-services' }
         ];
       case 'doctor':
         return [
