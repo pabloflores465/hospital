@@ -111,7 +111,15 @@ from .myfunctions.medical_records import (
 )
 
 # Eliminamos la importación errónea
-# from myproject.myfunctions.user import register, login, send_message
+# from myproject.myfunctions.user import register, login, send_messagefrom .myfunctions.appointments_crud import (
+from .myfunctions.appointments_crud import (
+    create_appointment,
+    update_appointment,
+    delete_appointment,
+    list_appointments,
+    complete_appointment
+)
+
 
 # from myproject.views import SendEmailAPIView
 
@@ -151,9 +159,9 @@ urlpatterns = [
     path("doctors", get_doctors),
     path("doctors/count", get_doctor_count),
     path("patients/count", get_patient_count),
-    path("appointments", get_appointments),
-    path("appointments/patient/<patient_id>", get_appointments),
-    path("appointments/doctor/<doctor_id>", get_appointments),
+    #path("appointments", get_appointments),
+    #path("appointments/patient/<patient_id>", get_appointments),
+    #path("appointments/doctor/<doctor_id>", get_appointments),
     path("users", get_users),
     path("comments/<parent_id>", get_comments),
     path("addcomment/", post_comment),
@@ -184,6 +192,12 @@ urlpatterns = [
     path("api/subcategories/<str:subcategory_id>/delete/", delete_subcategory),
     path("footer/", get_footer),
     path("patient/services/", get_patient_services),
+    path("api/appointments/", list_appointments),
+    path("api/appointments/create/", create_appointment),
+    path("api/appointments/<str:appointment_id>/update/", update_appointment),
+    path("api/appointments/<str:appointment_id>/delete/", delete_appointment),
+    path("api/appointments/<str:appointment_id>/complete/", complete_appointment),
+
     # Rutas para la ficha histórica
     path('medical-records/create/', create_medical_record, name='create_medical_record'),
     path('medical-records/procedure/add/', add_medical_procedure, name='add_medical_procedure'),

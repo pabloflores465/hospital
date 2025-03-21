@@ -2,16 +2,17 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 import json, traceback
 from bson import ObjectId
-from .db import get_db
-
-db = get_db()
-collection = db.services_ensurance
+from .config import services_collection as collection
+from django.views.decorators.csrf import csrf_exempt
 
 # Garantiza índice único
-collection.create_index(
-    [("service_id", 1), ("ensurance_id", 1)],
-    unique=True
-)
+try:
+    collection.create_index(
+        [("service_id", 1), ("ensurance_id", 1)],
+        unique=True
+    )
+except Exception:
+    pass
 
 def get_services_ensurance(request):
     if request.method != "GET":
