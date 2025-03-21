@@ -245,7 +245,9 @@ export class AppointmentsComponent implements OnInit {
 
   loadDoctors(): void {
     if (this.role === 'doctor') {
-      this.doctors = [{ _id: this.currentUserId, username: this.userService.getUser()?.username }];
+      // Load all doctors for selection even if logged in as doctor
+      this.http.get<{ doctors: any[] }>(`${this.baseUrl}/doctors`)
+        .subscribe(r => this.doctors = (r.doctors || []).filter(d => d._id !== this.currentUserId));
     } else {
       this.http.get<{ doctors: any[] }>(`${this.baseUrl}/doctors`)
         .subscribe(r => this.doctors = r.doctors || []);
@@ -261,9 +263,9 @@ export class AppointmentsComponent implements OnInit {
     this.http.get<{ appointments: any[] }>(`${this.baseUrl}/api/appointments/`)
       .subscribe(r => {
         const all = r.appointments || [];
-        this.appointments = this.role === 'doctor'
-          ? all.filter(a => a.doctor._id === this.currentUserId)
-          : all;
+        console.log('Loaded appointments (raw):', all);
+        this.appointments = all;
+        console.log('Filtered appointments:', this.appointments);
       });
   }
 

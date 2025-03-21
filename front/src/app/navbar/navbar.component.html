@@ -21,6 +21,12 @@
               Importar servicios
             </a>
           }
+          @if (userService.getUser()?.rol === "doctor"){
+            <a routerLink="/appointments" 
+            class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-blue-600">
+              Citas
+            </a>
+          }
           </div>
         }
       </div>
