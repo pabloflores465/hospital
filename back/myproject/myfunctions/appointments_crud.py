@@ -4,6 +4,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from bson import ObjectId
 from .config import appointments_collection, users_collection
+from django.utils.dateparse import parse_datetime
 
 BUSINESS_START = time(8,0)
 BUSINESS_END = time(16,30)
@@ -11,9 +12,6 @@ BUSINESS_END = time(16,30)
 def serialize(doc):
     doc["_id"] = str(doc["_id"])
     return doc
-
-def parse_datetime(date_str, time_str):
-    return datetime.fromisoformat(f"{date_str}T{time_str}")
 
 def is_conflict(doctor_id, start):
     return appointments_collection.find_one({
@@ -34,7 +32,12 @@ def create_appointment(request):
         return JsonResponse({"error": "Método no permitido"}, status=405)
     try:
         data = json.loads(request.body)
-        start = parse_datetime(data["date"], data["time"])
+        start_str = data.get("start")
+        if not start_str:
+            return JsonResponse({"error": "Missing start datetime"}, status=400)
+        start = parse_datetime(start_str)
+        if start is None:
+            return JsonResponse({"error": "Invalid start datetime format"}, status=400)
         if not validate_slot(start):
             raise ValueError("Horario inválido")
         if is_conflict(data["doctor"], start):
@@ -58,7 +61,12 @@ def update_appointment(request, appointment_id):
         return JsonResponse({"error": "Método no permitido"}, status=405)
     try:
         data = json.loads(request.body)
-        start = parse_datetime(data["date"], data["time"])
+        start_str = data.get("start")
+        if not start_str:
+            return JsonResponse({"error": "Missing start datetime"}, status=400)
+        start = parse_datetime(start_str)
+        if start is None:
+            return JsonResponse({"error": "Invalid start datetime format"}, status=400)
         if not validate_slot(start):
             raise ValueError("Horario inválido")
         if is_conflict(data["doctor"], start):

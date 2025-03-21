@@ -339,19 +339,21 @@ export class AppointmentsComponent implements OnInit {
     if (period === 'AM' && hour === 12) hour = 0;
     const time24 = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
     
-    const payload = { 
+    const startDateTime = `${this.appointment.date}T${time24}:00`;
+    const payload = {
       doctor: this.appointment.doctor,
-      date: this.appointment.date,
-      time: time24,
+      start: startDateTime,
       reason: this.appointment.reason,
       patient: patientId
     };
-
-    console.log(payload)
+    console.log('Submitting appointment payload:', payload);
     this.http.post(`${this.baseUrl}/api/appointments/create/`, payload)
       .subscribe(() => {
         this.loadAppointments();
         this.resetForm();
+      }, error => {
+        console.error('Error creating appointment:', error);
+        alert('Error al crear la cita: ' + (error.error.detail || error.statusText));
       });
   }
 
