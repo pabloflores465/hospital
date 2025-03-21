@@ -11,7 +11,7 @@ import { signal } from '@angular/core';
   template: `
     <main>
       <!-- Sección para agregar un nuevo comentario (nivel raíz) -->
-      <div class="mt-4">
+      <!--<div class="mt-4">
         <h3>Añadir Comentario</h3>
         <input
           type="text"
@@ -25,7 +25,7 @@ import { signal } from '@angular/core';
         >
           Enviar
         </button>
-      </div>
+      </div>-->
 
       <!-- Listado de comentarios principales -->
       <ng-container *ngIf="comments().length; else noComments">
@@ -130,7 +130,19 @@ import { signal } from '@angular/core';
 export class Comments implements OnInit {
   @Input() parent_id: string = '67dafe40e20eb0d0a374c1dc';
 
-  user = '67cc9dac93fa6f271b7fa7d7';
+  //user = '67cc9dac93fa6f271b7fa7d7';
+
+  stored = localStorage.getItem('userData');
+  user: string = '67cc9dac93fa6f271b7fa7d7';
+
+  if(stored: any) {
+    try {
+      const userObj = JSON.parse(stored);
+      this.user = userObj._id || '67cc9dac93fa6f271b7fa7d7';
+    } catch (err) {
+      console.error('Error parsing userData from localStorage:', err);
+    }
+  }
 
   comments = signal<any[]>([]);
 

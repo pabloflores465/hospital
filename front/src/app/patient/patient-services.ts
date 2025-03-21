@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import axios from 'axios';
+import { Comments } from '../comments/comments';
 
 interface Service {
   _id: string;
@@ -34,7 +35,7 @@ interface Patient {
 @Component({
   selector: 'patient-services',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, Comments],
   template: `
     <main class="p-4">
       <h1 class="text-2xl font-bold mb-4 text-center">Listado de Pacientes</h1>
@@ -80,6 +81,7 @@ interface Patient {
           <ng-template #noProfile>
             <p class="text-red-500">Perfil no disponible.</p>
           </ng-template>
+          <comments [parent_id]="patient._id" />
         </div>
       </div>
     </main>
