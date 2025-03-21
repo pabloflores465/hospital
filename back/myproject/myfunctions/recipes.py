@@ -380,9 +380,13 @@ def send_recipe_by_email(request, recipe_id):
             message_plain += f"Código: {code_string}\n"
             message_plain += f"Médico: {doctor.get('username', 'Médico')}\n"
             message_plain += f"Especialidad: {doctor.get('especialidad', 'Medicina General')}\n"
-            message_plain += f"Número de Colegiado: {doctor.get('noLicencia', 'N/A')}\n\n"
+            message_plain += f"Número de Colegiado: {doctor.get('noLicencia', 'N/A')}\n"
             
-            message_plain += "MEDICAMENTOS:\n"
+            # Agregar información del seguro solo si el paciente tiene seguro
+            if recipe.get("has_insurance", False) and recipe.get("insurance_code"):
+                message_plain += f"Número de Seguro: {recipe.get('insurance_code', 'N/A')}\n"
+            
+            message_plain += "\nMEDICAMENTOS:\n"
             for med in medicines:
                 message_plain += f"- {med.get('principioActivo', 'N/A')} {med.get('concentracion', 'N/A')}\n"
                 message_plain += f"  Presentación: {med.get('presentacion', 'N/A')} - {med.get('formaFarmaceutica', 'N/A')}\n"
