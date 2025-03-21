@@ -139,6 +139,14 @@ from .myfunctions.vision import (
     put_audit_vision,
 )
 
+from .myfunctions.contact import (
+    get_contact,
+    post_contact,
+    put_moderation_contact,
+    put_audit_contact,
+)
+
+from .myfunctions.faq import get_faq, post_faq, put_moderation_faq, put_audit_faq
 
 # from myproject.views import SendEmailAPIView
 
@@ -262,4 +270,12 @@ urlpatterns = [
     path("vision/update/", post_vision),
     path("vision/moderation/", put_moderation_vision),
     path("vision/audit/", put_audit_vision),
+    path("contact/", get_contact),
+    path("contact/update/", post_contact),
+    path("contact/moderation/", put_moderation_contact),
+    path("contact/audit/", put_audit_contact),
+    path("faq/", get_faq),
+    path("faq/update/", post_faq),
+    path("faq/moderation/", put_moderation_faq),
+    path("faq/audit/", put_audit_faq),
 ]
