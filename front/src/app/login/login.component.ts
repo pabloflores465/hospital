@@ -5,7 +5,8 @@ import { ButtonComponent } from '../button/button.component';
 import { UserService } from '../services/user.service';
 import { User } from '../models/user.model';
 import { CommonModule } from '@angular/common';
-import { environment } from '../../environments/environment';
+import { back_url } from '../back_url';
+
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -21,10 +22,6 @@ export class LoginComponent {
   errorMessage = signal('');
   loading = signal(false);
 
-  ngOnInit() {
-    console.log(environment.apiUrl);
-  }
-
   async onSubmit() {
     if (this.loading()) return;
 
@@ -35,9 +32,8 @@ export class LoginComponent {
       if (!this.username || !this.password) {
         throw new Error('Por favor ingrese usuario y contraseña');
       }
-
-      // Realizar la petición de login al backend
-      const response = await fetch('http://127.0.0.1:8000/login_usuario/', {
+      const url = await back_url();
+      const response = await fetch(`${url}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
