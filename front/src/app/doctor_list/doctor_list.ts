@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import axios from 'axios';
-
+import { back_url } from '../../environments/back_url';
 interface Doctor {
   username: string;
   email: string;
@@ -95,7 +95,8 @@ export class DoctorList {
   doctors: Doctor[] = [];
 
   async getDoctors() {
-    axios('http://127.0.0.1:8000/doctors')
+    const url = await back_url();
+    axios(`${url}/doctors`)
       .then((response) => {
         console.log(response.data);
         for (let current_doctor of response.data.doctors) {

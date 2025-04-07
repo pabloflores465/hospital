@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, signal } from '@angular/core';
 import axios from 'axios';
-
+import { back_url } from '../../environments/back_url';
 interface footer {
   title1: string;
   title2: string;
@@ -40,8 +40,9 @@ export class FooterComponent {
     social3: '',
   });
   async get_footer() {
+    const url = await back_url();
     axios
-      .get('http://127.0.0.1:8000/footer/')
+      .get(`${url}/footer/`)
       .then((response) => {
         console.log(response.data.footer);
         this.footer_info.set(response.data.footer);

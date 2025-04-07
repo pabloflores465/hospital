@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import axios from 'axios';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { back_url } from '../../environments/back_url';
 
 @Component({
   selector: 'app-hospital-vision',
@@ -163,7 +164,8 @@ export class HospitalVisionComponent {
 
   async getVision() {
     try {
-      const response = await axios.get('http://127.0.0.1:8000/vision');
+      const url = await back_url();
+      const response = await axios.get(`${url}/vision`);
       this.vision.set(response.data.history);
     } catch (error) {
       console.error(error);
@@ -182,20 +184,18 @@ export class HospitalVisionComponent {
 
   async save() {
     try {
-      const response = await axios.put(
-        'http://127.0.0.1:8000/vision/moderation/',
-        {
-          _id: this.vision()._id,
-          title1: this.vision().title1,
-          text1: this.vision().text1,
-          subtitle1: this.vision().subtitle1,
-          subtitle2: this.vision().subtitle2,
-          content1: this.vision().content1,
-          content2: this.vision().content2,
-          content3: this.vision().content3,
-        }
-      );
-      const response2 = await axios.put('http://127.0.0.1:8000/vision/audit/', {
+      const url = await back_url();
+      const response = await axios.put(`${url}/vision/moderation/`, {
+        _id: this.vision()._id,
+        title1: this.vision().title1,
+        text1: this.vision().text1,
+        subtitle1: this.vision().subtitle1,
+        subtitle2: this.vision().subtitle2,
+        content1: this.vision().content1,
+        content2: this.vision().content2,
+        content3: this.vision().content3,
+      });
+      const response2 = await axios.put(`${url}/vision/audit/`, {
         _id: this.vision()._id,
         title1: this.vision().title1,
         text1: this.vision().text1,

@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, signal } from '@angular/core';
 import axios from 'axios';
 import { FormsModule } from '@angular/forms';
+import { back_url } from '../../environments/back_url';
 
 @Component({
   selector: 'app-hospital-history',
@@ -79,8 +80,9 @@ export class HospitalHistoryComponent {
   }
 
   async getHistory() {
+    const url = await back_url();
     axios
-      .get('http://127.0.0.1:8000/history/')
+      .get(`${url}/history/`)
       .then((response) => {
         this.history.set(response.data.history);
         console.log(this.history);
@@ -102,22 +104,17 @@ export class HospitalHistoryComponent {
 
   async save() {
     try {
-      const response = await axios.put(
-        'http://127.0.0.1:8000/history/moderation/',
-        {
-          _id: this.history()._id,
-          title: this.history().title,
-          content: this.history().content,
-        }
-      );
-      const response2 = await axios.put(
-        'http://127.0.0.1:8000/history/audit/',
-        {
-          _id: this.history()._id,
-          title: this.history().title,
-          content: this.history().content,
-        }
-      );
+      const url = await back_url();
+      const response = await axios.put(`${url}/history/moderation/`, {
+        _id: this.history()._id,
+        title: this.history().title,
+        content: this.history().content,
+      });
+      const response2 = await axios.put(`${url}/history/audit/`, {
+        _id: this.history()._id,
+        title: this.history().title,
+        content: this.history().content,
+      });
       console.log(response.data.message);
       console.log(response2.data.message);
       this.edit.set(false);

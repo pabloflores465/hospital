@@ -13,29 +13,44 @@ import { UserService } from '../services/user.service';
         <!-- Panel de navegación lateral -->
         <div class="md:w-1/4 bg-white p-4 rounded-lg shadow">
           <nav class="space-y-2">
-            <a routerLink="appointments" routerLinkActive="bg-blue-100 text-blue-700" 
-               class="block p-2 rounded hover:bg-gray-100">
+            <a
+              routerLink="appointments"
+              routerLinkActive="bg-blue-100 text-blue-700"
+              class="block p-2 rounded hover:bg-gray-100"
+            >
               Citas
             </a>
-            <a routerLink="history" routerLinkActive="bg-blue-100 text-blue-700" 
-               class="block p-2 rounded hover:bg-gray-100">
+            <a
+              routerLink="history"
+              routerLinkActive="bg-blue-100 text-blue-700"
+              class="block p-2 rounded hover:bg-gray-100"
+            >
               Historial
             </a>
-            <a routerLink="prescriptions" routerLinkActive="bg-blue-100 text-blue-700" 
-               class="block p-2 rounded hover:bg-gray-100">
+            <a
+              routerLink="prescriptions"
+              routerLinkActive="bg-blue-100 text-blue-700"
+              class="block p-2 rounded hover:bg-gray-100"
+            >
               Prescripciones
             </a>
-            <a routerLink="recipes" routerLinkActive="bg-blue-100 text-blue-700" 
-               class="block p-2 rounded hover:bg-gray-100">
+            <a
+              routerLink="recipes"
+              routerLinkActive="bg-blue-100 text-blue-700"
+              class="block p-2 rounded hover:bg-gray-100"
+            >
               Mis Recetas
             </a>
-            <a routerLink="medical-record" routerLinkActive="bg-blue-100 text-blue-700" 
-               class="block p-2 rounded hover:bg-gray-100">
+            <a
+              routerLink="medical-record"
+              routerLinkActive="bg-blue-100 text-blue-700"
+              class="block p-2 rounded hover:bg-gray-100"
+            >
               Ficha Médica
             </a>
           </nav>
         </div>
-        
+
         <!-- Contenido principal -->
         <div class="md:w-3/4 bg-white p-4 rounded-lg shadow">
           <router-outlet></router-outlet>
@@ -43,13 +58,15 @@ import { UserService } from '../services/user.service';
       </div>
     </div>
   `,
-  styles: [`
-    :host {
-      display: block;
-      min-height: 100vh;
-      background-color: #f9fafb;
-    }
-  `]
+  styles: [
+    `
+      :host {
+        display: block;
+        min-height: 100vh;
+        background-color: #f9fafb;
+      }
+    `,
+  ],
 })
 export class PatientDashboardComponent {
   nextAppointment: any = null;
@@ -65,12 +82,12 @@ export class PatientDashboardComponent {
     this.nextAppointment = {
       date: new Date(2024, 2, 20, 14, 30),
       doctor: 'Dr. García',
-      specialty: 'Medicina General'
+      specialty: 'Medicina General',
     };
 
     this.recentPrescriptions = [
       { id: 1, date: new Date(2024, 2, 15), medication: 'Paracetamol 500mg' },
-      { id: 2, date: new Date(2024, 2, 10), medication: 'Ibuprofeno 400mg' }
+      { id: 2, date: new Date(2024, 2, 10), medication: 'Ibuprofeno 400mg' },
     ];
   }
-} 
+}

@@ -3,25 +3,26 @@ import { Router } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { User } from '../models/user.model';
-
+import { back_url } from '../../environments/back_url';
 export interface MenuItem {
   label: string;
   route: string;
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class UserService {
   private readonly STORAGE_KEY = 'hospital_user';
   private userSubject: BehaviorSubject<User | null>;
   public user$: Observable<User | null>;
-  private apiUrl = 'http://localhost:8000/api';
 
   constructor(private router: Router, private http: HttpClient) {
-    this.userSubject = new BehaviorSubject<User | null>(this.loadUserFromStorage());
+    this.userSubject = new BehaviorSubject<User | null>(
+      this.loadUserFromStorage()
+    );
     this.user$ = this.userSubject.asObservable();
-    
+
     // Verificar la sesión al inicio
     this.validateSession();
   }
@@ -30,7 +31,7 @@ export class UserService {
     try {
       const stored = localStorage.getItem(this.STORAGE_KEY);
       if (!stored) return null;
-      
+
       const user = JSON.parse(stored);
       console.log('Usuario cargado del localStorage:', user);
       return user;
@@ -90,7 +91,7 @@ export class UserService {
   redirectBasedOnRole(): void {
     const user = this.getUser();
     console.log('Redirigiendo basado en rol, usuario:', user);
-    
+
     if (!user) {
       console.log('No hay usuario, redirigiendo a login');
       this.router.navigate(['/login']);
@@ -146,7 +147,7 @@ export class UserService {
           { label: 'Pacientes', route: '/admin/users' },
           { label: 'Citas', route: '/appointments' },
           { label: 'Ficha Médica', route: '/medical-record/patients' },
-          { label: 'Servicios del Usuario', route: '/patient-services' }
+          { label: 'Servicios del Usuario', route: '/patient-services' },
         ];
       case 'doctor':
         return [
@@ -155,7 +156,7 @@ export class UserService {
           { label: 'Recetas', route: '/doctor/prescriptions' },
           { label: 'Nueva Receta', route: '/doctor/prescriptions/new' },
           { label: 'Historial de Pacientes', route: '/doctor/patient-history' },
-          { label: 'Ficha Médica', route: '/medical-record/patients' }
+          { label: 'Ficha Médica', route: '/medical-record/patients' },
         ];
       case 'patient':
       case 'paciente':
@@ -164,7 +165,7 @@ export class UserService {
           { label: 'Mis Citas', route: '/patient/appointments' },
           { label: 'Mi Historial', route: '/patient/history' },
           { label: 'Mis Recetas', route: '/patient/dashboard/recipes' },
-          { label: 'Ficha Médica', route: '/patient/medical-record' }
+          { label: 'Ficha Médica', route: '/patient/medical-record' },
         ];
       default:
         return [];
@@ -175,27 +176,38 @@ export class UserService {
     return !!this.getUser();
   }
 
-  login(credentials: { email: string; password: string }): Observable<any> {
-    return this.http.post(`${this.apiUrl}/login`, credentials);
+  async login(credentials: {
+    email: string;
+    password: string;
+  }): Promise<Observable<any>> {
+    const url = await back_url();
+    return this.http.post(`${url}/login`, credentials);
   }
 
-  register(userData: Partial<User>): Observable<any> {
-    return this.http.post(`${this.apiUrl}/register`, userData);
+  async register(userData: Partial<User>): Promise<Observable<any>> {
+    const url = await back_url();
+    return this.http.post(`${url}/register`, userData);
   }
 
-  updateUser(userId: string, userData: Partial<User>): Observable<any> {
-    return this.http.put(`${this.apiUrl}/users/${userId}`, userData);
+  async updateUser(
+    userId: string,
+    userData: Partial<User>
+  ): Promise<Observable<any>> {
+    const url = await back_url();
+    return this.http.put(`${url}/users/${userId}`, userData);
   }
 
-  getUserById(userId: string): Observable<any> {
-    return this.http.get(`${this.apiUrl}/users/${userId}`);
+  async getUserById(userId: string): Promise<Observable<any>> {
+    const url = await back_url();
+    return this.http.get(`${url}/users/${userId}`);
   }
 
   // Obtener lista de pacientes
-  getPatients(): Observable<User[]> {
+  async getPatients(): Promise<Observable<User[]>> {
+    const url = await back_url();
     // Intentamos buscar en el endpoint real primero
-    return new Observable<User[]>(observer => {
-      this.http.get<User[]>(`${this.apiUrl}/users?role=patient`).subscribe({
+    return new Observable<User[]>((observer) => {
+      this.http.get<User[]>(`${url}/users?role=patient`).subscribe({
         next: (patients) => {
           // Si la llamada es exitosa, devolvemos los pacientes de la API
           console.log('Pacientes obtenidos de la API:', patients.length);
@@ -204,7 +216,10 @@ export class UserService {
         },
         error: (error) => {
           // Si hay un error, usamos datos de respaldo con los pacientes reales que sabemos que existen
-          console.error('Error al obtener pacientes de la API, usando respaldo:', error);
+          console.error(
+            'Error al obtener pacientes de la API, usando respaldo:',
+            error
+          );
           const backupPatients = [
             {
               _id: '67dd0af00d9fcd8d2fc7a1fb', // ID real del primer paciente
@@ -212,7 +227,7 @@ export class UserService {
               name: 'Paciente Uno',
               email: 'paciente1@example.com',
               rol: 'paciente',
-              identification: '123456789'
+              identification: '123456789',
             },
             {
               _id: '67dd0c21ca818ed8dbd96c29', // ID real del segundo paciente
@@ -220,16 +235,16 @@ export class UserService {
               name: 'Paciente Dos',
               email: 'paciente2@example.com',
               rol: 'paciente',
-              identification: '987654321'
-            }
+              identification: '987654321',
+            },
           ];
-          
+
           // Simulamos un pequeño retraso
           setTimeout(() => {
             observer.next(backupPatients);
             observer.complete();
           }, 500);
-        }
+        },
       });
     });
   }

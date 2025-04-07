@@ -1,12 +1,12 @@
 from pymongo import MongoClient
 import json 
 
-with open('./back/myproject/myfunctions/variables.json', 'r') as f:
-    variables = json.load(f)
+with open('./back/myproject/server_config.json', 'r') as f:
+    server_config = json.load(f)
 
-MONGO_URI = variables["mongo_uri"]
+MONGO_URI = server_config["mongo_uri"]
 client = MongoClient(MONGO_URI)
-db = client[variables["database_name"]]
+db = client[server_config["database_name"]]
 users_collection = db["users"]
 medicines_collection = db["medicines"]
 recipes_collection = db["recipes"]

@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonComponent } from '../button/button.component';
+import { back_url } from '../../environments/back_url';
 
 @Component({
   selector: 'app-admin-users-single',
@@ -22,13 +23,11 @@ export class AdminUsersSingleComponent {
   errorMessage = signal('');
 
   async loadUser(id: string) {
+    const url = await back_url();
     try {
-      const response = await fetch(
-        `http://127.0.0.1:8000/obtener_usuario/${id}`,
-        {
-          method: 'GET',
-        }
-      );
+      const response = await fetch(`${url}/obtener_usuario/${id}`, {
+        method: 'GET',
+      });
       const data = await response.json();
 
       if (!response.ok) {
@@ -53,10 +52,11 @@ export class AdminUsersSingleComponent {
     }
 
     try {
+      const url = await back_url();
       const response = await fetch(
         this.isNewUser()
-          ? `http://127.0.0.1:8000/insertar_usuario/`
-          : `http://127.0.0.1:8000/actualizar_usuario/${this.route.snapshot.paramMap.get(
+          ? `${url}/insertar_usuario/`
+          : `${url}/actualizar_usuario/${this.route.snapshot.paramMap.get(
               'id'
             )}`,
         {

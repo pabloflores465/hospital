@@ -5,7 +5,7 @@ import { ButtonComponent } from '../button/button.component';
 import { UserService } from '../services/user.service';
 import { User } from '../models/user.model';
 import { CommonModule } from '@angular/common';
-import { back_url } from '../back_url';
+import { back_url } from '../../environments/back_url';
 
 @Component({
   selector: 'app-login',

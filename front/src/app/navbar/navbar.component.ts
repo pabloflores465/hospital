@@ -9,7 +9,7 @@ import { Subscription } from 'rxjs';
   standalone: true,
   imports: [CommonModule, RouterModule],
   templateUrl: './navbar.component.html',
-  styleUrls: ['./navbar.component.css']
+  styleUrls: ['./navbar.component.css'],
 })
 export class NavbarComponent implements OnInit, OnDestroy {
   menuItems: MenuItem[] = [];
@@ -22,7 +22,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
     this.userSubscription = this.userService.user$.subscribe(() => {
       this.updateMenuItems();
     });
-    
+
     // Inicializar los elementos del menú
     this.updateMenuItems();
   }

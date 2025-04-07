@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import axios from 'axios';
 import { Comments } from '../comments/comments';
-
+import { back_url } from '../../environments/back_url';
 interface Service {
   _id: string;
   name: string;
@@ -96,7 +96,8 @@ export class PatientServicesComponent {
   }
 
   async getPatients() {
-    axios('http://127.0.0.1:8000/patient/services/')
+    const url = await back_url();
+    axios(`${url}/patient/services/`)
       .then((response) => {
         console.log(response.data);
         this.patients = response.data.patients;

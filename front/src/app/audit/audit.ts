@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import axios from 'axios';
+import { back_url } from '../../environments/back_url';
 
 interface AuditItem {
   _id: string;
@@ -55,9 +56,10 @@ export class AuditComponent implements OnInit {
 
   constructor() {}
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
+    const url = await back_url();
     axios
-      .get<AuditResponse>('http://127.0.0.1:8000/audit')
+      .get<AuditResponse>(`${url}/audit`)
       .then((response) => {
         this.auditData = response.data.message;
       })

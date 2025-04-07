@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, signal, OnInit } from '@angular/core';
 import axios from 'axios';
-
+import { back_url } from '../../environments/back_url';
 interface ModerationChange {
   _id: string;
   old_val: { [key: string]: any };
@@ -82,8 +82,9 @@ export class ModerationComponent implements OnInit {
   }
 
   async get_changes() {
+    const url = await back_url();
     axios
-      .get('http://127.0.0.1:8000/moderation')
+      .get(`${url}/moderation`)
       .then((response) => {
         this.moderationChanges.set(response.data.message);
       })
@@ -92,22 +93,24 @@ export class ModerationComponent implements OnInit {
       });
   }
 
-  approveChange(page_name: string, page_id: string, new_value: any) {
+  async approveChange(page_name: string, page_id: string, new_value: any) {
+    const url = await back_url();
     const payload = { ...new_value, _id: page_id };
     axios
-      .post(`http://127.0.0.1:8000/${page_name}/update/`, payload)
+      .post(`${url}/${page_name}/update/`, payload)
       .then((response) => console.log(response.data))
       .catch((error) => console.log(error));
     axios
-      .put(`http://127.0.0.1:8000/moderation/clear/${page_id}`)
+      .put(`${url}/moderation/clear/${page_id}`)
       .then((response) => console.log(response.data))
       .catch((error) => console.log(error));
     this.get_changes();
   }
 
-  rejectChange(page_id: string) {
+  async rejectChange(page_id: string) {
+    const url = await back_url();
     axios
-      .put(`http://127.0.0.1:8000/moderation/clear/${page_id}`)
+      .put(`${url}/moderation/clear/${page_id}`)
       .then((response) => console.log(response.data))
       .catch((error) => console.log(error));
     this.get_changes();

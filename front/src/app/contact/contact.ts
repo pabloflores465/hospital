@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import axios from 'axios';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { back_url } from '../../environments/back_url';
 
 @Component({
   selector: 'app-hospital-contact',
@@ -103,7 +104,8 @@ export class HospitalContactComponent {
   // Consulta GET para obtener la información de contacto
   async getContact() {
     try {
-      const response = await axios.get('http://127.0.0.1:8000/contact');
+      const url = await back_url();
+      const response = await axios.get(`${url}/contact`);
       // Se asume que la respuesta viene como { history: {...} }
       this.contact.set(response.data.history);
     } catch (error) {
@@ -124,24 +126,19 @@ export class HospitalContactComponent {
   // Petición PUT para pasar los cambios a moderación
   async save() {
     try {
-      const response = await axios.put(
-        'http://127.0.0.1:8000/contact/moderation/',
-        {
-          _id: this.contact()._id,
-          title: this.contact().title,
-          text1: this.contact().text1,
-          text2: this.contact().text2,
-        }
-      );
-      const response2 = await axios.put(
-        'http://127.0.0.1:8000/contact/audit/',
-        {
-          _id: this.contact()._id,
-          title: this.contact().title,
-          text1: this.contact().text1,
-          text2: this.contact().text2,
-        }
-      );
+      const url = await back_url();
+      const response = await axios.put(`${url}/contact/moderation/`, {
+        _id: this.contact()._id,
+        title: this.contact().title,
+        text1: this.contact().text1,
+        text2: this.contact().text2,
+      });
+      const response2 = await axios.put(`${url}/contact/audit/`, {
+        _id: this.contact()._id,
+        title: this.contact().title,
+        text1: this.contact().text1,
+        text2: this.contact().text2,
+      });
       console.log(response.data.message);
       console.log(response2.data.message);
       this.edit.set(false);

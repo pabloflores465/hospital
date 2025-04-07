@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonComponent } from '../button/button.component';
+import { back_url } from '../../environments/back_url';
 
 @Component({
   selector: 'app-admin-users',
@@ -13,8 +14,9 @@ export class AdminUsersComponent {
   errorMessage = signal('');
 
   async loadUsers() {
+    const url = await back_url();
     try {
-      const response = await fetch('http://127.0.0.1:8000/lista_usuarios/', {
+      const response = await fetch(`${url}/lista_usuarios/`, {
         method: 'GET',
       });
       const data = await response.json();
@@ -31,13 +33,11 @@ export class AdminUsersComponent {
   }
 
   async borrarUsuario(id: string) {
+    const url = await back_url();
     try {
-      const response = await fetch(
-        `http://127.0.0.1:8000/borrar_usuario/${id}`,
-        {
-          method: 'DELETE',
-        }
-      );
+      const response = await fetch(`${url}/borrar_usuario/${id}`, {
+        method: 'DELETE',
+      });
       const data = await response.json();
 
       if (!response.ok) {

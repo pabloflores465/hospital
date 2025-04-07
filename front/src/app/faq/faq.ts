@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import axios from 'axios';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { back_url } from '../../environments/back_url';
 
 @Component({
   selector: 'app-faq',
@@ -137,7 +138,8 @@ export class FaqComponent {
 
   async getFaq() {
     try {
-      const response = await axios.get('http://127.0.0.1:8000/faq');
+      const url = await back_url();
+      const response = await axios.get(`${url}/faq`);
       // Se asume que la respuesta viene como { history: { ... } }
       this.faq.set(response.data.history);
     } catch (error) {
@@ -157,19 +159,17 @@ export class FaqComponent {
 
   async save() {
     try {
-      const response = await axios.put(
-        'http://127.0.0.1:8000/faq/moderation/',
-        {
-          _id: this.faq()._id,
-          question1: this.faq().question1,
-          answer1: this.faq().answer1,
-          question2: this.faq().question2,
-          answer2: this.faq().answer2,
-          question3: this.faq().question3,
-          answer3: this.faq().answer3,
-        }
-      );
-      const response2 = await axios.put('http://127.0.0.1:8000/faq/audit/', {
+      const url = await back_url();
+      const response = await axios.put(`${url}/faq/moderation/`, {
+        _id: this.faq()._id,
+        question1: this.faq().question1,
+        answer1: this.faq().answer1,
+        question2: this.faq().question2,
+        answer2: this.faq().answer2,
+        question3: this.faq().question3,
+        answer3: this.faq().answer3,
+      });
+      const response2 = await axios.put(`${url}/faq/audit/`, {
         _id: this.faq()._id,
         question1: this.faq().question1,
         answer1: this.faq().answer1,

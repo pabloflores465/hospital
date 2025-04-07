@@ -10,6 +10,7 @@ import {
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { back_url } from '../../environments/back_url';
 
 interface Medicamento {
   principioActivo: string;
@@ -64,25 +65,33 @@ interface DoctorResponse {
       <div class="mb-8">
         <h2 class="text-xl font-semibold mb-4">Mis Recetas</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div *ngFor="let receta of recetas" class="bg-white rounded-lg shadow p-4">
+          <div
+            *ngFor="let receta of recetas"
+            class="bg-white rounded-lg shadow p-4"
+          >
             <div class="border-b pb-2 mb-2">
-              <p class="font-semibold">Fecha: {{receta.fecha | date:'dd/MM/yyyy'}}</p>
-              <p>Código: {{receta.codigo}}</p>
+              <p class="font-semibold">
+                Fecha: {{ receta.fecha | date : 'dd/MM/yyyy' }}
+              </p>
+              <p>Código: {{ receta.codigo }}</p>
             </div>
             <div class="mb-2">
-              <p class="font-medium">Médico: {{receta.nombreMedico}}</p>
-              <p>Especialidad: {{receta.especialidad}}</p>
+              <p class="font-medium">Médico: {{ receta.nombreMedico }}</p>
+              <p>Especialidad: {{ receta.especialidad }}</p>
             </div>
             <div class="mb-2">
               <h3 class="font-medium">Medicamentos:</h3>
               <ul class="list-disc list-inside">
                 <li *ngFor="let medicamento of receta.medicamentos">
-                  {{medicamento.principioActivo}} - {{medicamento.dosis}}
+                  {{ medicamento.principioActivo }} - {{ medicamento.dosis }}
                 </li>
               </ul>
             </div>
             <div class="flex justify-end space-x-2">
-              <button (click)="generarPDF(receta)" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+              <button
+                (click)="generarPDF(receta)"
+                class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              >
                 Descargar PDF
               </button>
             </div>
@@ -463,27 +472,26 @@ export class RecipesPage implements OnInit {
     this.cargarPacientes();
     this.cargarPrincipiosActivos();
     this.cargarRecetas();
-    
+
     // Obtener información del usuario y verificar póliza
     this.verificarPolizaUsuario();
-    
+
     // Agregar listener para el cambio de paciente
-    this.recetaForm.get('paciente')?.valueChanges.subscribe(idPaciente => {
+    this.recetaForm.get('paciente')?.valueChanges.subscribe((idPaciente) => {
       if (idPaciente) {
         this.verificarPolizaPacienteSeleccionado(idPaciente);
       }
     });
   }
 
-  cargarDoctorActual(): void {
+  async cargarDoctorActual(): Promise<void> {
     // Para pruebas, puedes pasar el ID como parámetro
     // En producción, el backend debería obtener el ID del token/sesión
     const doctorId = '67cd3224d8c7c0ed8f0c01fe'; // Este ID debería venir de tu sistema de autenticación
 
+    const url = await back_url();
     this.http
-      .get<DoctorResponse>(
-        `http://127.0.0.1:8000/users/current-doctor?doctor_id=${doctorId}`
-      )
+      .get<DoctorResponse>(`${url}/users/current-doctor?doctor_id=${doctorId}`)
       .subscribe({
         next: (response) => {
           this.doctorActual = response.doctor;
@@ -504,8 +512,9 @@ export class RecipesPage implements OnInit {
       });
   }
 
-  cargarPacientes(): void {
-    this.http.get<ApiResponse>('http://127.0.0.1:8000/users').subscribe({
+  async cargarPacientes(): Promise<void> {
+    const url = await back_url();
+    this.http.get<ApiResponse>(`${url}/users`).subscribe({
       next: (response) => {
         this.pacientes = response.appointments.filter(
           (user: User) => user.rol === 'paciente'
@@ -518,46 +527,46 @@ export class RecipesPage implements OnInit {
     });
   }
 
-  cargarPrincipiosActivos(): void {
-    this.http
-      .get<any>('http://127.0.0.1:8000/medicines/principios-activos')
-      .subscribe({
-        next: (response) => {
-          this.principiosActivos = response.principios_activos;
-          console.log('Principios activos cargados:', this.principiosActivos);
-        },
-        error: (error) => {
-          console.error('Error al cargar los principios activos:', error);
-        },
-      });
+  async cargarPrincipiosActivos(): Promise<void> {
+    const url = await back_url();
+    this.http.get<any>(`${url}/medicines/principios-activos`).subscribe({
+      next: (response) => {
+        this.principiosActivos = response.principios_activos;
+        console.log('Principios activos cargados:', this.principiosActivos);
+      },
+      error: (error) => {
+        console.error('Error al cargar los principios activos:', error);
+      },
+    });
   }
 
-  cargarRecetas(): void {
+  async cargarRecetas(): Promise<void> {
+    const url = await back_url();
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     if (user.rol === 'patient') {
       // Si es paciente, cargar solo sus recetas
-      this.http.get(`http://localhost:8000/recetas/usuario/${user._id}`).subscribe({
+      this.http.get(`${url}/recetas/usuario/${user._id}`).subscribe({
         next: (response: any) => {
           this.recetas = response;
         },
         error: (error) => {
           console.error('Error al cargar las recetas:', error);
-        }
+        },
       });
     } else if (user.rol === 'doctor') {
       // Si es doctor, cargar las recetas que ha generado
-      this.http.get(`http://localhost:8000/recipes/doctor/${user._id}`).subscribe({
+      this.http.get(`${url}/recipes/doctor/${user._id}`).subscribe({
         next: (response: any) => {
           this.recetas = response;
         },
         error: (error) => {
           console.error('Error al cargar las recetas:', error);
-        }
+        },
       });
     }
   }
 
-  generarReceta(): void {
+  async generarReceta(): Promise<void> {
     if (this.recetaForm.valid) {
       const formData = this.recetaForm.value;
 
@@ -585,53 +594,58 @@ export class RecipesPage implements OnInit {
 
       console.log('Datos a enviar:', recetaData);
 
+      const url = await back_url();
       // Enviar datos al API
-      this.http
-        .post('http://127.0.0.1:8000/recipes/save', recetaData)
-        .subscribe({
-          next: (response: any) => {
-            console.log('Receta guardada:', response);
+      this.http.post(`${url}/recipes/save`, recetaData).subscribe({
+        next: (response: any) => {
+          console.log('Receta guardada:', response);
 
-            // Guardar el ID de la receta generada
-            this.recetaGeneradaId = response.recipe_id;
+          // Guardar el ID de la receta generada
+          this.recetaGeneradaId = response.recipe_id;
 
-            // Enviar automáticamente por email
-            this.http.post(`http://127.0.0.1:8000/recipes/send-email/${this.recetaGeneradaId}`, {}).subscribe({
+          // Enviar automáticamente por email
+          this.http
+            .post(`${url}/recipes/send-email/${this.recetaGeneradaId}`, {})
+            .subscribe({
               next: () => {
                 console.log('Receta enviada por email exitosamente');
-                alert('La receta ha sido guardada y enviada al correo del paciente.');
+                alert(
+                  'La receta ha sido guardada y enviada al correo del paciente.'
+                );
               },
               error: (err) => {
                 console.error('Error al enviar el email:', err);
-                alert('La receta se guardó correctamente, pero hubo un error al enviar el correo.');
-              }
+                alert(
+                  'La receta se guardó correctamente, pero hubo un error al enviar el correo.'
+                );
+              },
             });
 
-            // Para la vista previa, buscar el nombre del paciente según su ID
-            const pacienteSeleccionado = this.pacientes.find(
-              (p) => p._id === formData.paciente
-            );
+          // Para la vista previa, buscar el nombre del paciente según su ID
+          const pacienteSeleccionado = this.pacientes.find(
+            (p) => p._id === formData.paciente
+          );
 
-            // Crear objeto de receta para vista previa
-            this.recetaPreview = {
-              ...formData,
-              codigo: response.code,
-              fecha: new Date(formData.fecha),
-              // Mostrar nombres en la vista previa
-              nombreMedico: this.doctorActual?.username || 'Médico',
-              paciente: pacienteSeleccionado?.username || 'Paciente',
-            };
+          // Crear objeto de receta para vista previa
+          this.recetaPreview = {
+            ...formData,
+            codigo: response.code,
+            fecha: new Date(formData.fecha),
+            // Mostrar nombres en la vista previa
+            nombreMedico: this.doctorActual?.username || 'Médico',
+            paciente: pacienteSeleccionado?.username || 'Paciente',
+          };
 
-            this.recetaGenerada = true;
-          },
-          error: (error) => {
-            console.error('Error al guardar la receta:', error);
-            alert(
-              'Error al guardar la receta: ' +
-                (error.error?.error || 'Error desconocido')
-            );
-          },
-        });
+          this.recetaGenerada = true;
+        },
+        error: (error) => {
+          console.error('Error al guardar la receta:', error);
+          alert(
+            'Error al guardar la receta: ' +
+              (error.error?.error || 'Error desconocido')
+          );
+        },
+      });
     }
   }
 
@@ -657,17 +671,14 @@ export class RecipesPage implements OnInit {
   }
 
   // Método para enviar la receta por email
-  enviarPorEmail(): void {
+  async enviarPorEmail(): Promise<void> {
     if (!this.recetaGeneradaId) {
       alert('No hay una receta generada para enviar');
       return;
     }
-
+    const url = await back_url();
     this.http
-      .post(
-        `http://127.0.0.1:8000/recipes/send-email/${this.recetaGeneradaId}`,
-        {}
-      )
+      .post(`${url}/recipes/send-email/${this.recetaGeneradaId}`, {})
       .subscribe({
         next: (response: any) => {
           console.log('Receta enviada por email:', response);
@@ -687,7 +698,7 @@ export class RecipesPage implements OnInit {
    * Verifica la póliza del usuario actual obteniendo su correo del localStorage
    * y consultando la API para obtener su información completa
    */
-  verificarPolizaUsuario(): void {
+  async verificarPolizaUsuario(): Promise<void> {
     try {
       // Obtener el correo electrónico del usuario del localStorage
       const userData = localStorage.getItem('hospital_user');
@@ -695,39 +706,45 @@ export class RecipesPage implements OnInit {
         console.error('No se encontró información del usuario en localStorage');
         return;
       }
-      
+
       const user = JSON.parse(userData);
       const email = user.email;
-      
+
       if (!email) {
         console.error('No se encontró email del usuario en localStorage');
         return;
       }
-      
+
+      const url = await back_url();
       // Consultar la API para obtener información de todos los usuarios
-      this.http.get<any[]>(`http://192.168.0.11:8080/api/users/by-email`).subscribe({
+      this.http.get<any[]>(`${url}/users/by-email`).subscribe({
         next: (response: any[]) => {
           console.log('Lista de usuarios obtenida:', response);
-          
+
           // Buscar el usuario por su correo electrónico
-          const usuarioEncontrado = response.find(user => user.email === email);
-          
+          const usuarioEncontrado = response.find(
+            (user) => user.email === email
+          );
+
           if (usuarioEncontrado) {
             console.log('Usuario encontrado:', usuarioEncontrado);
-            
+
             // Verificar si el usuario tiene póliza
             if (usuarioEncontrado.policy) {
               // Automáticamente marcar que tiene seguro y poner el número de póliza
               this.recetaForm.patchValue({
                 tieneSeguro: true,
-                codigoSeguro: usuarioEncontrado.policy.idPolicy.toString()
+                codigoSeguro: usuarioEncontrado.policy.idPolicy.toString(),
               });
-              console.log('Usuario tiene póliza, ID:', usuarioEncontrado.policy.idPolicy);
+              console.log(
+                'Usuario tiene póliza, ID:',
+                usuarioEncontrado.policy.idPolicy
+              );
             } else {
               // Si no tiene póliza, desmarcamos la casilla
               this.recetaForm.patchValue({
                 tieneSeguro: false,
-                codigoSeguro: ''
+                codigoSeguro: '',
               });
               console.log('Usuario no tiene póliza');
             }
@@ -737,7 +754,7 @@ export class RecipesPage implements OnInit {
         },
         error: (error) => {
           console.error('Error al obtener información de usuarios:', error);
-        }
+        },
       });
     } catch (error) {
       console.error('Error al verificar póliza del usuario:', error);
@@ -748,61 +765,80 @@ export class RecipesPage implements OnInit {
    * Verifica la póliza del paciente seleccionado
    * @param idPaciente ID del paciente seleccionado en el formulario
    */
-  verificarPolizaPacienteSeleccionado(idPaciente: string): void {
+  async verificarPolizaPacienteSeleccionado(idPaciente: string): Promise<void> {
     try {
       // Buscar el paciente en la lista de pacientes cargados
-      const pacienteSeleccionado = this.pacientes.find(p => p._id === idPaciente);
-      
+      const pacienteSeleccionado = this.pacientes.find(
+        (p) => p._id === idPaciente
+      );
+
       if (!pacienteSeleccionado) {
         console.error('No se encontró el paciente con ID:', idPaciente);
         return;
       }
-      
+
       const emailPaciente = pacienteSeleccionado.email;
-      
+
       if (!emailPaciente) {
         console.error('El paciente no tiene email registrado');
         return;
       }
-      
-      console.log('Verificando póliza para el paciente:', pacienteSeleccionado.username, 'con email:', emailPaciente);
-      
+
+      console.log(
+        'Verificando póliza para el paciente:',
+        pacienteSeleccionado.username,
+        'con email:',
+        emailPaciente
+      );
+
       // Consultar la API para obtener información de todos los usuarios
-      this.http.get<any[]>(`http://192.168.0.11:8080/api/users/by-email`).subscribe({
+      const url = await back_url();
+      this.http.get<any[]>(`${url}/users/by-email`).subscribe({
         next: (response: any[]) => {
           // Buscar el usuario por su correo electrónico
-          const usuarioEncontrado = response.find(user => user.email === emailPaciente);
-          
+          const usuarioEncontrado = response.find(
+            (user) => user.email === emailPaciente
+          );
+
           if (usuarioEncontrado) {
-            console.log('Usuario encontrado en API externa:', usuarioEncontrado);
-            
+            console.log(
+              'Usuario encontrado en API externa:',
+              usuarioEncontrado
+            );
+
             // Verificar si el usuario tiene póliza
             if (usuarioEncontrado.policy) {
               // Automáticamente marcar que tiene seguro y poner el número de póliza
               this.recetaForm.patchValue({
                 tieneSeguro: true,
-                codigoSeguro: usuarioEncontrado.policy.idPolicy.toString()
+                codigoSeguro: usuarioEncontrado.policy.idPolicy.toString(),
               });
-              console.log('Paciente tiene póliza, ID:', usuarioEncontrado.policy.idPolicy);
+              console.log(
+                'Paciente tiene póliza, ID:',
+                usuarioEncontrado.policy.idPolicy
+              );
             } else {
               // Si no tiene póliza, desmarcamos la casilla
               this.recetaForm.patchValue({
                 tieneSeguro: false,
-                codigoSeguro: ''
+                codigoSeguro: '',
               });
               console.log('Paciente no tiene póliza');
             }
           } else {
-            console.error('No se encontró ningún usuario con el email:', emailPaciente);
+            console.error(
+              'No se encontró ningún usuario con el email:',
+              emailPaciente
+            );
             this.recetaForm.patchValue({
               tieneSeguro: false,
-              codigoSeguro: ''
+              codigoSeguro: '',
             });
           }
         },
         error: (error) => {
           console.error('Error al obtener información de usuarios:', error);
-        }
+        },
       });
     } catch (error) {
       console.error('Error al verificar póliza del paciente:', error);

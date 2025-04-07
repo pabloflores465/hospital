@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ButtonComponent } from '../button/button.component';
 import { SwitchComponent } from '../switch/switch.component';
+import { back_url } from '../../environments/back_url';
 
 @Component({
   selector: 'app-signup',
@@ -35,7 +36,8 @@ export class SignupComponent {
 
     this.loading.set(true);
     try {
-      const response = await fetch('http://127.0.0.1:8000/registrar_usuario/', {
+      const url = await back_url();
+      const response = await fetch(`${url}/registrar_usuario/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

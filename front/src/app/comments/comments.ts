@@ -3,7 +3,7 @@ import { Component, Input, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import axios from 'axios';
 import { signal } from '@angular/core';
-
+import { back_url } from '../../environments/back_url';
 @Component({
   selector: 'comments',
   standalone: true,
@@ -164,9 +164,8 @@ export class Comments implements OnInit {
 
   async getComments() {
     try {
-      const response = await axios.get(
-        `http://127.0.0.1:8000/comments/${this.parent_id}`
-      );
+      const url = await back_url();
+      const response = await axios.get(`${url}/comments/${this.parent_id}`);
       const rawComments = response.data.comments ?? [];
       const processed = this.parseComments(rawComments).reverse();
       this.comments.set(processed);
@@ -191,8 +190,9 @@ export class Comments implements OnInit {
 
   async addComment(root_comment: string = '', new_comment: any) {
     try {
+      const url = await back_url();
       const response = await axios.post(
-        `http://127.0.0.1:8000/addcomment/${root_comment}`,
+        `${url}/addcomment/${root_comment}`,
         new_comment
       );
       console.log('Comentario agregado:', response.data);

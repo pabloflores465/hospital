@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import axios from 'axios';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { back_url } from '../../environments/back_url';
 
 @Component({
   selector: 'app-hospital-mision',
@@ -183,7 +184,8 @@ export class HospitalMisionComponent {
 
   async getMission() {
     try {
-      const response = await axios.get('http://127.0.0.1:8000/mission');
+      const url = await back_url();
+      const response = await axios.get(`${url}/mission`);
       // Asumiendo que la respuesta trae { history: { ...campos... } }
       this.mission.set(response.data.history);
     } catch (error) {
@@ -203,34 +205,29 @@ export class HospitalMisionComponent {
 
   async save() {
     try {
-      const response = await axios.put(
-        'http://127.0.0.1:8000/mission/moderation/',
-        {
-          _id: this.mission()._id,
-          title1: this.mission().title1,
-          text1: this.mission().text1,
-          subtitle1: this.mission().subtitle1,
-          subtitle2: this.mission().subtitle2,
-          subtitle3: this.mission().subtitle3,
-          content1: this.mission().content1,
-          content2: this.mission().content2,
-          content3: this.mission().content3,
-        }
-      );
-      const response2 = await axios.put(
-        'http://127.0.0.1:8000/mission/audit/',
-        {
-          _id: this.mission()._id,
-          title1: this.mission().title1,
-          text1: this.mission().text1,
-          subtitle1: this.mission().subtitle1,
-          subtitle2: this.mission().subtitle2,
-          subtitle3: this.mission().subtitle3,
-          content1: this.mission().content1,
-          content2: this.mission().content2,
-          content3: this.mission().content3,
-        }
-      );
+      const url = await back_url();
+      const response = await axios.put(`${url}/mission/moderation/`, {
+        _id: this.mission()._id,
+        title1: this.mission().title1,
+        text1: this.mission().text1,
+        subtitle1: this.mission().subtitle1,
+        subtitle2: this.mission().subtitle2,
+        subtitle3: this.mission().subtitle3,
+        content1: this.mission().content1,
+        content2: this.mission().content2,
+        content3: this.mission().content3,
+      });
+      const response2 = await axios.put(`${url}/mission/audit/`, {
+        _id: this.mission()._id,
+        title1: this.mission().title1,
+        text1: this.mission().text1,
+        subtitle1: this.mission().subtitle1,
+        subtitle2: this.mission().subtitle2,
+        subtitle3: this.mission().subtitle3,
+        content1: this.mission().content1,
+        content2: this.mission().content2,
+        content3: this.mission().content3,
+      });
       console.log(response.data.message);
       console.log(response2.data.message);
       this.edit.set(false);
