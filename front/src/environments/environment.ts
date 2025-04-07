@@ -1,4 +1,6 @@
+import connection from '../app/connection.json';
+
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:8000'
-}; 
+  apiUrl: `http://${connection.ip}:${connection.port}`,
+};

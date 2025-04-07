@@ -5,7 +5,7 @@ import { ButtonComponent } from '../button/button.component';
 import { UserService } from '../services/user.service';
 import { User } from '../models/user.model';
 import { CommonModule } from '@angular/common';
-
+import { environment } from '../../environments/environment';
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -21,9 +21,13 @@ export class LoginComponent {
   errorMessage = signal('');
   loading = signal(false);
 
+  ngOnInit() {
+    console.log(environment.apiUrl);
+  }
+
   async onSubmit() {
     if (this.loading()) return;
-    
+
     this.loading.set(true);
     this.errorMessage.set('');
 
@@ -40,8 +44,8 @@ export class LoginComponent {
         },
         body: JSON.stringify({
           username: this.username,
-          password: this.password
-        })
+          password: this.password,
+        }),
       });
 
       const data = await response.json();
@@ -55,7 +59,7 @@ export class LoginComponent {
       }
 
       console.log('Respuesta del servidor:', data);
-      
+
       // Transformar la respuesta del backend al formato User
       const user: User = {
         _id: data.user._id,
@@ -63,14 +67,14 @@ export class LoginComponent {
         username: data.user.username,
         email: data.user.email,
         rol: data.user.rol.toLowerCase(),
-        license: data.user.noLicencia || undefined
+        license: data.user.noLicencia || undefined,
       };
 
       console.log('Usuario autenticado:', user);
-      
+
       // Guardar el usuario en el servicio
       this.userService.setUser(user);
-      
+
       // Redireccionar según el rol del usuario
       this.userService.redirectBasedOnRole();
     } catch (error: any) {

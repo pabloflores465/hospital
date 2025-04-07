@@ -29,11 +29,13 @@ SECRET_KEY = 'django-insecure--0(x7(4f32pd$00ts2hbn9t_xbp6tmeb^10=*9p8i-)&1rb)h0
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost' , "localhost:3000" , "localhost:4200"]
+# ALLOWED_HOSTS = ['127.0.0.1', 'localhost' , "localhost:3000" , "localhost:4200"]
+ALLOWED_HOSTS = ['*']
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:4200",  # Permitir peticiones desde tu frontend
-]
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:4200",  # Permitir peticiones desde tu frontend
+# ]
+CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_CREDENTIALS = True  # Permite enviar cookies y headers de autenticación
 CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
