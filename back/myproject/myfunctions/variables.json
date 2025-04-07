@@ -1,0 +1,4 @@
+{
+  "mongo_uri": "mongodb+srv://admin:123@cluster0.iuspf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
+  "database_name": "hospital_db"
+}
