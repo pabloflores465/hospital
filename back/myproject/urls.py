@@ -79,6 +79,7 @@ from .myfunctions.services_crud import (
     get_services,
     update_service,
     delete_service,
+    get_service_by_id,
 )
 from .myfunctions.categories_crud import (
     create_category,
@@ -209,10 +210,11 @@ urlpatterns = [
     ),
     path("api/services_ensurance/", get_services_ensurance),
     path("api/services_ensurance/import/", import_services_ensurance),
-    path("api/services/", get_services),
     path("api/services/create/", create_service),
     path("api/services/<str:service_id>/update/", update_service),
     path("api/services/<str:service_id>/delete/", delete_service),
+    path("api/services/<str:service_id>/", get_service_by_id),
+    path("api/services/", get_services),
     path("api/categories/", get_categories),
     path("api/categories/create/", create_category),
     path("api/categories/<str:category_id>/update/", update_category),

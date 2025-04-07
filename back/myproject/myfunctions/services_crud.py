@@ -5,6 +5,7 @@ from bson import ObjectId
 from django.views.decorators.csrf import csrf_exempt
 from .config import services_collection
 from .get_list import get_list
+from .convert_objectid import convert_objectid, ensure_serializable
 
 @csrf_exempt
 def create_service(request):
@@ -80,3 +81,37 @@ def delete_service(request, service_id):
     except Exception as e:
         traceback.print_exc()
         return JsonResponse({"error": str(e)}, status=400)
+
+def get_service_by_id(request, service_id):
+    """GET /api/services/<service_id> - Obtiene un servicio específico por ID"""
+    if request.method != "GET":
+        return JsonResponse({"error": "Método no permitido"}, status=405)
+    
+    print(f"Buscando servicio con ID: {service_id}")
+    
+    try:
+        # Convertir el ID a ObjectId
+        try:
+            obj_id = ObjectId(service_id)
+            print(f"ObjectId válido: {obj_id}")
+        except Exception as e:
+            print(f"Error al convertir ID: {str(e)}")
+            return JsonResponse({"error": f"ID de servicio inválido: {service_id}"}, status=400)
+        
+        # Buscar el servicio en la base de datos
+        service = services_collection.find_one({"_id": obj_id})
+        
+        if service is None:
+            print(f"Servicio no encontrado con ID: {service_id}")
+            return JsonResponse({"error": "Servicio no encontrado"}, status=404)
+        
+        # Convertir todos los ObjectId a string usando la función mejorada
+        serializable_service = ensure_serializable(service)
+        
+        print(f"Servicio procesado: {serializable_service}")
+        
+        return JsonResponse(serializable_service, status=200, safe=False)
+    except Exception as e:
+        traceback.print_exc()
+        print(f"Error al obtener servicio: {str(e)}")
+        return JsonResponse({"error": str(e)}, status=500)
