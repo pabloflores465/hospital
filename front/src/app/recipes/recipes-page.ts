@@ -463,6 +463,16 @@ export class RecipesPage implements OnInit {
     this.cargarPacientes();
     this.cargarPrincipiosActivos();
     this.cargarRecetas();
+    
+    // Obtener información del usuario y verificar póliza
+    this.verificarPolizaUsuario();
+    
+    // Agregar listener para el cambio de paciente
+    this.recetaForm.get('paciente')?.valueChanges.subscribe(idPaciente => {
+      if (idPaciente) {
+        this.verificarPolizaPacienteSeleccionado(idPaciente);
+      }
+    });
   }
 
   cargarDoctorActual(): void {
@@ -671,5 +681,131 @@ export class RecipesPage implements OnInit {
           );
         },
       });
+  }
+
+  /**
+   * Verifica la póliza del usuario actual obteniendo su correo del localStorage
+   * y consultando la API para obtener su información completa
+   */
+  verificarPolizaUsuario(): void {
+    try {
+      // Obtener el correo electrónico del usuario del localStorage
+      const userData = localStorage.getItem('hospital_user');
+      if (!userData) {
+        console.error('No se encontró información del usuario en localStorage');
+        return;
+      }
+      
+      const user = JSON.parse(userData);
+      const email = user.email;
+      
+      if (!email) {
+        console.error('No se encontró email del usuario en localStorage');
+        return;
+      }
+      
+      // Consultar la API para obtener información de todos los usuarios
+      this.http.get<any[]>(`http://192.168.0.11:8080/api/users/by-email`).subscribe({
+        next: (response: any[]) => {
+          console.log('Lista de usuarios obtenida:', response);
+          
+          // Buscar el usuario por su correo electrónico
+          const usuarioEncontrado = response.find(user => user.email === email);
+          
+          if (usuarioEncontrado) {
+            console.log('Usuario encontrado:', usuarioEncontrado);
+            
+            // Verificar si el usuario tiene póliza
+            if (usuarioEncontrado.policy) {
+              // Automáticamente marcar que tiene seguro y poner el número de póliza
+              this.recetaForm.patchValue({
+                tieneSeguro: true,
+                codigoSeguro: usuarioEncontrado.policy.idPolicy.toString()
+              });
+              console.log('Usuario tiene póliza, ID:', usuarioEncontrado.policy.idPolicy);
+            } else {
+              // Si no tiene póliza, desmarcamos la casilla
+              this.recetaForm.patchValue({
+                tieneSeguro: false,
+                codigoSeguro: ''
+              });
+              console.log('Usuario no tiene póliza');
+            }
+          } else {
+            console.error('No se encontró ningún usuario con el email:', email);
+          }
+        },
+        error: (error) => {
+          console.error('Error al obtener información de usuarios:', error);
+        }
+      });
+    } catch (error) {
+      console.error('Error al verificar póliza del usuario:', error);
+    }
+  }
+
+  /**
+   * Verifica la póliza del paciente seleccionado
+   * @param idPaciente ID del paciente seleccionado en el formulario
+   */
+  verificarPolizaPacienteSeleccionado(idPaciente: string): void {
+    try {
+      // Buscar el paciente en la lista de pacientes cargados
+      const pacienteSeleccionado = this.pacientes.find(p => p._id === idPaciente);
+      
+      if (!pacienteSeleccionado) {
+        console.error('No se encontró el paciente con ID:', idPaciente);
+        return;
+      }
+      
+      const emailPaciente = pacienteSeleccionado.email;
+      
+      if (!emailPaciente) {
+        console.error('El paciente no tiene email registrado');
+        return;
+      }
+      
+      console.log('Verificando póliza para el paciente:', pacienteSeleccionado.username, 'con email:', emailPaciente);
+      
+      // Consultar la API para obtener información de todos los usuarios
+      this.http.get<any[]>(`http://192.168.0.11:8080/api/users/by-email`).subscribe({
+        next: (response: any[]) => {
+          // Buscar el usuario por su correo electrónico
+          const usuarioEncontrado = response.find(user => user.email === emailPaciente);
+          
+          if (usuarioEncontrado) {
+            console.log('Usuario encontrado en API externa:', usuarioEncontrado);
+            
+            // Verificar si el usuario tiene póliza
+            if (usuarioEncontrado.policy) {
+              // Automáticamente marcar que tiene seguro y poner el número de póliza
+              this.recetaForm.patchValue({
+                tieneSeguro: true,
+                codigoSeguro: usuarioEncontrado.policy.idPolicy.toString()
+              });
+              console.log('Paciente tiene póliza, ID:', usuarioEncontrado.policy.idPolicy);
+            } else {
+              // Si no tiene póliza, desmarcamos la casilla
+              this.recetaForm.patchValue({
+                tieneSeguro: false,
+                codigoSeguro: ''
+              });
+              console.log('Paciente no tiene póliza');
+            }
+          } else {
+            console.error('No se encontró ningún usuario con el email:', emailPaciente);
+            this.recetaForm.patchValue({
+              tieneSeguro: false,
+              codigoSeguro: ''
+            });
+          }
+        },
+        error: (error) => {
+          console.error('Error al obtener información de usuarios:', error);
+        }
+      });
+    } catch (error) {
+      console.error('Error al verificar póliza del paciente:', error);
+    }
   }
 }

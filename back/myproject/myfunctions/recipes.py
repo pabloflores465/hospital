@@ -13,15 +13,30 @@ from django.conf import settings
 def get_recipes(request):
     if request.method == "GET":
         try:
+            # Obtener el nombre de usuario de los parámetros de la URL
+            username = request.GET.get('username')
+            
             medicines = []
             recipes = []
             users = []
+            
             if not medicines:
                 get_list(medicines, medicines_collection)
             if not recipes:
                 get_list(recipes, recipes_collection)
             if not users:
                 get_list(users, users_collection)
+
+            # Si se proporciona un nombre de usuario, filtrar las recetas
+            if username:
+                # Primero encontrar el ID del usuario por su nombre de usuario
+                user = users_collection.find_one({"username": username})
+                if user:
+                    user_id = user["_id"]
+                    # Filtrar recetas por el ID del usuario
+                    recipes = [recipe for recipe in recipes if recipe.get("patient") == str(user_id)]
+                else:
+                    return JsonResponse({"error": "Usuario no encontrado"}, status=404)
 
             doctors = []
             for user in users:

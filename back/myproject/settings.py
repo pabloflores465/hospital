@@ -29,17 +29,23 @@ SECRET_KEY = 'django-insecure--0(x7(4f32pd$00ts2hbn9t_xbp6tmeb^10=*9p8i-)&1rb)h0
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-# ALLOWED_HOSTS = ['127.0.0.1', 'localhost' , "localhost:3000" , "localhost:4200"]
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', "localhost:3000", "localhost:4200", "172.16.56.93", "*"]
 
-# CORS_ALLOWED_ORIGINS = [
-#     "http://localhost:4200",  # Permitir peticiones desde tu frontend
-# ]
-CORS_ALLOW_ALL_ORIGINS = True
+# Configuración ampliada de CORS
+CORS_ALLOW_ALL_ORIGINS = True  # Permite todas las origenes (solo en desarrollo)
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:4200",
+    "http://172.16.56.93:8080",
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+    "http://localhost:8000", 
+    "http://127.0.0.1:8000"
+]
 
-CORS_ALLOW_CREDENTIALS = True  # Permite enviar cookies y headers de autenticación
-CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-CORS_ALLOW_HEADERS = ["*"]  # Permite todos los headers
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+CORS_ALLOW_HEADERS = ["*"]
+CORS_EXPOSE_HEADERS = ["Content-Type", "X-CSRFToken"]
 
 # Application definition
 
