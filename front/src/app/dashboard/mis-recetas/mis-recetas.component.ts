@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { RouterModule } from '@angular/router';
-import { back_url } from '../../environments/back_url';
+import { back_url } from '../../../environments/back_url';
 @Component({
   selector: 'app-mis-recetas',
   standalone: true,

@@ -52,7 +52,7 @@ interface MedicalRecord {
   selector: 'app-medical-record',
   standalone: true,
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
-  templateUrl: './medical-record.component.html'
+  templateUrl: './medical-record.component.html',
 })
 export class MedicalRecordComponent implements OnInit {
   record: MedicalRecord | null = null;
@@ -74,7 +74,7 @@ export class MedicalRecordComponent implements OnInit {
 
   ngOnInit() {
     this.currentUser = this.userService.getUser();
-    
+
     if (!this.currentUser) {
       this.errorMessage = 'Necesita iniciar sesión para ver la ficha médica';
       this.isLoading = false;
@@ -83,16 +83,16 @@ export class MedicalRecordComponent implements OnInit {
 
     // Determinar si el usuario es médico o paciente
     this.isDoctor = this.currentUser.rol.toLowerCase() === 'doctor';
-    
+
     // Obtener patientId de la URL si existe
-    this.route.paramMap.subscribe(params => {
+    this.route.paramMap.subscribe((params) => {
       const urlPatientId = params.get('patientId');
-      
+
       // Si hay un ID en la URL y el usuario es médico, usar ese ID
       if (urlPatientId && this.isDoctor) {
         this.patientId = urlPatientId;
         this.loadPatientRecord();
-      } 
+      }
       // Si es paciente, usar su propio ID
       else if (!this.isDoctor && this.currentUser) {
         this.patientId = this.currentUser._id;
@@ -106,46 +106,54 @@ export class MedicalRecordComponent implements OnInit {
     });
   }
 
-  loadPatientRecord() {
+  async loadPatientRecord() {
     if (!this.patientId) {
       this.errorMessage = 'ID de paciente no válido';
       this.isLoading = false;
       return;
     }
-    
+
     this.isLoading = true;
-    
-    // Cargar datos reales desde la API en lugar de datos de prueba
-    this.medicalRecordService.getPatientRecord(this.patientId)
-      .subscribe({
-        next: (response) => {
+
+    try {
+      // Cargar datos reales desde la API en lugar de datos de prueba
+      const observable = await this.medicalRecordService.getPatientRecord(
+        this.patientId
+      );
+
+      observable.subscribe({
+        next: (response: any) => {
           console.log('Datos recibidos de la API:', response);
           this.record = response.record;
-          
+
           if (this.record?.procedures) {
             // Ordenar procedimientos por fecha (más reciente primero)
             this.record.procedures.sort((a, b) => {
               return new Date(b.date).getTime() - new Date(a.date).getTime();
             });
-            
+
             // Procesar cada procedimiento para formatear fechas y datos
-            this.record.procedures.forEach(procedure => {
+            this.record.procedures.forEach((procedure) => {
               // Manejar el formato de fecha o cualquier otro procesamiento necesario
               if (procedure.service_id) {
                 // Podríamos cargar información adicional del servicio si es necesario
-                console.log('Procedimiento asociado al servicio:', procedure.service_id);
+                console.log(
+                  'Procedimiento asociado al servicio:',
+                  procedure.service_id
+                );
               }
             });
           }
-          
+
           this.isLoading = false;
           this.inDevelopment = false; // Ya no estamos en modo desarrollo porque usamos datos reales
         },
         error: (error) => {
           console.error('Error al cargar la ficha médica:', error);
-          this.errorMessage = 'Error al cargar la ficha médica. Intente nuevamente más tarde.';
+          this.errorMessage =
+            'Error al cargar la ficha médica. Intente nuevamente más tarde.';
           this.isLoading = false;
-          
+
           // Si hay un error, cargar datos de prueba en modo desarrollo
           if (this.inDevelopment) {
             setTimeout(() => {
@@ -153,8 +161,15 @@ export class MedicalRecordComponent implements OnInit {
               this.isLoading = false;
             }, 1000);
           }
-        }
+        },
       });
+    } catch (error: any) {
+      console.error('Error al obtener observable de ficha médica:', error);
+      this.errorMessage = `Error al obtener datos del paciente: ${
+        error.message || 'Error desconocido'
+      }`;
+      this.isLoading = false;
+    }
   }
 
   loadMockData() {
@@ -165,7 +180,7 @@ export class MedicalRecordComponent implements OnInit {
         identification: 'DPI-12345678',
         insurance_number: 'SEG-987654321',
         address: 'Calle Principal 123, Ciudad',
-        contact_info: 'carlos.ramirez@email.com / +1 234 567 8901'
+        contact_info: 'carlos.ramirez@email.com / +1 234 567 8901',
       },
       procedures: [
         {
@@ -173,35 +188,37 @@ export class MedicalRecordComponent implements OnInit {
           type: 'Consulta Cardiológica',
           date: '2023-10-15T09:30:00Z',
           diagnosis: 'Hipertensión arterial leve',
-          observations: 'Se recomienda dieta baja en sodio y ejercicio moderado',
+          observations:
+            'Se recomienda dieta baja en sodio y ejercicio moderado',
           staff: {
             doctor: {
               name: 'Dra. María López',
               license: '12345',
-              specialty: 'Cardiología'
-            }
+              specialty: 'Cardiología',
+            },
           },
           financial_info: {
             cost: 150,
             payment_method: 'Seguro médico',
             insurance_details: {
               coverage: '80%',
-              policy_number: 'POL-123456'
-            }
+              policy_number: 'POL-123456',
+            },
           },
           comments: [
             {
               user_role: 'doctor',
               created_at: '2023-10-15T10:15:00Z',
-              content: 'Paciente presenta buena respuesta al tratamiento inicial'
-            }
+              content:
+                'Paciente presenta buena respuesta al tratamiento inicial',
+            },
           ],
           attachments: [
             {
               file_name: 'electrocardiograma.pdf',
-              file_url: '#'
-            }
-          ]
+              file_url: '#',
+            },
+          ],
         },
         {
           _id: 'proc2',
@@ -213,48 +230,52 @@ export class MedicalRecordComponent implements OnInit {
             doctor: {
               name: 'Dr. Juan García',
               license: '67890',
-              specialty: 'Medicina interna'
-            }
+              specialty: 'Medicina interna',
+            },
           },
           financial_info: {
             cost: 75,
-            payment_method: 'Efectivo'
+            payment_method: 'Efectivo',
           },
           comments: [],
           attachments: [
             {
               file_name: 'resultados_laboratorio.pdf',
-              file_url: '#'
-            }
-          ]
-        }
-      ]
+              file_url: '#',
+            },
+          ],
+        },
+      ],
     };
-    
+
     // Si estamos viendo un paciente específico, personalizar los datos
     if (this.patientId === '67d985d0ba17ad09ee384993') {
       this.record.personal_info.full_name = 'Usuario';
       this.record.personal_info.identification = 'DPI-12345678';
-      this.record.personal_info.contact_info = 'rrrivera@unis.edu.gt / +502 5555-1234';
+      this.record.personal_info.contact_info =
+        'rrrivera@unis.edu.gt / +502 5555-1234';
     } else if (this.patientId === '67db1d99b66c7ee01db87fff') {
       this.record.personal_info.full_name = 'Olakeace';
       this.record.personal_info.identification = 'DPI-87654321';
-      this.record.personal_info.contact_info = 'pablopolis2016@gmail.com / +502 5555-5678';
+      this.record.personal_info.contact_info =
+        'pablopolis2016@gmail.com / +502 5555-5678';
     }
   }
 
-  addComment(procedureId: string) {
+  async addComment(procedureId: string) {
     if (!this.newComment[procedureId]?.trim() || !this.currentUser) return;
 
     if (this.inDevelopment) {
       // Simulación en modo desarrollo
       const now = new Date();
-      const procedure = this.record?.procedures.find(p => p._id === procedureId);
+      const procedure = this.record?.procedures.find(
+        (p) => p._id === procedureId
+      );
       if (procedure) {
         procedure.comments.push({
           user_role: this.currentUser.rol,
           created_at: now.toISOString(),
-          content: this.newComment[procedureId]
+          content: this.newComment[procedureId],
         });
         this.newComment[procedureId] = '';
       }
@@ -265,20 +286,34 @@ export class MedicalRecordComponent implements OnInit {
       procedure_id: procedureId,
       user_id: this.currentUser._id,
       user_role: this.currentUser.rol,
-      content: this.newComment[procedureId]
+      content: this.newComment[procedureId],
     };
 
-    this.medicalRecordService.addComment(commentData)
-      .subscribe({
+    try {
+      const observable = await this.medicalRecordService.addComment(
+        commentData
+      );
+
+      observable.subscribe({
         next: () => {
           this.loadPatientRecord();
           this.newComment[procedureId] = '';
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error al agregar comentario:', error);
-          this.errorMessage = 'Error al agregar el comentario. Intente nuevamente.';
-        }
+          this.errorMessage =
+            'Error al agregar el comentario. Intente nuevamente.';
+        },
       });
+    } catch (error: any) {
+      console.error(
+        'Error al obtener observable para agregar comentario:',
+        error
+      );
+      this.errorMessage = `Error al agregar comentario: ${
+        error.message || 'Error desconocido'
+      }`;
+    }
   }
 
   onFileSelected(event: any, procedureId: string) {
@@ -288,16 +323,18 @@ export class MedicalRecordComponent implements OnInit {
     }
   }
 
-  uploadFile(procedureId: string) {
+  async uploadFile(procedureId: string) {
     if (!this.selectedFile[procedureId] || !this.currentUser) return;
 
     if (this.inDevelopment) {
       // Simulación en modo desarrollo
-      const procedure = this.record?.procedures.find(p => p._id === procedureId);
+      const procedure = this.record?.procedures.find(
+        (p) => p._id === procedureId
+      );
       if (procedure) {
         procedure.attachments.push({
           file_name: this.selectedFile[procedureId].name,
-          file_url: '#'
+          file_url: '#',
         });
         delete this.selectedFile[procedureId];
       }
@@ -309,17 +346,27 @@ export class MedicalRecordComponent implements OnInit {
     formData.append('procedure_id', procedureId);
     formData.append('user_id', this.currentUser._id);
 
-    this.medicalRecordService.uploadAttachment(formData)
-      .subscribe({
+    try {
+      const observable = await this.medicalRecordService.uploadAttachment(
+        formData
+      );
+
+      observable.subscribe({
         next: () => {
           this.loadPatientRecord();
           delete this.selectedFile[procedureId];
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error al subir archivo:', error);
           this.errorMessage = 'Error al subir el archivo. Intente nuevamente.';
-        }
+        },
       });
+    } catch (error: any) {
+      console.error('Error al obtener observable para subir archivo:', error);
+      this.errorMessage = `Error al subir archivo: ${
+        error.message || 'Error desconocido'
+      }`;
+    }
   }
 
   // Método para obtener el nombre amigable del servicio
@@ -331,4 +378,4 @@ export class MedicalRecordComponent implements OnInit {
   goToPatientList(): void {
     this.router.navigate(['/medical-record/patients']);
   }
-} 
+}
