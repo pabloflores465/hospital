@@ -159,7 +159,6 @@ export class DoctorAgendaComponent implements OnInit {
   selectedSlot: string | null = null;
   selectedAppointment: Appointment | null = null;
   result = { diagnosis: '', exams: '', medicines: '', next_steps: '' };
-  private baseUrl = 'http://localhost:8000';
 
   constructor(private http: HttpClient, public userService: UserService) {}
 
@@ -191,10 +190,11 @@ export class DoctorAgendaComponent implements OnInit {
     }
   }
 
-  loadAppointments(): void {
+  async loadAppointments(): Promise<void> {
+    const url = await back_url();
     const doctorId = this.userService.getUser()?._id;
     this.http
-      .get<{ appointments: any[] }>(`${this.baseUrl}/api/appointments/`)
+      .get<{ appointments: any[] }>(`${url}/api/appointments/`)
       .subscribe((r) => {
         this.appointments = r.appointments
           .filter((a) => a.doctor === doctorId && !a.completed)
@@ -234,11 +234,12 @@ export class DoctorAgendaComponent implements OnInit {
     this.selectedAppointment = appt;
   }
 
-  completeAppointment(): void {
+  async completeAppointment(): Promise<void> {
     if (!this.selectedAppointment) return;
     const id = this.selectedAppointment?.id;
+    const url = await back_url();
     this.http
-      .put(`${this.baseUrl}/api/appointments/${id}/complete/`, this.result)
+      .put(`${url}/api/appointments/${id}/complete/`, this.result)
       .subscribe({
         next: () => {
           alert('Resultados guardados correctamente');

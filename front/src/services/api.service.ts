@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { back_url } from '../environments/back_url';
 
 @Injectable({
   providedIn: 'root',
@@ -23,13 +24,14 @@ export class ApiService {
    * @param endpoint Endpoint de la API
    * @param params Parámetros opcionales
    */
-  get<T>(endpoint: string, params: any = {}): Observable<T> {
+  async get<T>(endpoint: string, params: any = {}): Promise<Observable<T>> {
+    const url = await back_url();
     const options = {
       headers: this.getHeaders(),
       params,
       withCredentials: true, // Importante para CORS con credenciales
     };
-    return this.http.get<T>(`${this.baseUrl}${endpoint}`, options);
+    return this.http.get<T>(`${url}${endpoint}`, options);
   }
 
   /**
@@ -37,12 +39,13 @@ export class ApiService {
    * @param endpoint Endpoint de la API
    * @param data Datos a enviar
    */
-  post<T>(endpoint: string, data: any): Observable<T> {
+  async post<T>(endpoint: string, data: any): Promise<Observable<T>> {
     const options = {
       headers: this.getHeaders(),
       withCredentials: true,
     };
-    return this.http.post<T>(`${this.baseUrl}${endpoint}`, data, options);
+    const url = await back_url();
+    return this.http.post<T>(`${url}${endpoint}`, data, options);
   }
 
   /**
@@ -50,23 +53,25 @@ export class ApiService {
    * @param endpoint Endpoint de la API
    * @param data Datos a enviar
    */
-  put<T>(endpoint: string, data: any): Observable<T> {
+  async put<T>(endpoint: string, data: any): Promise<Observable<T>> {
+    const url = await back_url();
     const options = {
       headers: this.getHeaders(),
       withCredentials: true,
     };
-    return this.http.put<T>(`${this.baseUrl}${endpoint}`, data, options);
+    return this.http.put<T>(`${url}${endpoint}`, data, options);
   }
 
   /**
    * Realiza una petición DELETE
    * @param endpoint Endpoint de la API
    */
-  delete<T>(endpoint: string): Observable<T> {
+  async delete<T>(endpoint: string): Promise<Observable<T>> {
+    const url = await back_url();
     const options = {
       headers: this.getHeaders(),
       withCredentials: true,
     };
-    return this.http.delete<T>(`${this.baseUrl}${endpoint}`, options);
+    return this.http.delete<T>(`${url}${endpoint}`, options);
   }
 }

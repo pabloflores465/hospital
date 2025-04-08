@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { UserService } from '../services/user.service';
+import { back_url } from '../../environments/back_url';
 
 @Component({
   selector: 'app-appointments',
@@ -280,7 +281,6 @@ export class AppointmentsComponent implements OnInit {
     '04:00 PM',
     '04:30 PM',
   ];
-  private baseUrl = 'http://localhost:8000';
 
   constructor(private http: HttpClient, public userService: UserService) {}
 
@@ -301,11 +301,12 @@ export class AppointmentsComponent implements OnInit {
     }
   }
 
-  loadDoctors(): void {
+  async loadDoctors(): Promise<void> {
+    const url = await back_url();
     if (this.role === 'doctor') {
       // Load all doctors for selection even if logged in as doctor
       this.http
-        .get<{ doctors: any[] }>(`${this.baseUrl}/doctors`)
+        .get<{ doctors: any[] }>(`${url}/doctors`)
         .subscribe(
           (r) =>
             (this.doctors = (r.doctors || []).filter(
@@ -314,10 +315,10 @@ export class AppointmentsComponent implements OnInit {
         );
     } else {
       this.http
-        .get<{ doctors: any[] }>(`${this.baseUrl}/doctors`)
+        .get<{ doctors: any[] }>(`${url}/doctors`)
         .subscribe((r) => (this.doctors = r.doctors || []));
       this.http
-        .get<{ services: any[] }>(`${this.baseUrl}/api/services/`)
+        .get<{ services: any[] }>(`${url}/api/services/`)
         .subscribe((r) => {
           const servicesAsDoctors = r.services.map((s) => ({
             _id: s._id!,
@@ -328,9 +329,10 @@ export class AppointmentsComponent implements OnInit {
     }
   }
 
-  loadAppointments(): void {
+  async loadAppointments(): Promise<void> {
+    const url = await back_url();
     this.http
-      .get<{ appointments: any[] }>(`${this.baseUrl}/api/appointments/`)
+      .get<{ appointments: any[] }>(`${url}/api/appointments/`)
       .subscribe((r) => {
         const all = r.appointments || [];
         console.log('Loaded appointments (raw):', all);
@@ -406,18 +408,20 @@ export class AppointmentsComponent implements OnInit {
       .padStart(2, '0')}`;
   }
 
-  completeAppointment(): void {
+  async completeAppointment(): Promise<void> {
     if (!this.selectedAppointment) return;
     const id = this.selectedAppointment._id;
+    const url = await back_url();
     this.http
-      .put(`${this.baseUrl}/api/appointments/${id}/complete/`, this.result)
+      .put(`${url}/api/appointments/${id}/complete/`, this.result)
       .subscribe(() => {
         this.loadAppointments();
         this.selectedAppointment = null;
       });
   }
 
-  submitAppointment(): void {
+  async submitAppointment(): Promise<void> {
+    const url = await back_url();
     if (!this.appointment.doctor) {
       alert('Debe seleccionar un doctor');
       return;
@@ -439,21 +443,18 @@ export class AppointmentsComponent implements OnInit {
       patient: patientId,
     };
     console.log('Submitting appointment payload:', payload);
-    this.http
-      .post(`${this.baseUrl}/api/appointments/create/`, payload)
-      .subscribe(
-        () => {
-          this.loadAppointments();
-          this.resetForm();
-        },
-        (error) => {
-          console.error('Error creating appointment:', error);
-          alert(
-            'Error al crear la cita: ' +
-              (error.error.detail || error.statusText)
-          );
-        }
-      );
+    this.http.post(`${url}/api/appointments/create/`, payload).subscribe(
+      () => {
+        this.loadAppointments();
+        this.resetForm();
+      },
+      (error) => {
+        console.error('Error creating appointment:', error);
+        alert(
+          'Error al crear la cita: ' + (error.error.detail || error.statusText)
+        );
+      }
+    );
   }
 
   resetForm(): void {
