@@ -1,7 +1,12 @@
+import os
 from pymongo import MongoClient
 import json 
 
-with open('./back/myproject/server_config.json', 'r') as f:
+# Construir la ruta al archivo de configuración relativa a este archivo
+current_dir = os.path.dirname(os.path.abspath(__file__))
+config_path = os.path.join(os.path.dirname(current_dir), 'server_config.json')
+
+with open(config_path, 'r') as f:
     server_config = json.load(f)
 
 MONGO_URI = server_config["mongo_uri"]
