@@ -33,7 +33,7 @@ export class LoginComponent {
         throw new Error('Por favor ingrese usuario y contraseña');
       }
       const url = await back_url();
-      const response = await fetch(`${url}`, {
+      const response = await fetch(`${url}/login_usuario/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
