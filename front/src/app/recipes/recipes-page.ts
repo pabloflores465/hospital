@@ -395,6 +395,7 @@ export class RecipesPage implements OnInit {
   recetaGenerada = false;
   recetaPreview: any = {};
   recetaGeneradaId: string = '';
+  tienePolicaDisponible: boolean = false;
 
   // Datos de ejemplo
   codigoHospital = '00256';
@@ -473,13 +474,24 @@ export class RecipesPage implements OnInit {
     this.cargarPrincipiosActivos();
     this.cargarRecetas();
 
+    // Por defecto, el checkbox de tieneSeguro está deshabilitado hasta verificar póliza
+    this.recetaForm.get('tieneSeguro')?.disable();
+
     // Obtener información del usuario y verificar póliza
     this.verificarPolizaUsuario();
 
     // Agregar listener para el cambio de paciente
     this.recetaForm.get('paciente')?.valueChanges.subscribe((idPaciente) => {
       if (idPaciente) {
+        // Deshabilitar el checkbox hasta verificar si tiene póliza
+        this.recetaForm.get('tieneSeguro')?.disable();
+        this.recetaForm.patchValue({ tieneSeguro: false, codigoSeguro: '' });
         this.verificarPolizaPacienteSeleccionado(idPaciente);
+      } else {
+        // Si no hay paciente seleccionado, deshabilitar la opción de seguro
+        this.tienePolicaDisponible = false;
+        this.recetaForm.get('tieneSeguro')?.disable();
+        this.recetaForm.patchValue({ tieneSeguro: false, codigoSeguro: '' });
       }
     });
   }
@@ -716,41 +728,46 @@ export class RecipesPage implements OnInit {
         return;
       }
 
-      // Consultar la API para obtener información de todos los usuarios
+      // Consultar la API para obtener información del usuario por su email
       this.http
-        .get<any[]>(`http://192.168.0.11:8080/api/users/by-email`)
+        .get<any>(`http://192.168.0.20:8080/api/users/by-email/${encodeURIComponent(email)}`)
         .subscribe({
-          next: (response: any[]) => {
-            console.log('Lista de usuarios obtenida:', response);
+          next: (response: any) => {
+            console.log('Usuario obtenido:', response);
 
-            // Buscar el usuario por su correo electrónico
-            const usuarioEncontrado = response.find(
-              (user) => user.email === email
-            );
-
-            if (usuarioEncontrado) {
-              console.log('Usuario encontrado:', usuarioEncontrado);
-
+            if (response) {
               // Verificar si el usuario tiene póliza
-              if (usuarioEncontrado.policy) {
+              if (response.policy) {
                 // Automáticamente marcar que tiene seguro y poner el número de póliza
+                this.tienePolicaDisponible = true;
                 this.recetaForm.patchValue({
                   tieneSeguro: true,
-                  codigoSeguro: usuarioEncontrado.policy.idPolicy.toString(),
+                  codigoSeguro: response.policy.idPolicy.toString(),
                 });
                 console.log(
                   'Usuario tiene póliza, ID:',
-                  usuarioEncontrado.policy.idPolicy
+                  response.policy.idPolicy
                 );
               } else {
-                // Si no tiene póliza, desmarcamos la casilla
+                // Si no tiene póliza, desmarcamos la casilla y deshabilitamos la opción
+                this.tienePolicaDisponible = false;
                 this.recetaForm.patchValue({
                   tieneSeguro: false,
                   codigoSeguro: '',
                 });
+                // Deshabilitar el control de tieneSeguro
+                this.recetaForm.get('tieneSeguro')?.disable();
                 console.log('Usuario no tiene póliza');
               }
             } else {
+              // No se encontró el usuario, deshabilitamos la opción de seguro
+              this.tienePolicaDisponible = false;
+              this.recetaForm.patchValue({
+                tieneSeguro: false,
+                codigoSeguro: '',
+              });
+              // Deshabilitar el control de tieneSeguro
+              this.recetaForm.get('tieneSeguro')?.disable();
               console.error(
                 'No se encontró ningún usuario con el email:',
                 email
@@ -758,10 +775,16 @@ export class RecipesPage implements OnInit {
             }
           },
           error: (error) => {
-            console.error('Error al obtener información de usuarios:', error);
+            // En caso de error, deshabilitamos la opción de seguro
+            this.tienePolicaDisponible = false;
+            this.recetaForm.get('tieneSeguro')?.disable();
+            console.error('Error al obtener información del usuario:', error);
           },
         });
     } catch (error) {
+      // En caso de error, deshabilitamos la opción de seguro
+      this.tienePolicaDisponible = false;
+      this.recetaForm.get('tieneSeguro')?.disable();
       console.error('Error al verificar póliza del usuario:', error);
     }
   }
@@ -796,57 +819,68 @@ export class RecipesPage implements OnInit {
         emailPaciente
       );
 
-      // Consultar la API para obtener información de todos los usuarios
+      // Consultar la API para obtener información del usuario por su email
       this.http
-        .get<any[]>(`http://192.168.0.11:8080/api/users/by-email`)
+        .get<any>(`http://192.168.0.20:8080/api/users/by-email/${encodeURIComponent(emailPaciente)}`)
         .subscribe({
-          next: (response: any[]) => {
-            // Buscar el usuario por su correo electrónico
-            const usuarioEncontrado = response.find(
-              (user) => user.email === emailPaciente
-            );
-
-            if (usuarioEncontrado) {
+          next: (response: any) => {
+            if (response) {
               console.log(
                 'Usuario encontrado en API externa:',
-                usuarioEncontrado
+                response
               );
 
               // Verificar si el usuario tiene póliza
-              if (usuarioEncontrado.policy) {
+              if (response.policy) {
                 // Automáticamente marcar que tiene seguro y poner el número de póliza
+                this.tienePolicaDisponible = true;
+                // Habilitamos el control tieneSeguro si estaba deshabilitado
+                this.recetaForm.get('tieneSeguro')?.enable();
                 this.recetaForm.patchValue({
                   tieneSeguro: true,
-                  codigoSeguro: usuarioEncontrado.policy.idPolicy.toString(),
+                  codigoSeguro: response.policy.idPolicy.toString(),
                 });
                 console.log(
                   'Paciente tiene póliza, ID:',
-                  usuarioEncontrado.policy.idPolicy
+                  response.policy.idPolicy
                 );
               } else {
-                // Si no tiene póliza, desmarcamos la casilla
+                // Si no tiene póliza, desmarcamos la casilla y deshabilitamos la opción
+                this.tienePolicaDisponible = false;
                 this.recetaForm.patchValue({
                   tieneSeguro: false,
                   codigoSeguro: '',
                 });
+                // Deshabilitar el control de tieneSeguro
+                this.recetaForm.get('tieneSeguro')?.disable();
                 console.log('Paciente no tiene póliza');
               }
             } else {
-              console.error(
-                'No se encontró ningún usuario con el email:',
-                emailPaciente
-              );
+              // No se encontró el usuario, deshabilitamos la opción de seguro
+              this.tienePolicaDisponible = false;
               this.recetaForm.patchValue({
                 tieneSeguro: false,
                 codigoSeguro: '',
               });
+              // Deshabilitar el control de tieneSeguro
+              this.recetaForm.get('tieneSeguro')?.disable();
+              console.error(
+                'No se encontró ningún usuario con el email:',
+                emailPaciente
+              );
             }
           },
           error: (error) => {
+            // En caso de error, deshabilitamos la opción de seguro
+            this.tienePolicaDisponible = false;
+            this.recetaForm.get('tieneSeguro')?.disable();
             console.error('Error al obtener información de usuarios:', error);
           },
         });
     } catch (error) {
+      // En caso de error, deshabilitamos la opción de seguro
+      this.tienePolicaDisponible = false;
+      this.recetaForm.get('tieneSeguro')?.disable();
       console.error('Error al verificar póliza del paciente:', error);
     }
   }
