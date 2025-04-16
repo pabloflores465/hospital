@@ -32,6 +32,7 @@ import { HospitalMisionComponent } from './mission/mission';
 import { HospitalVisionComponent } from './vision/vision';
 import { AuditComponent } from './audit/audit';
 import { ModerationComponent } from './moderation/moderation';
+import { DoctorReportsComponent } from './doctor-reports/doctor-reports.component';
 
 export const routes: Routes = [
   {
@@ -53,6 +54,7 @@ export const routes: Routes = [
       { path: 'login', component: LoginComponent },
       { path: 'signup', component: SignupComponent },
       { path: 'validate', component: ValidateUserComponent },
+      { path: 'doctor-reports', redirectTo: 'doctor/doctor-reports', pathMatch: 'full' },
       {
         path: 'admin/users',
         component: AdminUsersComponent,
@@ -91,6 +93,7 @@ export const routes: Routes = [
           { path: 'prescriptions', component: PrescriptionsComponent },
           { path: 'prescriptions/new', component: AddPrescriptionComponent },
           { path: 'recipes', component: RecipesPage },
+          { path: 'doctor-reports', component: DoctorReportsComponent },
         ],
       },
       {

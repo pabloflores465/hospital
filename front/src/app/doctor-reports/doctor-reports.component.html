@@ -1,0 +1,132 @@
+<div class="report-container">
+  <h2 class="title">Reporte de Consultas</h2>
+  
+  <!-- Filtros -->
+  <div class="filters-container">
+    <div class="filter-group">
+      <label for="startDate">Fecha Inicio:</label>
+      <input 
+        type="date" 
+        id="startDate" 
+        [(ngModel)]="startDate" 
+        [max]="maxDate"
+        required
+      >
+    </div>
+    
+    <div class="filter-group">
+      <label for="endDate">Fecha Fin:</label>
+      <input 
+        type="date" 
+        id="endDate" 
+        [(ngModel)]="endDate" 
+        [max]="maxDate"
+        required
+      >
+    </div>
+    
+    <div class="filter-group">
+      <label for="reportType">Tipo de Reporte:</label>
+      <select id="reportType" [(ngModel)]="reportType">
+        <option value="grouped">Agrupado por día</option>
+        <option value="individual">Listado individual</option>
+      </select>
+    </div>
+    
+    <button class="generate-btn" (click)="generateReport()" [disabled]="loading">
+      {{ loading ? 'Generando...' : 'Generar Reporte' }}
+    </button>
+  </div>
+  
+  <!-- Mensaje de error -->
+  <div class="error-message" *ngIf="error">
+    {{ error }}
+  </div>
+  
+  <!-- Resultados del reporte -->
+  <div class="report-results" *ngIf="!loading && !error && (groupedData.length > 0 || individualData.length > 0)">
+    <div class="report-header">
+      <h3>Reporte de Consultas: {{ formatDateDisplay(startDate) }} - {{ formatDateDisplay(endDate) }}</h3>
+      <p *ngIf="doctorInfo">Doctor: {{ doctorInfo.name }} ({{ doctorInfo.specialty }})</p>
+    </div>
+    
+    <!-- Tabla para reporte agrupado -->
+    <table class="report-table" *ngIf="reportType === 'grouped' && groupedData.length > 0">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Total Consultas</th>
+          <th>Pagos por Seguro</th>
+          <th>Pagos Directos</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of groupedData">
+          <td>{{ formatDateDisplay(item.date) }}</td>
+          <td>{{ item.total_appointments }}</td>
+          <td>{{ formatCurrency(item.insurance_payment_total) }}</td>
+          <td>{{ formatCurrency(item.direct_payment_total) }}</td>
+        </tr>
+      </tbody>
+      <tfoot *ngIf="summary">
+        <tr>
+          <th>Total</th>
+          <th>{{ summary.total_appointments }}</th>
+          <th>{{ formatCurrency(summary.total_insurance_payment) }}</th>
+          <th>{{ formatCurrency(summary.total_direct_payment) }}</th>
+        </tr>
+      </tfoot>
+    </table>
+    
+    <!-- Tabla para reporte individual -->
+    <table class="report-table" *ngIf="reportType === 'individual' && individualData.length > 0">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Hora</th>
+          <th>Paciente</th>
+          <th>Tipo de Pago</th>
+          <th>Monto</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of individualData">
+          <td>{{ formatDateDisplay(item.date) }}</td>
+          <td>{{ item.time }}</td>
+          <td>{{ item.patient.name }}</td>
+          <td>{{ item.payment_type === 'insurance' ? 'Seguro' : 'Directo' }}</td>
+          <td>{{ formatCurrency(item.amount) }}</td>
+        </tr>
+      </tbody>
+      <tfoot *ngIf="summary">
+        <tr>
+          <th colspan="4">Total</th>
+          <th>{{ formatCurrency(summary.total_insurance_payment + summary.total_direct_payment) }}</th>
+        </tr>
+      </tfoot>
+    </table>
+    
+    <!-- Resumen -->
+    <div class="summary-container" *ngIf="summary">
+      <h4>Resumen</h4>
+      <p>Total de consultas: {{ summary.total_appointments }}</p>
+      <p>Total pagos por seguro: {{ formatCurrency(summary.total_insurance_payment) }}</p>
+      <p>Total pagos directos: {{ formatCurrency(summary.total_direct_payment) }}</p>
+      <p>Total general: {{ formatCurrency(summary.total_insurance_payment + summary.total_direct_payment) }}</p>
+    </div>
+  </div>
+  
+  <!-- Mensaje de carga -->
+  <div class="loading-message" *ngIf="loading">
+    <p>Generando reporte, por favor espere...</p>
+  </div>
+  
+  <!-- Mensaje cuando no hay datos -->
+  <div class="no-data-message" *ngIf="!loading && !error && reportType === 'grouped' && groupedData.length === 0">
+    <p>No se encontraron consultas para el período seleccionado.</p>
+  </div>
+  
+  <div class="no-data-message" *ngIf="!loading && !error && reportType === 'individual' && individualData.length === 0">
+    <p>No se encontraron consultas para el período seleccionado.</p>
+  </div>
+</div>

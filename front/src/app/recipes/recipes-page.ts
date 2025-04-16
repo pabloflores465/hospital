@@ -821,7 +821,7 @@ export class RecipesPage implements OnInit {
 
       // Consultar la API para obtener información del usuario por su email
       this.http
-        .get<any>(`http://192.168.0.20:8080/api/users/by-email/${encodeURIComponent(emailPaciente)}`)
+        .get<any>(`http://172.20.10.3:8080/api/users/by-email/${encodeURIComponent(emailPaciente)}`)
         .subscribe({
           next: (response: any) => {
             if (response) {

@@ -153,6 +153,8 @@ from .myfunctions.moderation import clear_history, get_changes
 
 from .myfunctions.audit import get_all_changes
 
+from .myfunctions.reports import doctor_appointments_report
+
 # from myproject.views import SendEmailAPIView
 
 
@@ -288,4 +290,5 @@ urlpatterns = [
     path("moderation/clear/<page_id>", clear_history),
     path("moderation/", get_changes),
     path("audit", get_all_changes),
+    path("api/reports/doctor-appointments", doctor_appointments_report, name="doctor_appointments_report"),
 ]
