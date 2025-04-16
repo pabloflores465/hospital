@@ -1,7 +1,7 @@
 {
   "mongo_uri": "mongodb+srv://admin:123@cluster0.iuspf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
   "database_name": "hospital_db",
-  "back_port": 5052,
-  "front_port": 5053,
-  "api_url": "http://0.0.0.0:5052"
+  "back_port": 5050,
+  "front_port": 5051,
+  "api_url": "http://0.0.0.0:5050"
 }

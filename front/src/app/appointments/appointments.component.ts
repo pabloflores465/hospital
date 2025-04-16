@@ -331,14 +331,55 @@ export class AppointmentsComponent implements OnInit {
 
   async loadAppointments(): Promise<void> {
     const url = await back_url();
-    this.http
-      .get<{ appointments: any[] }>(`${url}/api/appointments/`)
-      .subscribe((r) => {
-        const all = r.appointments || [];
-        console.log('Loaded appointments (raw):', all);
-        this.appointments = all;
-        console.log('Filtered appointments:', this.appointments);
-      });
+    
+    // Si el usuario es un doctor, cargar citas usando su email desde localStorage
+    if (this.role === 'doctor') {
+      try {
+        // Obtener datos del localStorage y parsearlo correctamente
+        const userDataString = localStorage.getItem('hospital_user');
+        let doctorEmail = '';
+        
+        if (userDataString) {
+          const userData = JSON.parse(userDataString);
+          doctorEmail = userData.email;
+          console.log('Doctor email from localStorage:', doctorEmail);
+        }
+        
+        // Usar el email si existe, de lo contrario usar el ID
+        const doctorIdentifier = doctorEmail || this.currentUserId;
+        
+        if (doctorIdentifier) {
+          console.log('Requesting appointments for doctor:', doctorIdentifier);
+          this.http
+            .get<{ appointments: any[] }>(`${url}/api/appointments/doctor/${doctorIdentifier}/`)
+            .subscribe((r) => {
+              const all = r.appointments || [];
+              console.log('Loaded doctor appointments (raw):', all);
+              this.appointments = all;
+              console.log('Filtered doctor appointments:', this.appointments);
+            }, (error) => {
+              console.error('Error loading doctor appointments:', error);
+              this.appointments = [];
+            });
+        } else {
+          console.error('No doctor identifier available');
+          this.appointments = [];
+        }
+      } catch (error) {
+        console.error('Error processing user data from localStorage:', error);
+        this.appointments = [];
+      }
+    } else {
+      // Para pacientes u otros roles, cargar todas las citas
+      this.http
+        .get<{ appointments: any[] }>(`${url}/api/appointments/`)
+        .subscribe((r) => {
+          const all = r.appointments || [];
+          console.log('Loaded appointments (raw):', all);
+          this.appointments = all;
+          console.log('Filtered appointments:', this.appointments);
+        });
+    }
   }
 
   isSlotTaken(day: Date, time: string): boolean {

@@ -65,7 +65,7 @@ from .myfunctions.recipes import (
 from .myfunctions.services import get_all_services
 from .myfunctions.doctors import get_doctors, get_doctor_count
 from .myfunctions.patients import get_patient_count, get_users
-from .myfunctions.appointments import get_appointments
+from .myfunctions.appointments import get_appointments, get_appointments_by_doctor_identifier
 from myproject.myfunctions.users import get_current_doctor
 from myproject.myfunctions.medicines import get_principios_activos
 from .myfunctions.comments import get_comments
@@ -229,6 +229,7 @@ urlpatterns = [
     path("api/subcategories/<str:subcategory_id>/delete/", delete_subcategory),
     path("footer/", get_footer),
     path("patient/services/", get_patient_services),
+    path("api/appointments/doctor/<str:doctor_identifier>/", get_appointments_by_doctor_identifier, name="get_appointments_by_doctor_identifier"),
     path("api/appointments/", list_appointments),
     path("api/appointments/create/", create_appointment),
     path("api/appointments/<str:appointment_id>/update/", update_appointment),
