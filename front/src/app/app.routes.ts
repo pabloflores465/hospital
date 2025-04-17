@@ -56,7 +56,12 @@ export const routes: Routes = [
       { path: 'login', component: LoginComponent },
       { path: 'signup', component: SignupComponent },
       { path: 'validate', component: ValidateUserComponent },
-      { path: 'doctor-reports', redirectTo: 'doctor/doctor-reports', pathMatch: 'full' },
+      { 
+        path: 'doctor-reports', 
+        component: DoctorReportsComponent,
+        canActivate: [authGuard],
+        data: { roles: ['doctor', 'admin'] }
+      },
       { 
         path: 'dashboard/reports', 
         component: DoctorReportsComponent,
@@ -111,6 +116,7 @@ export const routes: Routes = [
               { path: '', redirectTo: 'agenda', pathMatch: 'full' },
               { path: 'agenda', component: DoctorAgendaComponent },
               { path: 'patient-history', component: PatientHistoryComponent },
+              { path: 'reports', component: DoctorReportsComponent }
             ],
           },
           { path: 'agenda', component: DoctorAgendaComponent },

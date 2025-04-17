@@ -155,6 +155,7 @@ from .myfunctions.audit import get_all_changes
 
 from .myfunctions.reports import doctor_appointments_report, medicines_report, rejected_users_report
 from .myfunctions.user_data_export import export_user_data, import_user_data
+from .myfunctions.doctors_api import list_doctors
 
 # from myproject.views import SendEmailAPIView
 
@@ -297,4 +298,5 @@ urlpatterns = [
     path("api/reports/rejected-users", rejected_users_report),
     path("api/users/export", export_user_data, name="export_user_data"),
     path("api/users/import", import_user_data, name="import_user_data"),
+    path("api/doctors/list", list_doctors, name="list_doctors"),
 ]

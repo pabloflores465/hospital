@@ -8,8 +8,45 @@
 
   <h2 class="title">Reporte de Consultas</h2>
   
+  <!-- Indicador para administradores -->
+  <div *ngIf="isAdmin" class="admin-indicator">
+    <div class="admin-badge">
+      <i class="fas fa-user-shield"></i> Acceso de Administrador
+    </div>
+    <p class="admin-note">Estás viendo el reporte como administrador. Puedes seleccionar cualquier doctor del sistema.</p>
+  </div>
+  
   <!-- Filtros -->
   <div class="filters-container">
+    <!-- Selector de doctor (solo para administradores) -->
+    <div class="filter-group" *ngIf="isAdmin">
+      <label for="doctorSelect">Doctor:</label>
+      <select 
+        id="doctorSelect" 
+        [(ngModel)]="selectedDoctorId" 
+        (change)="onDoctorChange()"
+        [disabled]="loading || loadingDoctors"
+        required
+      >
+        <option value="" disabled selected>Seleccione un doctor</option>
+        <option *ngFor="let doctor of doctors" [value]="doctor._id">
+          {{ doctor.username }} {{ doctor.especialidad ? '(' + doctor.especialidad + ')' : '' }}
+        </option>
+      </select>
+      <div *ngIf="loadingDoctors" class="loading-indicator">
+        Cargando doctores...
+      </div>
+      <div *ngIf="doctors && doctors.length === 0 && !loadingDoctors" class="error-indicator">
+        No se encontraron doctores en el sistema. El reporte no puede generarse.
+      </div>
+      <div *ngIf="error && error.includes('doctores')" class="error-indicator">
+        {{ error }}
+        <button (click)="loadDoctors()" class="retry-btn">
+          Intentar nuevamente
+        </button>
+      </div>
+    </div>
+    
     <div class="filter-group">
       <label for="startDate">Fecha Inicio:</label>
       <input 
@@ -17,6 +54,7 @@
         id="startDate" 
         [(ngModel)]="startDate" 
         [max]="maxDate"
+        [disabled]="loading"
         required
       >
     </div>
@@ -28,19 +66,20 @@
         id="endDate" 
         [(ngModel)]="endDate" 
         [max]="maxDate"
+        [disabled]="loading"
         required
       >
     </div>
     
     <div class="filter-group">
       <label for="reportType">Tipo de Reporte:</label>
-      <select id="reportType" [(ngModel)]="reportType">
+      <select id="reportType" [(ngModel)]="reportType" [disabled]="loading">
         <option value="grouped">Agrupado por día</option>
         <option value="individual">Listado individual</option>
       </select>
     </div>
     
-    <button class="generate-btn" (click)="generateReport()" [disabled]="loading">
+    <button class="generate-btn" (click)="generateReport()" [disabled]="loading || !isFormValid()">
       {{ loading ? 'Generando...' : 'Generar Reporte' }}
     </button>
   </div>
@@ -54,7 +93,7 @@
   <div class="report-results" *ngIf="!loading && !error && (groupedData.length > 0 || individualData.length > 0)">
     <div class="report-header">
       <h3>Reporte de Consultas: {{ formatDateDisplay(startDate) }} - {{ formatDateDisplay(endDate) }}</h3>
-      <p *ngIf="doctorInfo">Doctor: {{ doctorInfo.name }} ({{ doctorInfo.specialty }})</p>
+      <p *ngIf="doctorInfo">Doctor: {{ doctorInfo.name }} {{ doctorInfo.specialty ? '(' + doctorInfo.specialty + ')' : '' }}</p>
     </div>
     
     <!-- Tabla para reporte agrupado -->

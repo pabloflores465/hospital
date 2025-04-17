@@ -38,6 +38,14 @@ interface IndividualAppointment {
   amount: number;
 }
 
+interface Doctor {
+  _id: string;
+  username: string;
+  email: string;
+  rol: string;
+  especialidad?: string;
+}
+
 @Component({
   selector: 'app-doctor-reports',
   standalone: true,
@@ -62,6 +70,12 @@ export class DoctorReportsComponent implements OnInit {
   // Control de fecha máxima (hoy)
   maxDate: string = '';
 
+  // Datos para administradores
+  isAdmin: boolean = false;
+  selectedDoctorId: string = '';
+  doctors: Doctor[] = [];
+  loadingDoctors: boolean = false;
+
   constructor(
     private http: HttpClient,
     private userService: UserService
@@ -77,8 +91,64 @@ export class DoctorReportsComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Cargar los datos iniciales
-    this.generateReport();
+    const currentUser = this.userService.getUser();
+    console.log('Usuario actual:', currentUser);
+    
+    // Verificar si el usuario es administrador
+    this.isAdmin = currentUser && currentUser.rol === 'admin' ? true : false;
+    console.log('Es administrador:', this.isAdmin);
+    
+    // Si es doctor, establecer su ID como seleccionado
+    if (currentUser && currentUser.rol === 'doctor') {
+      this.selectedDoctorId = currentUser._id;
+      console.log('ID de doctor seleccionado:', this.selectedDoctorId);
+    }
+    
+    // Si es administrador, cargar la lista de doctores
+    if (this.isAdmin) {
+      console.log('Cargando doctores para administrador...');
+      this.loadDoctors();
+    } else {
+      // Cargar los datos iniciales para doctores
+      console.log('Generando reporte para doctor...');
+      this.generateReport();
+    }
+  }
+
+  async loadDoctors(): Promise<void> {
+    this.loadingDoctors = true;
+    this.error = null;
+    
+    try {
+      const url = await back_url();
+      // Usar la API de usuarios existente en lugar de /api/doctors/list
+      this.http.get<any>(`${url}/users`).subscribe({
+        next: (res) => {
+          // Filtrar usuarios con rol "doctor" del resultado
+          this.doctors = res.users.filter((user: any) => user.rol === 'doctor');
+          
+          // Si hay doctores, seleccionar el primero por defecto
+          if (this.doctors && this.doctors.length > 0) {
+            this.selectedDoctorId = this.doctors[0]._id;
+            this.generateReport();
+          } else {
+            this.error = 'No se encontraron doctores en el sistema.';
+          }
+          
+          this.loadingDoctors = false;
+        },
+        error: (err) => {
+          console.error('Error al cargar doctores:', err);
+          this.error = 'Error al cargar la lista de doctores: ' + 
+                      (err.error?.error || err.message || 'Error desconocido');
+          this.loadingDoctors = false;
+        }
+      });
+    } catch (err: any) {
+      console.error('Error en loadDoctors:', err);
+      this.error = 'Error al cargar doctores: ' + err.message;
+      this.loadingDoctors = false;
+    }
   }
 
   formatDate(date: Date): string {
@@ -100,35 +170,59 @@ export class DoctorReportsComponent implements OnInit {
   }
 
   isFormValid(): boolean {
+    // Para administradores, verificar que haya seleccionado un doctor
+    if (this.isAdmin && !this.selectedDoctorId) {
+      return false;
+    }
+    
     return !!this.startDate && !!this.endDate && this.startDate <= this.endDate;
   }
 
   async generateReport(): Promise<void> {
     if (!this.isFormValid()) {
-      this.error = 'Por favor complete todos los campos.';
+      this.error = this.isAdmin && !this.selectedDoctorId 
+                ? 'Por favor seleccione un doctor.'
+                : 'Por favor complete todos los campos.';
       return;
     }
 
     const currentUser = this.userService.getUser();
-    if (!currentUser || currentUser.rol !== 'doctor') {
-      this.error = 'Solo los doctores pueden ver este reporte.';
+    if (!currentUser || (currentUser.rol !== 'doctor' && currentUser.rol !== 'admin')) {
+      this.error = 'Solo los doctores y administradores pueden ver este reporte.';
       return;
     }
 
     this.loading = true;
     this.error = null;
+    this.groupedData = [];
+    this.individualData = [];
+    this.summary = null;
 
     try {
       const url = await back_url();
+      console.log('URL base:', url);
+      
+      // Determinar qué ID de doctor usar
+      const doctorIdToUse = this.isAdmin ? this.selectedDoctorId : currentUser._id;
+      console.log('Generando reporte para doctor ID:', doctorIdToUse);
+      
+      // Asegurar que tengamos un ID de doctor válido
+      if (!doctorIdToUse) {
+        this.error = 'Error: No se pudo determinar el ID del doctor para el reporte.';
+        this.loading = false;
+        return;
+      }
+      
       this.http.get(`${url}/api/reports/doctor-appointments`, {
         params: {
-          doctor_id: currentUser._id,
+          doctor_id: doctorIdToUse,
           start_date: this.startDate,
           end_date: this.endDate,
           report_type: this.reportType
         }
       }).subscribe({
         next: (response: any) => {
+          console.log('Respuesta del reporte:', response);
           this.doctorInfo = response.doctor;
           this.summary = response.summary;
           
@@ -143,13 +237,27 @@ export class DoctorReportsComponent implements OnInit {
           this.loading = false;
         },
         error: (err) => {
+          console.error('Error obteniendo el reporte:', err);
           this.error = 'Error al cargar el reporte: ' + (err.error?.error || err.message || 'Error desconocido');
           this.loading = false;
         }
       });
     } catch (err: any) {
+      console.error('Error general:', err);
       this.error = 'Error al generar el reporte: ' + err.message;
       this.loading = false;
+    }
+  }
+
+  onDoctorChange(): void {
+    // Limpiar datos actuales y generar nuevo reporte
+    this.groupedData = [];
+    this.individualData = [];
+    this.summary = null;
+    this.error = null;
+    
+    if (this.selectedDoctorId) {
+      this.generateReport();
     }
   }
 }

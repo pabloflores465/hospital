@@ -58,6 +58,7 @@
   flex-direction: column;
   min-width: 200px;
   flex: 1;
+  margin-bottom: 1rem;
 }
 
 .filter-group label {
@@ -215,4 +216,75 @@
     display: block;
     overflow-x: auto;
   }
+}
+
+.loading-indicator {
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0.25rem;
+  font-style: italic;
+}
+
+/* Estilos para el selector de doctores */
+select {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 100%;
+}
+
+select:disabled {
+  background-color: #f2f2f2;
+  cursor: not-allowed;
+}
+
+/* Estilos para el indicador de administrador */
+.admin-indicator {
+  margin-bottom: 1.5rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 1rem;
+  border-left: 4px solid #ffc107;
+}
+
+.admin-badge {
+  display: inline-block;
+  background-color: #ffc107;
+  color: #212529;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.admin-note {
+  margin: 0;
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.error-indicator {
+  font-size: 0.9rem;
+  color: #dc3545;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: #f8d7da;
+  border-radius: 4px;
+  border: 1px solid #f5c6cb;
+}
+
+.retry-btn {
+  display: block;
+  margin-top: 0.5rem;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.retry-btn:hover {
+  background-color: #c82333;
 }
