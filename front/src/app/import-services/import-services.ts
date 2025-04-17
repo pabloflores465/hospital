@@ -60,6 +60,7 @@ interface Subcategory {
             <p><strong>Copago:</strong> {{ service.copay }}</p>
             <p><strong>Pago:</strong> {{ service.pay }}</p>
             <p><strong>Total:</strong> {{ service.total }}</p>
+            <p><strong>ID:</strong> {{ service._id }}</p>
             <button
               (click)="onEditService(service)"
               class="text-blue-600 mr-2 mt-2"
@@ -223,6 +224,7 @@ interface Subcategory {
               <strong>Descripción de Cobertura:</strong>
               {{ ensurance.coverageDescription }}
             </p>
+            <p><strong>ID:</strong> {{ ensurance._id }}</p>
             <button
               (click)="onEditEnsurance(ensurance)"
               class="text-blue-600 mr-2 mt-2"
@@ -451,6 +453,18 @@ interface Subcategory {
         <h2 class="text-xl font-semibold mb-3">
           Importar Catálogo de Aseguradora
         </h2>
+        
+        <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded">
+          <h3 class="font-medium text-blue-800 mb-2">Guía para importar servicios</h3>
+          <ol class="list-decimal ml-5 text-sm text-blue-800">
+            <li class="mb-1">Selecciona un archivo JSON con la estructura correcta</li>
+            <li class="mb-1">Cada servicio debe tener service_id, ensurance_id, description y cost</li>
+            <li class="mb-1">Opcionalmente, puedes incluir campos como name, category, subcategory, copay, pay y total para crear un servicio completo</li>
+            <li class="mb-1">Los IDs pueden ser nuevos o existentes en la base de datos</li>
+            <li class="mb-1">Ideal para importar datos desde otros sistemas o restaurar datos borrados</li>
+          </ol>
+        </div>
+        
         <input
           type="file"
           (change)="onFileSelected($event)"
@@ -459,13 +473,38 @@ interface Subcategory {
         />
         <button
           (click)="importCatalog()"
-          class="bg-blue-600 text-white px-4 py-2 rounded"
+          [disabled]="!fileData" 
+          class="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Importar
         </button>
-        <div *ngIf="result" class="mt-4 bg-green-100 p-4 rounded">
-          <p><strong>Servicios creados:</strong> {{ result.created }}</p>
-          <p><strong>Servicios actualizados:</strong> {{ result.updated }}</p>
+        
+        <!-- Mostrar resultados -->
+        <div *ngIf="result && (result.created > 0 || result.updated > 0 || (result.services_created && result.services_created > 0))" class="mt-4 bg-green-100 p-4 rounded">
+          <p><strong>Servicios creados:</strong> {{ result.services_created ?? 0 }}</p>
+          <p><strong>Relaciones creadas:</strong> {{ result.created }}</p>
+          <p><strong>Relaciones actualizadas:</strong> {{ result.updated }}</p>
+        </div>
+        
+        <!-- Mostrar errores detallados -->
+        <div *ngIf="result && result.errors && result.errors > 0" class="mt-4 bg-yellow-50 border border-yellow-200 p-4 rounded">
+          <h4 class="font-medium text-yellow-800 mb-2">Se encontraron {{ result.errors }} errores:</h4>
+          <ul class="list-disc ml-5 text-sm">
+            <li *ngFor="let error of result.error_details" class="text-yellow-800 mb-1">
+              {{ error }}
+            </li>
+          </ul>
+        </div>
+        
+        <!-- Mostrar error de importación de catálogo -->
+        <div *ngIf="importCatalogError" class="mt-3 text-red-600">
+          {{ importCatalogError }}
+        </div>
+        
+        <!-- Ejemplos de formato -->
+        <div class="mt-4 p-4 bg-gray-50 border border-gray-200 rounded">
+          <h4 class="font-medium mb-2">Ejemplo de formato JSON correcto:</h4>
+          <pre class="text-xs bg-gray-100 p-2 rounded overflow-auto max-h-40">{{ exampleJson }}</pre>
         </div>
       </div>
 
@@ -610,8 +649,46 @@ export class ImportServicesPage implements OnInit {
   categories: Category[] = [];
   subcategories: Subcategory[] = [];
   fileData: any;
-  result: { created: number; updated: number } = { created: 0, updated: 0 };
-
+  result: { 
+    created: number; 
+    updated: number; 
+    errors?: number;
+    error_details?: string[];
+    services_created?: number;
+  } | null = null;
+  
+  // Guía de importación
+  importGuide: string = `
+    <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded">
+      <h3 class="font-medium text-blue-800 mb-2">Guía para importar servicios</h3>
+      <ol class="list-decimal ml-5 text-sm text-blue-800">
+        <li class="mb-1">Selecciona un archivo JSON con la estructura correcta</li>
+        <li class="mb-1">Cada servicio debe tener service_id, ensurance_id, description y cost</li>
+        <li class="mb-1">Opcionalmente, puedes incluir campos como name, category, subcategory, copay, pay y total para crear un servicio completo</li>
+        <li class="mb-1">Los IDs pueden ser nuevos o existentes en la base de datos</li>
+        <li class="mb-1">Ideal para importar datos desde otros sistemas o restaurar datos borrados</li>
+      </ol>
+    </div>
+  `;
+  
+  // Ejemplo JSON
+  exampleJson: string = `{
+  "services": [
+    {
+      "service_id": "ID_DEL_SERVICIO",
+      "ensurance_id": "ID_DE_LA_ASEGURADORA",
+      "name": "Nombre del servicio",
+      "category": "ID_DE_CATEGORÍA",
+      "subcategory": "ID_DE_SUBCATEGORÍA",
+      "copay": 10.50,
+      "pay": 15.00,
+      "total": 25.50,
+      "description": "Descripción del servicio con esta aseguradora",
+      "cost": 25.50
+    }
+  ]
+}`;
+  
   // Formularios para crear
   serviceForm: FormGroup;
   ensuranceForm: FormGroup;
@@ -639,6 +716,9 @@ export class ImportServicesPage implements OnInit {
   userDataFile: File | null = null;
   importResult: any = null;
   importError: string = '';
+  
+  // Error para importación de catálogo
+  importCatalogError: string = '';
 
   constructor(private http: HttpClient) {
     // Formulario para crear servicio
@@ -924,34 +1004,77 @@ export class ImportServicesPage implements OnInit {
 
   // Importar catálogo
   onFileSelected(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        this.fileData = JSON.parse(reader.result as string);
-      } catch {
-        alert('El archivo no es un JSON válido');
-      }
-    };
-    reader.readAsText(file);
+    const element = event.target as HTMLInputElement;
+    if (element.files && element.files.length > 0) {
+      const file = element.files[0];
+      const reader = new FileReader();
+      
+      // Resetear errores y resultados anteriores
+      this.fileData = null;
+      this.result = null;
+      this.importCatalogError = ''; 
+
+      reader.onload = (e: ProgressEvent<FileReader>) => {
+        try {
+          this.fileData = JSON.parse(e.target?.result as string);
+          console.log('File data parsed:', this.fileData);
+        } catch (error) {
+          console.error('Error parsing JSON file:', error);
+          this.importCatalogError = 'Error al leer el archivo JSON. Asegúrate de que el formato sea correcto.';
+        }
+      };
+
+      reader.onerror = (error) => {
+        console.error('Error reading file:', error);
+        this.importCatalogError = 'Error al leer el archivo.';
+      };
+
+      reader.readAsText(file);
+    }
   }
+
   async importCatalog(): Promise<void> {
-    if (!this.fileData?.services) {
-      alert('Selecciona un archivo JSON válido con el campo "services"');
+    if (!this.fileData) {
+      this.importCatalogError = 'No se ha seleccionado ningún archivo o el archivo está vacío.';
       return;
     }
-    const url = await back_url();
-    this.http
-      .post<{ created: number; updated: number }>(
-        `${url}/api/services_ensurance/import/`,
-        this.fileData
-      )
-      .subscribe({
-        next: (res) => (this.result = res),
-        error: (err) =>
-          alert('Error importando: ' + (err.error?.error || err.message)),
-      });
+    
+    this.importCatalogError = ''; // Limpiar error previo
+    this.result = null; // Limpiar resultado previo
+
+    try {
+      const url = await back_url();
+      this.http
+        .post<any>(
+          `${url}/api/services_ensurance/import/`,
+          this.fileData
+        )
+        .subscribe({
+          next: (res) => {
+            this.result = res;
+            console.log('Import result:', res);
+            
+            // Solo limpiar los datos si no hay errores o si hay algunos éxitos
+            if (!res.errors || res.created > 0 || res.updated > 0) {
+              this.fileData = null; // Limpiar datos del archivo después de importar
+              
+              // Resetear el campo de archivo si es posible
+              const fileInput = document.querySelector('input[type="file"][accept=".json"]') as HTMLInputElement;
+              if (fileInput) {
+                fileInput.value = ''; 
+              }
+            }
+          },
+          error: (err) => {
+            console.error('Error importing catalog:', err);
+            this.result = null;
+            this.importCatalogError = err.error?.error || 'Error al importar el catálogo. Verifica los IDs y el formato del archivo.';
+          },
+        });
+    } catch (error) {
+      console.error('Error during import setup:', error);
+      this.importCatalogError = 'Error inesperado durante la configuración de la importación.';
+    }
   }
 
   onUserDataFileSelected(event: Event): void {

@@ -1,0 +1,16 @@
+{
+    "services": [
+      {
+        "service_id": "67dcbafd246948ea916de000",
+        "ensurance_id": "67ccf23d7075e6925fa2dbaa",
+        "description": "Consulta médica específica",
+        "cost": 25.50
+      },
+      {
+        "service_id": "67dcb5cb246948ea916de000",
+        "ensurance_id": "67ccf23d7075e6925fa2dbaa",
+        "description": "Radiografía de pies",
+        "cost": 45.00
+      }
+    ]
+  }
