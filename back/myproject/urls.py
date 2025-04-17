@@ -65,7 +65,7 @@ from .myfunctions.recipes import (
 from .myfunctions.services import get_all_services
 from .myfunctions.doctors import get_doctors, get_doctor_count
 from .myfunctions.patients import get_patient_count, get_users
-from .myfunctions.appointments import get_appointments, get_appointments_by_doctor_identifier
+from .myfunctions.appointments import get_appointments, get_appointments_by_doctor_identifier, get_appointments_by_patient_identifier
 from myproject.myfunctions.users import get_current_doctor
 from myproject.myfunctions.medicines import get_principios_activos
 from .myfunctions.comments import get_comments
@@ -291,4 +291,5 @@ urlpatterns = [
     path("moderation/", get_changes),
     path("audit", get_all_changes),
     path("api/reports/doctor-appointments", doctor_appointments_report, name="doctor_appointments_report"),
+    path("api/appointments/patient/<str:patient_identifier>/", get_appointments_by_patient_identifier, name="get_appointments_by_patient_identifier"),
 ]

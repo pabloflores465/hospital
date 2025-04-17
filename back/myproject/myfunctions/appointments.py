@@ -153,3 +153,107 @@ def get_appointments_by_doctor_identifier(request, doctor_identifier=None):
             return JsonResponse({"error": str(e), "traceback": traceback.format_exc()}, status=500)
     else:
         return JsonResponse({"error": "Método no permitido"}, status=405)
+
+def get_appointments_by_patient_identifier(request, patient_identifier=None):
+    """
+    Obtiene las citas de un paciente por ID o correo electrónico
+    """
+    if request.method == "GET":
+        try:
+            import traceback
+            print(f"Buscando citas para paciente: {patient_identifier}")
+            
+            # Si no se proporciona identificador, devolver error
+            if not patient_identifier:
+                print("Error: No se proporcionó identificador del paciente")
+                return JsonResponse({"error": "Se requiere ID o email del paciente"}, status=400)
+            
+            # Verificar si el identificador es un email
+            if '@' in patient_identifier:
+                # Buscar paciente por email
+                print(f"Buscando paciente con email: {patient_identifier}")
+                patient = users_collection.find_one({"email": patient_identifier})
+                if not patient:
+                    print(f"Error: No se encontró paciente con email {patient_identifier}")
+                    return JsonResponse({"error": "Paciente no encontrado"}, status=404)
+                patient_id = patient["_id"]
+                print(f"Paciente encontrado con ID: {patient_id}")
+            else:
+                # Usar el identificador como ID
+                try:
+                    patient_id = ObjectId(patient_identifier)
+                    print(f"Usando ID de paciente: {patient_id}")
+                except Exception as e:
+                    print(f"Error al convertir ID: {str(e)}")
+                    return JsonResponse({"error": "ID de paciente inválido"}, status=400)
+            
+            # Obtener citas del paciente
+            print(f"Buscando citas para paciente ID: {patient_id}")
+            appointments = list(appointments_collection.find({"patient": patient_id}))
+            print(f"Encontradas {len(appointments)} citas")
+            
+            # Si no hay citas, intentar buscar por ID como cadena también
+            if len(appointments) == 0:
+                print("No se encontraron citas con ObjectId, intentando con ID como string")
+                patient_id_str = str(patient_id)
+                appointments = list(appointments_collection.find({"patient": patient_id_str}))
+                print(f"Encontradas {len(appointments)} citas usando ID como string")
+            
+            # Formatear respuesta
+            formatted_appointments = []
+            for appointment in appointments:
+                formatted_appointment = {
+                    "_id": str(appointment["_id"]),
+                    "start": appointment.get("start", ""),
+                    "end": appointment.get("end", ""),
+                    "reason": appointment.get("reason", "Sin razón especificada"),
+                    "cost": appointment.get("cost", 0),
+                    "completed": appointment.get("completed", False),
+                    "doctor": {},
+                    "patient": {}
+                }
+                
+                # Obtener datos del doctor
+                if appointment.get("doctor"):
+                    doctor_id_to_use = appointment["doctor"]
+                    if isinstance(doctor_id_to_use, str):
+                        try:
+                            doctor_id_to_use = ObjectId(doctor_id_to_use)
+                        except:
+                            pass
+                    
+                    doctor = users_collection.find_one({"_id": doctor_id_to_use})
+                    if doctor:
+                        formatted_appointment["doctor"] = {
+                            "_id": str(doctor["_id"]),
+                            "name": doctor.get("username", ""),
+                            "email": doctor.get("email", ""),
+                            "speciality": doctor.get("speciality", "")
+                        }
+                
+                # Obtener datos del paciente
+                if appointment.get("patient"):
+                    patient_id_to_use = appointment["patient"]
+                    if isinstance(patient_id_to_use, str):
+                        try:
+                            patient_id_to_use = ObjectId(patient_id_to_use)
+                        except:
+                            pass
+                            
+                    patient = users_collection.find_one({"_id": patient_id_to_use})
+                    if patient:
+                        formatted_appointment["patient"] = {
+                            "_id": str(patient["_id"]),
+                            "name": patient.get("username", ""),
+                            "email": patient.get("email", "")
+                        }
+                
+                formatted_appointments.append(formatted_appointment)
+
+            return JsonResponse(formatted_appointments, status=200, safe=False)
+        except Exception as e:
+            print(f"Error en get_appointments_by_patient_identifier: {str(e)}")
+            traceback.print_exc()
+            return JsonResponse({"error": str(e), "traceback": traceback.format_exc()}, status=500)
+    else:
+        return JsonResponse({"error": "Método no permitido"}, status=405)
