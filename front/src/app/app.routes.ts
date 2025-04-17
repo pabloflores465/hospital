@@ -33,6 +33,8 @@ import { HospitalVisionComponent } from './vision/vision';
 import { AuditComponent } from './audit/audit';
 import { ModerationComponent } from './moderation/moderation';
 import { DoctorReportsComponent } from './doctor-reports/doctor-reports.component';
+import { MedicinesReportComponent } from './medicines-report/medicines-report.component';
+import { RejectedUsersReportComponent } from './rejected-users-report/rejected-users-report.component';
 
 export const routes: Routes = [
   {
@@ -55,6 +57,29 @@ export const routes: Routes = [
       { path: 'signup', component: SignupComponent },
       { path: 'validate', component: ValidateUserComponent },
       { path: 'doctor-reports', redirectTo: 'doctor/doctor-reports', pathMatch: 'full' },
+      { 
+        path: 'dashboard/reports', 
+        component: DoctorReportsComponent,
+        canActivate: [authGuard],
+        data: { roles: ['doctor', 'admin'] }
+      },
+      { 
+        path: 'dashboard/medicines-report', 
+        component: MedicinesReportComponent,
+        canActivate: [authGuard],
+        data: { roles: ['doctor', 'admin'] }
+      },
+      { 
+        path: 'dashboard/rejected-users-report', 
+        component: RejectedUsersReportComponent,
+        canActivate: [authGuard],
+        data: { roles: ['admin'] }
+      },
+      {
+        path: 'rejected-users-report',
+        redirectTo: 'dashboard/rejected-users-report',
+        pathMatch: 'full'
+      },
       {
         path: 'admin/users',
         component: AdminUsersComponent,

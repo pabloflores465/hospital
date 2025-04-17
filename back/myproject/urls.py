@@ -153,7 +153,7 @@ from .myfunctions.moderation import clear_history, get_changes
 
 from .myfunctions.audit import get_all_changes
 
-from .myfunctions.reports import doctor_appointments_report
+from .myfunctions.reports import doctor_appointments_report, medicines_report, rejected_users_report
 
 # from myproject.views import SendEmailAPIView
 
@@ -291,5 +291,10 @@ urlpatterns = [
     path("moderation/", get_changes),
     path("audit", get_all_changes),
     path("api/reports/doctor-appointments", doctor_appointments_report, name="doctor_appointments_report"),
+<<<<<<< HEAD
     path("api/appointments/patient/<str:patient_identifier>/", get_appointments_by_patient_identifier, name="get_appointments_by_patient_identifier"),
+=======
+    path("api/reports/medicines", medicines_report),
+    path("api/reports/rejected-users", rejected_users_report),
+>>>>>>> c57de13 (Agregar nuevos reportes de medicinas y usuarios rechazados en la API, actualizar rutas en el frontend y mejorar la navegación entre reportes en la interfaz de usuario.)
 ]

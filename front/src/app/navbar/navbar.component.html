@@ -16,21 +16,37 @@
               </a>
             }
             @if (userService.getUser()?.rol === "admin"){
-            <a routerLink="/import-services" 
-            class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-blue-600">
-              Importar servicios
-            </a>
-          }
-          @if (userService.getUser()?.rol === "doctor"){
-            <a routerLink="/appointments" 
-            class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-blue-600">
-              Citas
-            </a>
-            <a routerLink="/doctor/doctor-reports" 
-            class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-blue-600">
-              Reportes
-            </a>
-          }
+              <a routerLink="/import-services" 
+                class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-blue-600">
+                Importar servicios
+              </a>
+              <a routerLink="/moderation" 
+                class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-blue-600">
+                Moderación
+              </a>
+              <a routerLink="/audit" 
+                class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-blue-600">
+                Auditoría
+              </a>
+              <a routerLink="/dashboard/reports" 
+                class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-blue-600">
+                Reportes
+              </a>
+              <a routerLink="/dashboard/rejected-users-report" 
+                class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-blue-600">
+                Rechazos
+              </a>
+            }
+            @if (userService.getUser()?.rol === "doctor"){
+              <a routerLink="/appointments" 
+                class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-blue-600">
+                Citas
+              </a>
+              <a routerLink="/dashboard/reports" 
+                class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-900 hover:text-blue-600">
+                Reportes
+              </a>
+            }
           </div>
         }
       </div>

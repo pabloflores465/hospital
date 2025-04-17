@@ -1,0 +1,100 @@
+<div class="report-container">
+  <!-- Menú de navegación de reportes -->
+  <div class="reports-nav">
+    <a routerLink="/dashboard/reports" routerLinkActive="active" class="reports-nav-item">Reporte de Consultas</a>
+    <a routerLink="/dashboard/medicines-report" routerLinkActive="active" class="reports-nav-item">Reporte de Medicinas</a>
+    <a routerLink="/dashboard/rejected-users-report" routerLinkActive="active" class="reports-nav-item">Reporte de Moderación</a>
+  </div>
+
+  <h2 class="title">Reporte de Usuarios con Cambios Rechazados</h2>
+  
+  <!-- Filtros -->
+  <div class="filters-container">
+    <div class="filter-group">
+      <label for="startDate">Fecha Inicio:</label>
+      <input 
+        type="date" 
+        id="startDate" 
+        [(ngModel)]="startDate" 
+        [max]="maxDate"
+        required
+      >
+    </div>
+    
+    <div class="filter-group">
+      <label for="endDate">Fecha Fin:</label>
+      <input 
+        type="date" 
+        id="endDate" 
+        [(ngModel)]="endDate" 
+        [max]="maxDate"
+        required
+      >
+    </div>
+    
+    <div class="filter-group">
+      <label for="limit">Límite de Resultados:</label>
+      <input 
+        type="number" 
+        id="limit" 
+        [(ngModel)]="limit" 
+        min="1" 
+        max="50"
+      >
+    </div>
+    
+    <button class="generate-btn" (click)="generateReport()" [disabled]="loading">
+      {{ loading ? 'Generando...' : 'Generar Reporte' }}
+    </button>
+  </div>
+  
+  <!-- Mensaje de error -->
+  <div class="error-message" *ngIf="error">
+    {{ error }}
+  </div>
+  
+  <!-- Resultados del reporte -->
+  <div class="report-results" *ngIf="!loading && !error && reportData.length > 0">
+    <div class="report-header">
+      <h3>Usuarios con Moderación Rechazada: {{ formatDateDisplay(startDate) }} - {{ formatDateDisplay(endDate) }}</h3>
+      
+      <!-- Indicador de datos de ejemplo -->
+      <div class="example-data-notice" *ngIf="isExampleData">
+        <div class="example-data-badge">DATOS DE EJEMPLO</div>
+        <p>
+          Los datos mostrados son ejemplos y no representan información real de la base de datos.
+          Esto puede deberse a que no existen registros de moderación rechazada en el período seleccionado
+          o a que la estructura de los datos no coincide con la esperada.
+        </p>
+      </div>
+    </div>
+    
+    <!-- Tabla de resultados -->
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th>Ranking</th>
+          <th>Usuario</th>
+          <th>Total de Rechazos</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of reportData">
+          <td>{{ item.rank }}</td>
+          <td>{{ item.username }}</td>
+          <td>{{ item.total_rejections }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- Mensaje de carga -->
+  <div class="loading-message" *ngIf="loading">
+    <p>Generando reporte, por favor espere...</p>
+  </div>
+  
+  <!-- Mensaje cuando no hay datos -->
+  <div class="no-data-message" *ngIf="!loading && !error && reportData.length === 0">
+    <p>No se encontraron usuarios con cambios rechazados en el período seleccionado.</p>
+  </div>
+</div> 

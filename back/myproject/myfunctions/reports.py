@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from datetime import datetime
 from bson import ObjectId
-from .config import appointments_collection, users_collection
+from .config import appointments_collection, users_collection, recipes_collection, medicines_collection, moderation_collection
 import traceback
 
 def doctor_appointments_report(request):
@@ -86,137 +86,120 @@ def doctor_appointments_report(request):
             appointments = list(appointments_collection.find(query_str).sort("start", 1))
             print(f"Encontradas {len(appointments)} citas con ID como string")
         
-        # Enriquecer datos de las citas
-        for appt in appointments:
-            appt["_id"] = str(appt["_id"])
-            
-            # Convertir referencias a ObjectId en strings
-            if isinstance(appt.get("doctor"), ObjectId):
-                appt["doctor"] = str(appt["doctor"])
-                
-            # Obtener datos del paciente
-            patient_data = {"id": "", "name": "Paciente desconocido"}
-            
-            if "patient" in appt:
-                if isinstance(appt["patient"], ObjectId):
-                    patient = users_collection.find_one({"_id": appt["patient"]})
-                    if patient:
-                        patient_data = {
-                            "id": str(patient["_id"]),
-                            "name": patient.get("username", "Paciente desconocido")
-                        }
-                elif isinstance(appt["patient"], str):
-                    try:
-                        patient_obj_id = ObjectId(appt["patient"])
-                        patient = users_collection.find_one({"_id": patient_obj_id})
-                        if patient:
-                            patient_data = {
-                                "id": str(patient["_id"]),
-                                "name": patient.get("username", "Paciente desconocido")
-                            }
-                    except:
-                        patient_data = {"id": appt["patient"], "name": "Paciente desconocido"}
-                
-                # Si patient es un diccionario, extraer datos directamente
-                elif isinstance(appt["patient"], dict):
-                    patient_data = {
-                        "id": str(appt["patient"].get("_id", "")),
-                        "name": appt["patient"].get("username", "Paciente desconocido")
-                    }
-            
-            # Guardar datos del paciente para uso posterior
-            appt["patient_data"] = patient_data
+        # Si aún no hay citas, devolver respuesta vacía
+        if len(appointments) == 0:
+            return JsonResponse({
+                "doctor": doctor_info,
+                "start_date": start_date_str,
+                "end_date": end_date_str,
+                "report_type": report_type,
+                "data": [],
+                "summary": {
+                    "total_appointments": 0,
+                    "total_insurance_payment": 0,
+                    "total_direct_payment": 0
+                }
+            })
         
-        # Generar datos según tipo de reporte
+        # Construir datos del reporte según el tipo
         report_data = []
-        total_appointments = len(appointments)
+        total_appointments = 0
         total_insurance = 0
         total_direct = 0
         
         if report_type == "grouped":
             # Agrupar por día
-            date_groups = {}
-            for appt in appointments:
-                # Asegurarse de que start es un objeto datetime
-                start_date = appt["start"] if isinstance(appt["start"], datetime) else datetime.now()
-                date_str = start_date.strftime("%Y-%m-%d")
+            appointments_by_date = {}
+            
+            for appointment in appointments:
+                # Extraer la fecha (sin hora)
+                appointment_date = appointment["start"].date()
+                date_str = appointment_date.strftime("%Y-%m-%d")
                 
-                if date_str not in date_groups:
-                    date_groups[date_str] = {
+                # Inicializar si es la primera cita de este día
+                if date_str not in appointments_by_date:
+                    appointments_by_date[date_str] = {
                         "date": date_str,
+                        "appointments": [],
                         "total_appointments": 0,
                         "insurance_payment_total": 0,
                         "direct_payment_total": 0
                     }
                 
-                date_groups[date_str]["total_appointments"] += 1
+                # Añadir la cita al grupo
+                appointments_by_date[date_str]["appointments"].append(appointment)
+                appointments_by_date[date_str]["total_appointments"] += 1
                 
-                # Determinar tipo de pago con manejo seguro
-                payment_amount = 0
-                payment_type = "direct"  # por defecto
+                # Procesar información de pago
+                payment_info = appointment.get("payment", {})
+                payment_type = payment_info.get("type", "direct")
+                payment_amount = float(payment_info.get("amount", 0))
                 
-                if "financial_info" in appt and appt["financial_info"]:
-                    financial_info = appt["financial_info"]
-                    if isinstance(financial_info, dict):
-                        payment_method = financial_info.get("payment_method", "").lower()
-                        payment_amount = financial_info.get("cost", 0)
-                        
-                        if "seguro" in payment_method or "insurance" in payment_method:
-                            payment_type = "insurance"
-                            date_groups[date_str]["insurance_payment_total"] += payment_amount
-                            total_insurance += payment_amount
-                        else:
-                            date_groups[date_str]["direct_payment_total"] += payment_amount
-                            total_direct += payment_amount
+                if payment_type == "insurance":
+                    appointments_by_date[date_str]["insurance_payment_total"] += payment_amount
+                    total_insurance += payment_amount
+                else:
+                    appointments_by_date[date_str]["direct_payment_total"] += payment_amount
+                    total_direct += payment_amount
                 
-            # Convertir a lista ordenada por fecha
-            report_data = sorted(date_groups.values(), key=lambda x: x["date"])
+                total_appointments += 1
             
-        else:  # individual
-            for appt in appointments:
-                # Asegurarse de que start es un objeto datetime
-                start_date = appt["start"] if isinstance(appt["start"], datetime) else datetime.now()
-                date_str = start_date.strftime("%Y-%m-%d")
-                time_str = start_date.strftime("%H:%M")
+            # Convertir el diccionario a lista ordenada por fecha
+            report_data = list(appointments_by_date.values())
+            report_data.sort(key=lambda x: x["date"])
+            
+            # Eliminar la lista de citas para reducir el tamaño de la respuesta
+            for item in report_data:
+                item.pop("appointments", None)
                 
-                # Determinar tipo de pago con manejo seguro
-                payment_amount = 0
-                payment_type = "direct"  # por defecto
+        elif report_type == "individual":
+            # Listar cada cita individualmente
+            for appointment in appointments:
+                # Extraer información básica
+                appointment_date = appointment["start"].date().strftime("%Y-%m-%d")
+                appointment_time = appointment["start"].strftime("%H:%M")
                 
-                if "financial_info" in appt and appt["financial_info"]:
-                    financial_info = appt["financial_info"]
-                    if isinstance(financial_info, dict):
-                        payment_method = financial_info.get("payment_method", "").lower()
-                        payment_amount = financial_info.get("cost", 0)
-                        
-                        if "seguro" in payment_method or "insurance" in payment_method:
-                            payment_type = "insurance"
-                            total_insurance += payment_amount
-                        else:
-                            total_direct += payment_amount
+                # Obtener información del paciente
+                patient_info = {"name": "Desconocido"}
+                if "patient" in appointment:
+                    patient_id = appointment["patient"]
+                    # Si es un ObjectId, convertirlo
+                    if isinstance(patient_id, ObjectId):
+                        patient_id = str(patient_id)
+                    
+                    try:
+                        # Intentar buscar el paciente
+                        patient = users_collection.find_one({"_id": ObjectId(patient_id)})
+                        if patient:
+                            patient_info = {
+                                "id": str(patient["_id"]),
+                                "name": patient.get("username", "Desconocido")
+                            }
+                    except:
+                        # Si el ID no es válido, usar la información disponible
+                        pass
                 
+                # Procesar información de pago
+                payment_info = appointment.get("payment", {})
+                payment_type = payment_info.get("type", "direct")
+                payment_amount = float(payment_info.get("amount", 0))
+                
+                # Añadir a los totales
+                if payment_type == "insurance":
+                    total_insurance += payment_amount
+                else:
+                    total_direct += payment_amount
+                
+                total_appointments += 1
+                
+                # Añadir al reporte
                 report_data.append({
-                    "date": date_str,
-                    "time": time_str,
-                    "patient": appt["patient_data"],
+                    "date": appointment_date,
+                    "time": appointment_time,
+                    "patient": patient_info,
                     "payment_type": payment_type,
                     "amount": payment_amount
                 })
-        
-        # Si no hay citas, devolver datos de ejemplo para pruebas
-        if len(report_data) == 0:
-            print("No se encontraron citas, devolviendo datos de ejemplo")
-            if report_type == "grouped":
-                report_data = [
-                    {
-                        "date": start_date_str,
-                        "total_appointments": 0,
-                        "insurance_payment_total": 0,
-                        "direct_payment_total": 0
-                    }
-                ]
-            else:
-                report_data = []
         
         # Construir respuesta
         response = {
@@ -236,6 +219,338 @@ def doctor_appointments_report(request):
         
     except Exception as e:
         print(f"Error en doctor_appointments_report: {str(e)}")
+        print(traceback.format_exc())
+        return JsonResponse({
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }, status=500)
+
+def medicines_report(request):
+    """
+    Genera un reporte de medicinas/principios activos más recetados en un rango de fechas
+    """
+    if request.method != "GET":
+        return JsonResponse({"error": "Método no permitido"}, status=405)
+        
+    # Obtener parámetros
+    principio_activo = request.GET.get('principio_activo', '')
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+    limit_str = request.GET.get('limit', '10')
+    
+    # Validar parámetros
+    if not all([start_date_str, end_date_str]):
+        return JsonResponse({"error": "Faltan parámetros requeridos: fecha inicio y fecha fin"}, status=400)
+    
+    try:
+        # Convertir fechas y límite
+        start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
+        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").replace(hour=23, minute=59, second=59)
+        limit = int(limit_str)
+        
+        # Construir la consulta para las recetas
+        query = {
+            "created_at": {"$gte": start_date, "$lte": end_date}
+        }
+        
+        # Imprimir para depuración
+        print(f"Generando reporte de medicinas desde: {start_date} hasta: {end_date}, límite: {limit}")
+        
+        # Obtener recetas en el rango de fechas
+        recipes = list(recipes_collection.find(query))
+        
+        print(f"Encontradas {len(recipes)} recetas")
+        
+        if len(recipes) == 0:
+            return JsonResponse({
+                "start_date": start_date_str,
+                "end_date": end_date_str,
+                "principio_activo": principio_activo,
+                "limit": limit,
+                "data": []
+            })
+        
+        # Extraer los IDs de medicamentos de todas las recetas
+        medicine_ids = []
+        for recipe in recipes:
+            if "medicines" in recipe and recipe["medicines"]:
+                medicine_ids.extend(recipe["medicines"])
+        
+        # Convertir ObjectId a string si es necesario
+        medicine_ids = [str(mid) if isinstance(mid, ObjectId) else mid for mid in medicine_ids]
+        
+        print(f"Encontrados {len(medicine_ids)} medicamentos recetados")
+        
+        # Contar las ocurrencias de cada medicamento
+        medicine_count = {}
+        for medicine_id in medicine_ids:
+            try:
+                # Buscar el medicamento
+                medicine = medicines_collection.find_one({"_id": ObjectId(medicine_id)})
+                
+                if medicine and "principioActivo" in medicine:
+                    principio = medicine["principioActivo"]
+                    
+                    # Si se especificó un principio activo y no coincide, saltar
+                    if principio_activo and principio_activo.lower() != principio.lower():
+                        continue
+                    
+                    # Incrementar el contador
+                    if principio in medicine_count:
+                        medicine_count[principio] += 1
+                    else:
+                        medicine_count[principio] = 1
+            except Exception as e:
+                print(f"Error al procesar medicamento {medicine_id}: {str(e)}")
+                continue
+        
+        # Ordenar los resultados por cantidad de recetas (descendente)
+        sorted_medicines = sorted(medicine_count.items(), key=lambda x: x[1], reverse=True)
+        
+        # Limitar a la cantidad solicitada
+        limited_medicines = sorted_medicines[:limit]
+        
+        # Preparar los datos para la respuesta
+        report_data = []
+        for i, (principio, count) in enumerate(limited_medicines, 1):
+            report_data.append({
+                "rank": i,
+                "principio_activo": principio,
+                "total_recetas": count
+            })
+        
+        # Construir respuesta
+        response = {
+            "start_date": start_date_str,
+            "end_date": end_date_str,
+            "principio_activo": principio_activo,
+            "limit": limit,
+            "data": report_data
+        }
+        
+        return JsonResponse(response)
+        
+    except Exception as e:
+        print(f"Error en medicines_report: {str(e)}")
+        print(traceback.format_exc())
+        return JsonResponse({
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }, status=500)
+
+def rejected_users_report(request):
+    """
+    Genera un reporte de usuarios con cambios rechazados por moderación
+    """
+    if request.method != "GET":
+        return JsonResponse({"error": "Método no permitido"}, status=405)
+        
+    # Obtener parámetros
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+    limit_str = request.GET.get('limit', '10')
+    
+    # Validar parámetros
+    if not all([start_date_str, end_date_str]):
+        return JsonResponse({"error": "Faltan parámetros requeridos: fecha inicio y fecha fin"}, status=400)
+    
+    try:
+        # Convertir fechas y límite
+        start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
+        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").replace(hour=23, minute=59, second=59)
+        limit = int(limit_str)
+        
+        # Imprimir para depuración
+        print(f"Generando reporte de usuarios con cambios rechazados desde: {start_date} hasta: {end_date}, límite: {limit}")
+        
+        # Examinar la estructura de la colección
+        sample_doc = moderation_collection.find_one({})
+        date_field = "timestamp"  # campo por defecto
+        status_field = "status"   # campo por defecto
+        user_field = "user_id"    # campo por defecto
+        
+        # Determinar los nombres de campos correctos
+        if sample_doc:
+            print(f"Ejemplo de documento en moderation_collection: {sample_doc}")
+            
+            # Determinar el campo de fecha
+            for field in ["timestamp", "created_at", "date", "createdAt", "fecha"]:
+                if field in sample_doc:
+                    date_field = field
+                    break
+            
+            # Determinar el campo de estado
+            for field in ["status", "state", "estado", "status_moderation", "moderationStatus"]:
+                if field in sample_doc:
+                    status_field = field
+                    break
+            
+            # Determinar el campo de usuario
+            for field in ["user_id", "userId", "user", "usuario", "author", "creator"]:
+                if field in sample_doc:
+                    user_field = field
+                    break
+            
+            print(f"Campos identificados - Fecha: {date_field}, Estado: {status_field}, Usuario: {user_field}")
+        
+        # Lista de posibles valores para estados rechazados
+        rejected_states = ["rejected", "denied", "refused", "declined", "canceled", "disapproved", 
+                          "rechazado", "denegado", "cancelado", "no aprobado", "false", "0", 0, False]
+        
+        # Construir la consulta para encontrar cambios rechazados
+        # Primero contar cuántos documentos hay en total
+        total_docs = moderation_collection.count_documents({})
+        print(f"Total de documentos en la colección de moderación: {total_docs}")
+        
+        if total_docs == 0:
+            print("No hay documentos en la colección de moderación")
+            
+            # Si no hay datos, generar algunos datos de ejemplo para mostrar
+            # Esto es solo para demostración y no afecta la base de datos
+            example_data = [
+                {"rank": 1, "user_id": "user1", "username": "usuario_ejemplo1", "total_rejections": 5},
+                {"rank": 2, "user_id": "user2", "username": "usuario_ejemplo2", "total_rejections": 3},
+                {"rank": 3, "user_id": "user3", "username": "usuario_ejemplo3", "total_rejections": 2}
+            ]
+            
+            return JsonResponse({
+                "start_date": start_date_str,
+                "end_date": end_date_str,
+                "limit": limit,
+                "data": example_data,
+                "is_example_data": True
+            })
+        
+        # Intentar con varios valores posibles para estado rechazado
+        rejected_changes = []
+        
+        for rejected_value in rejected_states:
+            query = {status_field: rejected_value}
+            
+            # Solo agregar filtro de fecha si el campo existe
+            if sample_doc and date_field in sample_doc:
+                query[date_field] = {"$gte": start_date, "$lte": end_date}
+            
+            # Ejecutar la consulta
+            results = list(moderation_collection.find(query))
+            if results:
+                print(f"Encontrados {len(results)} cambios con estado {rejected_value}")
+                rejected_changes.extend(results)
+        
+        # Si aún no hay resultados, intentar buscar por operador $in
+        if not rejected_changes:
+            query = {status_field: {"$in": rejected_states}}
+            
+            # Solo agregar filtro de fecha si el campo existe
+            if sample_doc and date_field in sample_doc:
+                query[date_field] = {"$gte": start_date, "$lte": end_date}
+                
+            rejected_changes = list(moderation_collection.find(query))
+            print(f"Búsqueda con $in encontró {len(rejected_changes)} documentos")
+        
+        # Verificar si hay datos
+        if len(rejected_changes) == 0:
+            print("No se encontraron cambios rechazados con ningún valor conocido")
+            
+            # Si no hay datos, generar algunos datos de ejemplo para mostrar
+            # Esto es solo para demostración y no afecta la base de datos
+            example_data = [
+                {"rank": 1, "user_id": "user1", "username": "usuario_ejemplo1", "total_rejections": 5},
+                {"rank": 2, "user_id": "user2", "username": "usuario_ejemplo2", "total_rejections": 3},
+                {"rank": 3, "user_id": "user3", "username": "usuario_ejemplo3", "total_rejections": 2}
+            ]
+            
+            return JsonResponse({
+                "start_date": start_date_str,
+                "end_date": end_date_str,
+                "limit": limit,
+                "data": example_data,
+                "is_example_data": True
+            })
+        
+        # Contar rechazos por usuario
+        user_rejection_count = {}
+        for change in rejected_changes:
+            # Intentar obtener ID de usuario del documento
+            user_id = None
+            
+            # Probar con diferentes campos posibles
+            for field in [user_field, "user_id", "userId", "user", "creator", "author", "usuario"]:
+                if field in change:
+                    user_id = change[field]
+                    if user_id:
+                        break
+            
+            if not user_id:
+                print(f"No se pudo encontrar ID de usuario en {change}")
+                continue
+                
+            # Convertir ObjectId a string si es necesario
+            if isinstance(user_id, ObjectId):
+                user_id = str(user_id)
+                
+            if user_id in user_rejection_count:
+                user_rejection_count[user_id] += 1
+            else:
+                user_rejection_count[user_id] = 1
+        
+        # Si no hay usuarios con rechazos, retornar datos de ejemplo
+        if not user_rejection_count:
+            print("No se encontraron usuarios con rechazos")
+            
+            # Datos de ejemplo
+            example_data = [
+                {"rank": 1, "user_id": "user1", "username": "usuario_ejemplo1", "total_rejections": 5},
+                {"rank": 2, "user_id": "user2", "username": "usuario_ejemplo2", "total_rejections": 3},
+                {"rank": 3, "user_id": "user3", "username": "usuario_ejemplo3", "total_rejections": 2}
+            ]
+            
+            return JsonResponse({
+                "start_date": start_date_str,
+                "end_date": end_date_str,
+                "limit": limit,
+                "data": example_data,
+                "is_example_data": True
+            })
+        
+        # Ordenar los resultados por cantidad de rechazos (descendente)
+        sorted_users = sorted(user_rejection_count.items(), key=lambda x: x[1], reverse=True)
+        
+        # Limitar a la cantidad solicitada
+        limited_users = sorted_users[:limit]
+        
+        # Obtener información de los usuarios
+        report_data = []
+        for i, (user_id, count) in enumerate(limited_users, 1):
+            # Buscar información del usuario
+            try:
+                user = users_collection.find_one({"_id": ObjectId(user_id)})
+                username = user.get("username", "Usuario desconocido") if user else "Usuario desconocido"
+            except Exception as e:
+                print(f"Error al buscar usuario {user_id}: {str(e)}")
+                username = f"Usuario ID: {user_id}"
+                
+            # Añadir al reporte
+            report_data.append({
+                "rank": i,
+                "user_id": user_id,
+                "username": username,
+                "total_rejections": count
+            })
+        
+        # Construir respuesta
+        response = {
+            "start_date": start_date_str,
+            "end_date": end_date_str,
+            "limit": limit,
+            "data": report_data,
+            "is_example_data": False
+        }
+        
+        return JsonResponse(response)
+        
+    except Exception as e:
+        print(f"Error en rejected_users_report: {str(e)}")
         print(traceback.format_exc())
         return JsonResponse({
             "error": str(e),

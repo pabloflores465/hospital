@@ -6,58 +6,32 @@ import { back_url } from '../../environments/back_url';
 import { UserService } from '../services/user.service';
 import { RouterModule } from '@angular/router';
 
-interface DoctorInfo {
-  id: string;
-  name: string;
-  specialty: string;
-}
-
-interface PatientInfo {
-  id: string;
-  name: string;
-}
-
-interface AppointmentSummary {
-  total_appointments: number;
-  total_insurance_payment: number;
-  total_direct_payment: number;
-}
-
-interface GroupedAppointment {
-  date: string;
-  total_appointments: number;
-  insurance_payment_total: number;
-  direct_payment_total: number;
-}
-
-interface IndividualAppointment {
-  date: string;
-  time: string;
-  patient: PatientInfo;
-  payment_type: string;
-  amount: number;
+// Interfaces para el reporte
+interface RejectedUserItem {
+  rank: number;
+  user_id: string;
+  username: string;
+  total_rejections: number;
 }
 
 @Component({
-  selector: 'app-doctor-reports',
+  selector: 'app-rejected-users-report',
   standalone: true,
   imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule],
-  templateUrl: './doctor-reports.component.html',
-  styleUrls: ['./doctor-reports.component.css']
+  templateUrl: './rejected-users-report.component.html',
+  styleUrls: ['./rejected-users-report.component.css']
 })
-export class DoctorReportsComponent implements OnInit {
+export class RejectedUsersReportComponent implements OnInit {
   // Parámetros de filtrado
   startDate: string = '';
   endDate: string = '';
-  reportType: 'grouped' | 'individual' = 'grouped';
+  limit: number = 10;
   
   // Datos del reporte
   loading: boolean = false;
   error: string | null = null;
-  doctorInfo: DoctorInfo | null = null;
-  groupedData: GroupedAppointment[] = [];
-  individualData: IndividualAppointment[] = [];
-  summary: AppointmentSummary | null = null;
+  reportData: RejectedUserItem[] = [];
+  isExampleData: boolean = false; // Para indicar si son datos de ejemplo
   
   // Control de fecha máxima (hoy)
   maxDate: string = '';
@@ -77,7 +51,7 @@ export class DoctorReportsComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Cargar los datos iniciales
+    // Generar el reporte inicial
     this.generateReport();
   }
 
@@ -92,64 +66,47 @@ export class DoctorReportsComponent implements OnInit {
     return `${parts[2]}/${parts[1]}/${parts[0]}`;
   }
 
-  formatCurrency(value: number): string {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(value);
-  }
-
   isFormValid(): boolean {
     return !!this.startDate && !!this.endDate && this.startDate <= this.endDate;
   }
 
   async generateReport(): Promise<void> {
     if (!this.isFormValid()) {
-      this.error = 'Por favor complete todos los campos.';
-      return;
-    }
-
-    const currentUser = this.userService.getUser();
-    if (!currentUser || currentUser.rol !== 'doctor') {
-      this.error = 'Solo los doctores pueden ver este reporte.';
+      this.error = 'Por favor complete correctamente las fechas.';
       return;
     }
 
     this.loading = true;
     this.error = null;
+    this.isExampleData = false;
 
     try {
       const url = await back_url();
-      this.http.get(`${url}/api/reports/doctor-appointments`, {
-        params: {
-          doctor_id: currentUser._id,
-          start_date: this.startDate,
-          end_date: this.endDate,
-          report_type: this.reportType
-        }
-      }).subscribe({
+      let params: any = {
+        start_date: this.startDate,
+        end_date: this.endDate,
+        limit: this.limit
+      };
+      
+      console.log('Generando reporte de usuarios rechazados con parámetros:', params);
+
+      this.http.get(`${url}/api/reports/rejected-users`, { params }).subscribe({
         next: (response: any) => {
-          this.doctorInfo = response.doctor;
-          this.summary = response.summary;
-          
-          if (this.reportType === 'grouped') {
-            this.groupedData = response.data;
-            this.individualData = [];
-          } else {
-            this.individualData = response.data;
-            this.groupedData = [];
-          }
-          
+          this.reportData = response.data || [];
+          this.isExampleData = response.is_example_data || false;
           this.loading = false;
+          console.log('Datos del reporte recibidos:', this.reportData, 'Son datos de ejemplo:', this.isExampleData);
         },
         error: (err) => {
+          console.error('Error al generar reporte:', err);
           this.error = 'Error al cargar el reporte: ' + (err.error?.error || err.message || 'Error desconocido');
           this.loading = false;
         }
       });
     } catch (err: any) {
+      console.error('Error al generar reporte (catch):', err);
       this.error = 'Error al generar el reporte: ' + err.message;
       this.loading = false;
     }
   }
-}
+} 

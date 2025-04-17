@@ -1,0 +1,107 @@
+<div class="report-container">
+  <!-- Menú de navegación de reportes -->
+  <div class="reports-nav">
+    <a routerLink="/dashboard/reports" routerLinkActive="active" class="reports-nav-item">Reporte de Consultas</a>
+    <a routerLink="/dashboard/medicines-report" routerLinkActive="active" class="reports-nav-item">Reporte de Medicinas</a>
+    <a routerLink="/dashboard/rejected-users-report" routerLinkActive="active" class="reports-nav-item">Reporte de Moderación</a>
+  </div>
+
+  <h2 class="title">Reporte de Medicinas/Principios Activos Populares</h2>
+  
+  <!-- Filtros -->
+  <div class="filters-container">
+    <div class="filter-group">
+      <label for="principioActivo">Principio Activo:</label>
+      <select 
+        id="principioActivo" 
+        [(ngModel)]="principioActivo"
+        [disabled]="loadingPrincipios"
+        class="filter-select"
+      >
+        <option value="">Todos</option> <!-- Opción para no filtrar -->
+        <option *ngIf="loadingPrincipios" disabled>Cargando...</option>
+        <option *ngFor="let principio of principiosActivosList" [value]="getPrincipioActivoName(principio)">
+          {{ getPrincipioActivoName(principio) }}
+        </option>
+      </select>
+    </div>
+    
+    <div class="filter-group">
+      <label for="startDate">Fecha Inicio:</label>
+      <input 
+        type="date" 
+        id="startDate" 
+        [(ngModel)]="startDate" 
+        [max]="maxDate"
+        required
+      >
+    </div>
+    
+    <div class="filter-group">
+      <label for="endDate">Fecha Fin:</label>
+      <input 
+        type="date" 
+        id="endDate" 
+        [(ngModel)]="endDate" 
+        [max]="maxDate"
+        required
+      >
+    </div>
+    
+    <div class="filter-group">
+      <label for="limit">Límite de Resultados:</label>
+      <input 
+        type="number" 
+        id="limit" 
+        [(ngModel)]="limit" 
+        min="1" 
+        max="50"
+      >
+    </div>
+    
+    <button class="generate-btn" (click)="generateReport()" [disabled]="loading || loadingPrincipios">
+      {{ loading ? 'Generando...' : 'Generar Reporte' }}
+    </button>
+  </div>
+  
+  <!-- Mensaje de error -->
+  <div class="error-message" *ngIf="error">
+    {{ error }}
+  </div>
+  
+  <!-- Resultados del reporte -->
+  <div class="report-results" *ngIf="!loading && !error && reportData.length > 0">
+    <div class="report-header">
+      <h3>Medicinas Más Recetadas: {{ formatDateDisplay(startDate) }} - {{ formatDateDisplay(endDate) }}</h3>
+      <p *ngIf="principioActivo">Filtrado por: {{ principioActivo }}</p>
+    </div>
+    
+    <!-- Tabla de resultados -->
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th>Ranking</th>
+          <th>Principio Activo</th>
+          <th>Total de Recetas</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of reportData">
+          <td>{{ item.rank }}</td>
+          <td>{{ item.principio_activo }}</td>
+          <td>{{ item.total_recetas }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- Mensaje de carga -->
+  <div class="loading-message" *ngIf="loading">
+    <p>Generando reporte, por favor espere...</p>
+  </div>
+  
+  <!-- Mensaje cuando no hay datos -->
+  <div class="no-data-message" *ngIf="!loading && !error && reportData.length === 0">
+    <p>No se encontraron medicinas recetadas para el período seleccionado.</p>
+  </div>
+</div> 
