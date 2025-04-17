@@ -69,3 +69,15 @@ def get_current_doctor(request):
             return JsonResponse({"error": str(e), "traceback": traceback_str}, status=500)
     else:
         return JsonResponse({"error": "Método no permitido"}, status=405)
+
+@csrf_exempt
+def get_patient_by_email(request):
+    if request.method == "GET":
+        try:
+            email = request.GET.get('email')
+            patient = users_collection.find_one({"email": email, "rol": "patient"})
+            return JsonResponse({"patient": patient}, status=200)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+    else:
+        return JsonResponse({"error": "Método no permitido"}, status=405)
