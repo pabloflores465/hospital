@@ -154,6 +154,7 @@ from .myfunctions.moderation import clear_history, get_changes
 from .myfunctions.audit import get_all_changes
 
 from .myfunctions.reports import doctor_appointments_report, medicines_report, rejected_users_report
+from .myfunctions.user_data_export import export_user_data, import_user_data
 
 # from myproject.views import SendEmailAPIView
 
@@ -294,4 +295,6 @@ urlpatterns = [
     path("api/appointments/patient/<str:patient_identifier>/", get_appointments_by_patient_identifier, name="get_appointments_by_patient_identifier"),
     path("api/reports/medicines", medicines_report),
     path("api/reports/rejected-users", rejected_users_report),
+    path("api/users/export", export_user_data, name="export_user_data"),
+    path("api/users/import", import_user_data, name="import_user_data"),
 ]

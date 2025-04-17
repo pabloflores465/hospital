@@ -7,6 +7,7 @@ import {
   Validators,
   ReactiveFormsModule,
 } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { back_url } from '../../environments/back_url';
 
 interface Service {
@@ -41,7 +42,7 @@ interface Subcategory {
 @Component({
   selector: 'import-services-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule],
   template: `
     <div class="container mx-auto p-4">
       <h1 class="text-2xl font-bold mb-4">
@@ -467,6 +468,139 @@ interface Subcategory {
           <p><strong>Servicios actualizados:</strong> {{ result.updated }}</p>
         </div>
       </div>
+
+      <!-- Sección Exportar/Importar Datos de Usuario -->
+      <div class="bg-white rounded-lg shadow p-6 mt-6">
+        <h2 class="text-xl font-semibold mb-5">
+          Exportar/Importar Datos de Usuario
+        </h2>
+        
+        <!-- Exportar datos de usuario -->
+        <div class="mb-6 border-b pb-6">
+          <h3 class="text-lg font-medium mb-3">Exportar Datos</h3>
+          <p class="mb-4">Exporta todos los datos de un usuario (diagnósticos, exámenes, recetas, etc.) en formato JSON.</p>
+          
+          <div class="mb-4">
+            <div class="mb-3">
+              <label class="inline-flex items-center">
+                <input 
+                  type="radio" 
+                  name="searchType" 
+                  value="id" 
+                  [(ngModel)]="exportSearchType" 
+                  class="form-radio h-4 w-4"
+                >
+                <span class="ml-2">Buscar por ID</span>
+              </label>
+              <label class="inline-flex items-center ml-4">
+                <input 
+                  type="radio" 
+                  name="searchType" 
+                  value="email" 
+                  [(ngModel)]="exportSearchType" 
+                  class="form-radio h-4 w-4"
+                >
+                <span class="ml-2">Buscar por Correo</span>
+              </label>
+              <label class="inline-flex items-center ml-4">
+                <input 
+                  type="radio" 
+                  name="searchType" 
+                  value="all" 
+                  [(ngModel)]="exportSearchType" 
+                  class="form-radio h-4 w-4"
+                >
+                <span class="ml-2">Exportar Todos</span>
+              </label>
+            </div>
+            
+            <div class="flex items-end gap-4" *ngIf="exportSearchType === 'id'">
+              <div class="flex-1">
+                <label class="block mb-1 font-medium">ID de Usuario</label>
+                <input
+                  [(ngModel)]="exportUserId"
+                  placeholder="ID del usuario a exportar"
+                  class="border p-2 rounded w-full"
+                />
+              </div>
+              <button
+                (click)="exportUserData()"
+                [disabled]="!exportUserId"
+                class="bg-blue-600 text-white px-4 py-2 rounded h-[42px]"
+              >
+                Exportar Datos
+              </button>
+            </div>
+            
+            <div class="flex items-end gap-4" *ngIf="exportSearchType === 'email'">
+              <div class="flex-1">
+                <label class="block mb-1 font-medium">Correo electrónico</label>
+                <input
+                  [(ngModel)]="exportUserEmail"
+                  placeholder="Correo del usuario a exportar"
+                  class="border p-2 rounded w-full"
+                />
+              </div>
+              <button
+                (click)="exportUserData()"
+                [disabled]="!exportUserEmail"
+                class="bg-blue-600 text-white px-4 py-2 rounded h-[42px]"
+              >
+                Exportar Datos
+              </button>
+            </div>
+            
+            <div *ngIf="exportSearchType === 'all'" class="mt-3">
+              <p class="mb-3 text-sm text-gray-600">Esta opción exportará los datos de todos los usuarios del sistema.</p>
+              <button
+                (click)="exportUserData()"
+                class="bg-blue-600 text-white px-4 py-2 rounded"
+              >
+                Exportar Todos los Datos
+              </button>
+            </div>
+          </div>
+          
+          <div *ngIf="exportError" class="mt-3 text-red-600">
+            {{ exportError }}
+          </div>
+        </div>
+        
+        <!-- Importar datos de usuario -->
+        <div>
+          <h3 class="text-lg font-medium mb-3">Importar Datos</h3>
+          <p class="mb-4">Importa datos de usuario previamente exportados en formato JSON.</p>
+          
+          <input
+            type="file"
+            (change)="onUserDataFileSelected($event)"
+            accept=".json"
+            class="block mb-4 border p-2 rounded w-full"
+          />
+          <button
+            (click)="importUserData()"
+            [disabled]="!userDataFile"
+            class="bg-green-600 text-white px-4 py-2 rounded"
+          >
+            Importar Datos
+          </button>
+          
+          <div *ngIf="importResult" class="mt-4 bg-green-100 p-4 rounded">
+            <h4 class="font-semibold mb-2">Resultados de la importación:</h4>
+            <p><strong>Usuario:</strong> {{ importResult.stats.user }}</p>
+            <p><strong>Recetas creadas:</strong> {{ importResult.stats.recipes_created }}</p>
+            <p><strong>Recetas actualizadas:</strong> {{ importResult.stats.recipes_updated }}</p>
+            <p><strong>Citas creadas:</strong> {{ importResult.stats.appointments_created }}</p>
+            <p><strong>Citas actualizadas:</strong> {{ importResult.stats.appointments_updated }}</p>
+            <p><strong>Registros médicos creados:</strong> {{ importResult.stats.medical_records_created }}</p>
+            <p><strong>Registros médicos actualizados:</strong> {{ importResult.stats.medical_records_updated }}</p>
+          </div>
+          
+          <div *ngIf="importError" class="mt-3 text-red-600">
+            {{ importError }}
+          </div>
+        </div>
+      </div>
     </div>
   `,
 })
@@ -496,6 +630,15 @@ export class ImportServicesPage implements OnInit {
 
   editingSubcategory: Subcategory | null = null;
   subcategoryEditForm: FormGroup;
+
+  // Variables para exportar/importar datos de usuario
+  exportUserId: string = '';
+  exportUserEmail: string = '';
+  exportSearchType: string = 'id';
+  exportError: string = '';
+  userDataFile: File | null = null;
+  importResult: any = null;
+  importError: string = '';
 
   constructor(private http: HttpClient) {
     // Formulario para crear servicio
@@ -809,5 +952,79 @@ export class ImportServicesPage implements OnInit {
         error: (err) =>
           alert('Error importando: ' + (err.error?.error || err.message)),
       });
+  }
+
+  onUserDataFileSelected(event: Event): void {
+    const element = event.target as HTMLInputElement;
+    if (element.files && element.files.length > 0) {
+      this.userDataFile = element.files[0];
+      this.importError = '';
+      this.importResult = null;
+    }
+  }
+
+  async exportUserData(): Promise<void> {
+    try {
+      const url = await back_url();
+      let exportUrl = `${url}/api/users/export?`;
+      
+      if (this.exportSearchType === 'id') {
+        if (!this.exportUserId) {
+          this.exportError = 'Por favor, ingrese un ID de usuario válido';
+          return;
+        }
+        exportUrl += `user_id=${this.exportUserId}`;
+      } 
+      else if (this.exportSearchType === 'email') {
+        if (!this.exportUserEmail) {
+          this.exportError = 'Por favor, ingrese un correo electrónico válido';
+          return;
+        }
+        exportUrl += `email=${this.exportUserEmail}`;
+      }
+      else if (this.exportSearchType === 'all') {
+        exportUrl += 'export_all=true';
+      }
+      
+      // Usamos window.open para descargar directamente el archivo
+      window.open(exportUrl, '_blank');
+      this.exportError = '';
+    } catch (error) {
+      console.error('Error al exportar datos de usuario:', error);
+      this.exportError = 'Error al exportar datos. Por favor, intente nuevamente.';
+    }
+  }
+
+  async importUserData(): Promise<void> {
+    if (!this.userDataFile) {
+      this.importError = 'Por favor, seleccione un archivo JSON';
+      return;
+    }
+
+    try {
+      const url = await back_url();
+      const formData = new FormData();
+      formData.append('file', this.userDataFile);
+
+      this.http.post(`${url}/api/users/import`, formData).subscribe({
+        next: (response: any) => {
+          this.importResult = response;
+          this.importError = '';
+          this.userDataFile = null;
+          // Resetear el campo de archivo
+          const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+          if (fileInput) {
+            fileInput.value = '';
+          }
+        },
+        error: (err) => {
+          console.error('Error importando datos de usuario:', err);
+          this.importError = err.error?.error || 'Error al importar datos. Por favor, verifique el formato del archivo.';
+        }
+      });
+    } catch (error) {
+      console.error('Error al importar datos de usuario:', error);
+      this.importError = 'Error al importar datos. Por favor, intente nuevamente.';
+    }
   }
 }
