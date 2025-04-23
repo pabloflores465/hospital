@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Recipe } from '../app/services/doctor.service';
 
-const API_URL = 'http://127.0.0.1:8000';
+const API_URL = 'http://0.0.0.0:5050';
 
 export const recipeService = {
   async getUserRecipes(username: string): Promise<Recipe[]> {
@@ -17,6 +17,23 @@ export const recipeService = {
       }
     } catch (error) {
       console.error('Error al obtener recetas:', error);
+      throw error;
+    }
+  },
+
+  async getRecipesByEmail(email: string): Promise<Recipe[]> {
+    try {
+      const response = await axios.get(`${API_URL}/recipes/email/${email}`);
+      if (response.data && Array.isArray(response.data)) {
+        return response.data;
+      } else if (response.data && Array.isArray(response.data.recipes)) {
+        return response.data.recipes;
+      } else {
+        console.warn('Estructura de respuesta inesperada:', response.data);
+        return [];
+      }
+    } catch (error) {
+      console.error('Error al obtener recetas por email:', error);
       throw error;
     }
   },

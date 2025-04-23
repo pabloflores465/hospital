@@ -60,6 +60,7 @@ from .myfunctions.recipes import (
     save_recipe,
     get_recipe_detail,
     send_recipe_by_email,
+    get_recipes_by_email,
 )
 
 from .myfunctions.services import get_all_services
@@ -187,6 +188,7 @@ urlpatterns = [
     path("recipes", get_recipes),
     path("recipes/doctor/<user_id>", get_recipes_by_doctor_id),
     path("recipes/patient/<user_id>", get_recipes_by_patient_id),
+    path("recipes/email/<str:email>", get_recipes_by_email, name="get_recipes_by_email"),
     path("recipes/save", save_recipe, name="save_recipe"),
     path("recipes/detail/<str:recipe_id>", get_recipe_detail, name="get_recipe_detail"),
     path(

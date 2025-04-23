@@ -53,7 +53,7 @@ def registrar_paciente(request):
                 inserted = resultado.inserted_id
             send_mail(
                 f"Registro para {data['username']}",
-                f"Se ha pedido un registro para el usuario {data['username']} con su correo. Si no ha sido usted, puede ignorar este correo.\n\nSi ha sido usted, haga click en el siguiente enlace para validar su cuenta: http://localhost:4200/validate?username={data['username']}&code={code}",
+                f"Se ha pedido un registro para el usuario {data['username']} con su correo. Si no ha sido usted, puede ignorar este correo.\n\nSi ha sido usted, haga click en el siguiente enlace para validar su cuenta: http://localhost:5051/validate?username={data['username']}&code={code}",
                 settings.EMAIL_HOST_USER,  # Asegúrate de tenerlo configurado en settings.py
                 [data["email"]],
                 fail_silently=False,

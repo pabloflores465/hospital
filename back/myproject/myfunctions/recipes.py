@@ -204,6 +204,80 @@ def get_recipes_by_doctor_id(request, user_id):
     else:
         return JsonResponse({"error": "Método no permitido"}, status=405)
 
+def get_recipes_by_email(request, email):
+    if request.method == "GET":
+        try:
+            # Buscar el usuario por su email
+            user = users_collection.find_one({"email": email})
+            if not user:
+                return JsonResponse({"error": "Usuario no encontrado con ese email"}, status=404)
+            
+            user_id = user["_id"]
+            recipes = []
+
+            # Buscar todas las recetas del paciente
+            # Usar sort por created_at para ordenar en MongoDB
+            cursor = recipes_collection.find({"patient": user_id}).sort("created_at", -1)
+            
+            for doc in cursor:
+                doc = convert_objectid(doc)
+                recipes.append(doc)
+
+            # Enriquecer cada receta con información detallada
+            for recipe in recipes:
+                # Obtener detalles de los medicamentos
+                if recipe.get("medicines"):
+                    for index, medicine_id in enumerate(recipe["medicines"]):
+                        medicine = medicines_collection.find_one(
+                            {"_id": ObjectId(medicine_id)}
+                        )
+                        if medicine:
+                            medicine = convert_objectid(medicine)
+                            recipe["medicines"][index] = medicine
+
+                # Obtener datos del doctor
+                if recipe.get("doctor"):
+                    doctor = users_collection.find_one(
+                        {"_id": ObjectId(recipe["doctor"])}
+                    )
+                    if doctor:
+                        doctor = convert_objectid(doctor)
+                        doctor.pop("password", None)
+                        if doctor.get("profile"):
+                            doctor.pop("profile", None)
+                        recipe["doctor_details"] = doctor
+                        # Mantener la compatibilidad con el código anterior
+                        recipe["doctor"] = doctor["username"]
+
+                # Formatear el código de la receta
+                if "code" in recipe:
+                    code_string = "-".join(recipe["code"])
+                    recipe["formatted_code"] = code_string
+                    # Mantener la compatibilidad con el código anterior
+                    recipe["code"] = code_string
+
+                # Agregar formato legible para created_at
+                if "created_at" in recipe:
+                    recipe["formatted_date"] = recipe["created_at"].strftime("%d/%m/%Y %H:%M:%S")
+
+            # Obtener datos del paciente (solo una vez)
+            user = convert_objectid(user)
+            user.pop("password", None)
+            if user.get("profile"):
+                user.pop("profile", None)
+            
+            # Añadir el paciente a la respuesta
+            return JsonResponse({
+                "patient": user,
+                "recipes": recipes
+            }, status=200)
+            
+        except Exception as e:
+            traceback_str = traceback.format_exc()
+            return JsonResponse({"error": str(e), "traceback": traceback_str}, status=500)
+    else:
+        return JsonResponse({"error": "Método no permitido"}, status=405)
+
 @csrf_exempt
 def save_recipe(request):
     if request.method == "POST":

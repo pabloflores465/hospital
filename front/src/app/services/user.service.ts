@@ -70,6 +70,7 @@ export class UserService {
   logOut(): void {
     console.log('Cerrando sesión');
     localStorage.removeItem(this.STORAGE_KEY);
+    localStorage.removeItem('userEmail');
     this.userSubject.next(null);
     this.router.navigate(['/login']);
   }

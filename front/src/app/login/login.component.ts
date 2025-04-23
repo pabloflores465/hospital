@@ -70,6 +70,11 @@ export class LoginComponent {
 
       // Guardar el usuario en el servicio
       this.userService.setUser(user);
+      
+      // Guardar el email del usuario en localStorage para usarlo más tarde
+      if (user.email) {
+        localStorage.setItem('userEmail', user.email);
+      }
 
       // Redireccionar según el rol del usuario
       this.userService.redirectBasedOnRole();

@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { UserService } from '../../services/user.service';
+import { recipeService } from '../../../services/recipeService';
 
 @Component({
   selector: 'app-user-recipes',
@@ -101,15 +102,59 @@ export class UserRecipesComponent implements OnInit {
     const user = this.userService.getUser();
     console.log('Usuario actual:', user);
     
-    if (!user || !user._id) {
+    // Obtener el email desde localStorage
+    const userEmail = localStorage.getItem('userEmail');
+    
+    if (!user || (!user._id && !userEmail)) {
       this.error = 'No se pudo identificar al usuario actual';
       this.loading = false;
       return;
     }
     
-    console.log('Cargando recetas para el usuario:', user._id);
+    // Primero intentamos usar el email desde localStorage
+    if (userEmail) {
+      console.log('Cargando recetas por email:', userEmail);
+      
+      this.http.get<any>(`http://0.0.0.0:5050/recipes/email/${userEmail}`).subscribe({
+        next: (response) => {
+          console.log('Respuesta del servidor:', response);
+          if (response && response.recipes) {
+            this.recipes = response.recipes;
+            
+            // Ordenar por fecha (más reciente primero)
+            this.recipes.sort((a, b) => {
+              return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+            });
+          } else {
+            this.recipes = [];
+          }
+          this.loading = false;
+        },
+        error: (err) => {
+          console.error('Error al cargar recetas por email:', err);
+          
+          // Si falla la carga por email, intentamos por ID de usuario como fallback
+          if (user && user._id) {
+            this.loadRecipesByUserId(user._id);
+          } else {
+            this.error = 'No se pudieron cargar las recetas. Por favor, intenta nuevamente.';
+            this.loading = false;
+          }
+        }
+      });
+    } else if (user && user._id) {
+      // Si no hay email en localStorage, usamos el ID del usuario
+      this.loadRecipesByUserId(user._id);
+    } else {
+      this.error = 'No se pudo identificar al usuario actual';
+      this.loading = false;
+    }
+  }
+  
+  loadRecipesByUserId(userId: string): void {
+    console.log('Cargando recetas por ID de usuario:', userId);
     
-    this.http.get<any>(`http://127.0.0.1:8000/recipes/patient/${user._id}`).subscribe({
+    this.http.get<any>(`http://0.0.0.0:5050/recipes/patient/${userId}`).subscribe({
       next: (response) => {
         console.log('Respuesta del servidor:', response);
         if (response && response.recipes) {
@@ -125,7 +170,7 @@ export class UserRecipesComponent implements OnInit {
         this.loading = false;
       },
       error: (err) => {
-        console.error('Error al cargar recetas:', err);
+        console.error('Error al cargar recetas por ID:', err);
         this.error = 'No se pudieron cargar las recetas. Por favor, intenta nuevamente.';
         this.loading = false;
       }
@@ -133,7 +178,7 @@ export class UserRecipesComponent implements OnInit {
   }
   
   sendEmail(recipeId: string): void {
-    this.http.post(`http://127.0.0.1:8000/recipes/send-email/${recipeId}`, {}).subscribe({
+    this.http.post(`http://0.0.0.0:5050/recipes/send-email/${recipeId}`, {}).subscribe({
       next: () => {
         alert('Receta enviada correctamente a tu correo.');
       },
