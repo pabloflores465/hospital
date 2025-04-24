@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Recipe } from '../app/services/doctor.service';
 
-const API_URL = 'http://0.0.0.0:5050';
+const API_URL = 'http://172.16.57.55:5050/';
 
 export const recipeService = {
   async getUserRecipes(username: string): Promise<Recipe[]> {

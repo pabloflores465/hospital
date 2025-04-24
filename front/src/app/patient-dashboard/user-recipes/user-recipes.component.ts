@@ -115,7 +115,7 @@ export class UserRecipesComponent implements OnInit {
     if (userEmail) {
       console.log('Cargando recetas por email:', userEmail);
       
-      this.http.get<any>(`http://0.0.0.0:5050/recipes/email/${userEmail}`).subscribe({
+      this.http.get<any>(`http://172.16.57.55:5050//recipes/email/${userEmail}`).subscribe({
         next: (response) => {
           console.log('Respuesta del servidor:', response);
           if (response && response.recipes) {
@@ -154,7 +154,7 @@ export class UserRecipesComponent implements OnInit {
   loadRecipesByUserId(userId: string): void {
     console.log('Cargando recetas por ID de usuario:', userId);
     
-    this.http.get<any>(`http://0.0.0.0:5050/recipes/patient/${userId}`).subscribe({
+    this.http.get<any>(`http://172.16.57.55:5050//recipes/patient/${userId}`).subscribe({
       next: (response) => {
         console.log('Respuesta del servidor:', response);
         if (response && response.recipes) {
@@ -178,7 +178,7 @@ export class UserRecipesComponent implements OnInit {
   }
   
   sendEmail(recipeId: string): void {
-    this.http.post(`http://0.0.0.0:5050/recipes/send-email/${recipeId}`, {}).subscribe({
+    this.http.post(`http://172.16.57.55:5050//recipes/send-email/${recipeId}`, {}).subscribe({
       next: () => {
         alert('Receta enviada correctamente a tu correo.');
       },

@@ -211,13 +211,14 @@ interface DoctorResponse {
                 <select
                   formControlName="principioActivo"
                   class="w-full p-2 border rounded"
+                  (change)="seleccionarMedicamento()"
                 >
                   <option value="">Seleccione un principio activo</option>
                   <option
                     *ngFor="let principio of principiosActivos"
-                    [value]="principio.nombre || principio.name"
+                    [value]="principio.name || principio.activeMedicament"
                   >
-                    {{ principio.nombre || principio.name }}
+                    {{ principio.activeMedicament || principio.name }}
                   </option>
                 </select>
               </div>
@@ -540,14 +541,30 @@ export class RecipesPage implements OnInit {
   }
 
   async cargarPrincipiosActivos(): Promise<void> {
-    const url = await back_url();
-    this.http.get<any>(`${url}/medicines/principios-activos`).subscribe({
+    // Usar la API externa proporcionada para obtener los medicamentos
+    this.http.get<any>('http://172.16.57.55:8081/api2/medicines').subscribe({
       next: (response) => {
-        this.principiosActivos = response.principios_activos;
+        // Guardar la respuesta en la variable principiosActivos
+        this.principiosActivos = response || [];
         console.log('Principios activos cargados:', this.principiosActivos);
       },
       error: (error) => {
         console.error('Error al cargar los principios activos:', error);
+        // En caso de error, intentar cargar desde la API local como respaldo
+        this.cargarPrincipiosActivosLocal();
+      },
+    });
+  }
+
+  async cargarPrincipiosActivosLocal(): Promise<void> {
+    const url = await back_url();
+    this.http.get<any>(`${url}/medicines/principios-activos`).subscribe({
+      next: (response) => {
+        this.principiosActivos = response.principios_activos || [];
+        console.log('Principios activos cargados (local):', this.principiosActivos);
+      },
+      error: (error) => {
+        console.error('Error al cargar los principios activos locales:', error);
       },
     });
   }
@@ -821,7 +838,7 @@ export class RecipesPage implements OnInit {
 
       // Consultar la API para obtener información del usuario por su email
       this.http
-        .get<any>(`http://172.20.10.3:8080/api/users/by-email/${encodeURIComponent(emailPaciente)}`)
+        .get<any>(`http://172.16.57.55:8080/api/users/by-email/${encodeURIComponent(emailPaciente)}`)
         .subscribe({
           next: (response: any) => {
             if (response) {
@@ -882,6 +899,38 @@ export class RecipesPage implements OnInit {
       this.tienePolicaDisponible = false;
       this.recetaForm.get('tieneSeguro')?.disable();
       console.error('Error al verificar póliza del paciente:', error);
+    }
+  }
+
+  seleccionarMedicamento(): void {
+    // Obtener el valor actual del control principioActivo
+    const principioActivoSeleccionado = this.recetaForm.get('medicamento.principioActivo')?.value;
+    if (!principioActivoSeleccionado) return;
+    
+    console.log('Principio activo seleccionado:', principioActivoSeleccionado);
+    
+    // Buscar el medicamento en el array de principiosActivos
+    const medicamentoSeleccionado = this.principiosActivos.find(med => 
+      med.name === principioActivoSeleccionado || 
+      med.activeMedicament === principioActivoSeleccionado
+    );
+    
+    if (medicamentoSeleccionado) {
+      console.log('Medicamento encontrado:', medicamentoSeleccionado);
+      
+      // Actualizar los campos del formulario con la información del medicamento
+      this.recetaForm.patchValue({
+        medicamento: {
+          // Mantener el principio activo seleccionado
+          principioActivo: principioActivoSeleccionado,
+          // Actualizar concentración si existe
+          concentracion: medicamentoSeleccionado.concentration || '',
+          // Actualizar presentación si existe
+          presentacion: medicamentoSeleccionado.representation || '',
+          // Actualizar forma farmacéutica si existe
+          formaFarmaceutica: medicamentoSeleccionado.description || ''
+        }
+      });
     }
   }
 }

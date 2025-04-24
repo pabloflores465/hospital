@@ -287,7 +287,27 @@ export class AppointmentsComponent implements OnInit {
   ngOnInit(): void {
     this.initializeWeekDays();
     this.role = this.userService.getUser()?.rol ?? '';
-    this.currentUserId = this.userService.getUser()?._id ?? '';
+    
+    // Verificar que el ID de usuario no sea "magic" u otro valor inválido
+    const userId = this.userService.getUser()?._id;
+    this.currentUserId = (userId && userId !== 'magic' && userId.trim() !== '') ? userId : '';
+    
+    // Si estamos en rol doctor pero no tenemos ID válido, intentar obtenerlo del localStorage
+    if (this.role === 'doctor' && !this.currentUserId) {
+      try {
+        const userDataString = localStorage.getItem('hospital_user');
+        if (userDataString) {
+          const userData = JSON.parse(userDataString);
+          if (userData._id && userData._id !== 'magic' && userData._id.trim() !== '') {
+            this.currentUserId = userData._id;
+            console.log('ID obtenido del localStorage:', this.currentUserId);
+          }
+        }
+      } catch (error) {
+        console.error('Error al obtener ID de usuario del localStorage:', error);
+      }
+    }
+    
     this.loadDoctors();
     this.loadAppointments();
   }
@@ -345,10 +365,10 @@ export class AppointmentsComponent implements OnInit {
           console.log('Doctor email from localStorage:', doctorEmail);
         }
         
-        // Usar el email si existe, de lo contrario usar el ID
+        // Verificar si tenemos un email o ID válido
         const doctorIdentifier = doctorEmail || this.currentUserId;
         
-        if (doctorIdentifier) {
+        if (doctorIdentifier && doctorIdentifier !== 'magic' && doctorIdentifier.trim() !== '') {
           console.log('Requesting appointments for doctor:', doctorIdentifier);
           this.http
             .get<{ appointments: any[] }>(`${url}/api/appointments/doctor/${doctorIdentifier}/`)
@@ -362,24 +382,46 @@ export class AppointmentsComponent implements OnInit {
               this.appointments = [];
             });
         } else {
-          console.error('No doctor identifier available');
-          this.appointments = [];
+          console.error('No hay un identificador válido para el doctor. Cargando todas las citas.');
+          // Si no hay identificador válido, cargar todas las citas como fallback
+          this.loadAllAppointments(url);
         }
       } catch (error) {
         console.error('Error processing user data from localStorage:', error);
         this.appointments = [];
+        // Si hay error, cargar todas las citas como fallback
+        this.loadAllAppointments(url);
       }
     } else {
       // Para pacientes u otros roles, cargar todas las citas
-      this.http
-        .get<{ appointments: any[] }>(`${url}/api/appointments/`)
-        .subscribe((r) => {
-          const all = r.appointments || [];
-          console.log('Loaded appointments (raw):', all);
-          this.appointments = all;
-          console.log('Filtered appointments:', this.appointments);
-        });
+      this.loadAllAppointments(url);
     }
+  }
+
+  // Método auxiliar para cargar todas las citas
+  private loadAllAppointments(url: string): void {
+    this.http
+      .get<{ appointments: any[] }>(`${url}/api/appointments/`)
+      .subscribe((r) => {
+        const all = r.appointments || [];
+        console.log('Loaded all appointments:', all);
+        this.appointments = all;
+        
+        // Si el usuario es doctor pero estamos cargando todas las citas, mostrar un mensaje
+        if (this.role === 'doctor') {
+          setTimeout(() => {
+            alert('No se pudieron cargar sus citas específicas como doctor. Se están mostrando todas las citas disponibles.');
+          }, 1000);
+        }
+      }, (error) => {
+        console.error('Error loading all appointments:', error);
+        this.appointments = [];
+        
+        // Mensaje de error si falla todo
+        setTimeout(() => {
+          alert('Error al cargar las citas. Por favor, intente nuevamente más tarde.');
+        }, 1000);
+      });
   }
 
   isSlotTaken(day: Date, time: string): boolean {
