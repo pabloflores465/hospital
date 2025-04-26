@@ -1,9 +1,9 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DoctorService } from '../../services/doctor.service';
 import { ButtonComponent } from '../../button/button.component';
-import { RouterModule } from '@angular/router';
+import { RouterModule, ActivatedRoute } from '@angular/router';
 
 interface Medicine {
   name: string;
@@ -158,14 +158,26 @@ interface Medicine {
     }
   `]
 })
-export class AddPrescriptionComponent {
+export class AddPrescriptionComponent implements OnInit {
   patientId = '';
   code = '';
   medicines: Medicine[] = [{ name: '', dosis: '', frequency: '', duration: '' }];
   loading = signal(false);
   errorMessage = signal('');
 
-  constructor(private doctorService: DoctorService) {}
+  constructor(
+    private doctorService: DoctorService,
+    private route: ActivatedRoute
+  ) {}
+
+  ngOnInit() {
+    // Obtener el patientId de los parámetros de URL
+    this.route.queryParams.subscribe(params => {
+      if (params['patientId']) {
+        this.patientId = params['patientId'];
+      }
+    });
+  }
 
   addMedicine() {
     this.medicines.push({ name: '', dosis: '', frequency: '', duration: '' });

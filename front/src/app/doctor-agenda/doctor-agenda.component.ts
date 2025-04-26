@@ -4,12 +4,15 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { UserService } from '../services/user.service';
 import { back_url } from '../../environments/back_url';
+import { Router } from '@angular/router';
+
 interface Appointment {
   id: number;
   patientName: string;
   time: string;
   details: string;
   start: string;
+  patientId?: string;
 }
 
 @Component({
@@ -18,70 +21,65 @@ interface Appointment {
   imports: [CommonModule, FormsModule],
   template: `
     <div class="agenda-container">
-      <h2>Mis Citas Pendientes</h2>
-      <ul>
-        <li
+      <h2>Mi Agenda</h2>
+      <div *ngIf="appointments.length > 0">
+        <h3>Citas pendientes</h3>
+        <div
           *ngFor="let appt of appointments"
-          (click)="selectAppointment(appt)"
           class="appointment-item"
+          (click)="selectAppointment(appt)"
         >
-          {{ appt.patientName }} — {{ appt.time }} — {{ appt.details }} —
-          {{ appt.start | date : 'fullDate' }}
-        </li>
-      </ul>
+          <strong>{{ appt.time }}</strong> - {{ appt.patientName }} ({{
+            appt.details
+          }})
+        </div>
+      </div>
+      <div *ngIf="appointments.length === 0">
+        <p>No tienes citas pendientes.</p>
+      </div>
 
-      <div class="appointment-form" *ngIf="selectedAppointment">
-        <h3>Completar Cita</h3>
-        <p><strong>Paciente:</strong> {{ selectedAppointment.patientName }}</p>
-        <p><strong>Doctor:</strong> {{ userService.getUser()?.username }}</p>
-        <p><strong>Descripción:</strong> {{ selectedAppointment.details }}</p>
-        <form (ngSubmit)="completeAppointment()" class="form-card">
-          <div class="form-group">
-            <label>Diagnóstico</label>
-            <textarea
-              [(ngModel)]="result.diagnosis"
-              name="diagnosis"
-              required
-              rows="3"
-            ></textarea>
-          </div>
-          <div class="form-group">
-            <label>Exámenes</label>
-            <textarea
-              [(ngModel)]="result.exams"
-              name="exams"
-              rows="3"
-            ></textarea>
-          </div>
-          <div class="form-group">
-            <label>Medicinas</label>
-            <textarea
-              [(ngModel)]="result.medicines"
-              name="medicines"
-              rows="2"
-            ></textarea>
-          </div>
-          <div class="form-group">
-            <label>Siguientes pasos</label>
-            <textarea
-              [(ngModel)]="result.next_steps"
-              name="next_steps"
-              rows="2"
-            ></textarea>
-          </div>
-          <div class="button-group">
-            <button type="submit" class="btn btn-primary">
-              Guardar Resultados
-            </button>
-            <button
-              type="button"
-              class="btn btn-secondary"
-              (click)="selectedAppointment = null"
-            >
-              Cancelar
-            </button>
-          </div>
-        </form>
+      <div *ngIf="selectedAppointment" class="appointment-form">
+        <h3>Completar Cita con {{ selectedAppointment.patientName }}</h3>
+        <div class="form-card">
+          <form (ngSubmit)="completeAppointment()">
+            <div class="form-group">
+              <label>Diagnóstico</label>
+              <textarea
+                [(ngModel)]="result.diagnosis"
+                name="diagnosis"
+                rows="3"
+              ></textarea>
+            </div>
+            <div class="form-group">
+              <label>Exámenes</label>
+              <textarea
+                [(ngModel)]="result.exams"
+                name="exams"
+                rows="2"
+              ></textarea>
+            </div>
+            <div class="form-group">
+              <label>Siguientes pasos</label>
+              <textarea
+                [(ngModel)]="result.next_steps"
+                name="next_steps"
+                rows="2"
+              ></textarea>
+            </div>
+            <div class="button-group">
+              <button type="submit" class="btn btn-primary">
+                Guardar resultados y generar receta
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="selectedAppointment = null"
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   `,
@@ -160,7 +158,11 @@ export class DoctorAgendaComponent implements OnInit {
   selectedAppointment: Appointment | null = null;
   result = { diagnosis: '', exams: '', medicines: '', next_steps: '' };
 
-  constructor(private http: HttpClient, public userService: UserService) {}
+  constructor(
+    private http: HttpClient, 
+    public userService: UserService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.generateTimeSlots();
@@ -201,6 +203,7 @@ export class DoctorAgendaComponent implements OnInit {
           .map((a) => ({
             id: a._id,
             patientName: a.patient.username,
+            patientId: a.patient._id,
             time: new Date(a.start).toLocaleTimeString([], {
               hour: 'numeric',
               minute: '2-digit',
@@ -237,6 +240,7 @@ export class DoctorAgendaComponent implements OnInit {
   async completeAppointment(): Promise<void> {
     if (!this.selectedAppointment) return;
     const id = this.selectedAppointment?.id;
+    const patientId = this.selectedAppointment?.patientId;
     const url = await back_url();
     this.http
       .put(`${url}/api/appointments/${id}/complete/`, this.result)
@@ -245,6 +249,8 @@ export class DoctorAgendaComponent implements OnInit {
           alert('Resultados guardados correctamente');
           this.loadAppointments();
           this.selectedAppointment = null;
+          // Redirigir a la página de recetas con el paciente seleccionado
+          window.location.href = `http://192.168.0.21:5051/doctor/recipes?patientId=${patientId}`;
         },
         error: (err) =>
           alert('Error al guardar resultados: ' + err.error?.error),

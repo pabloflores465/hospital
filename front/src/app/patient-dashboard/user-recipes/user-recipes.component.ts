@@ -12,12 +12,27 @@ import { recipeService } from '../../../services/recipeService';
     <div class="p-4">
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-bold">Mis Recetas Médicas</h2>
+        <button 
+          (click)="testConnection()" 
+          class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+          Probar conexión
+        </button>
       </div>
       
       <!-- Estado de carga -->
       <div *ngIf="loading" class="text-center py-6">
         <div class="inline-block animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
         <p class="mt-2">Cargando recetas...</p>
+      </div>
+      
+      <!-- Mensaje de éxito de conexión -->
+      <div *ngIf="connectionStatus" class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4">
+        <p>{{ connectionStatus }}</p>
+      </div>
+      
+      <!-- Mensaje de éxito -->
+      <div *ngIf="successMessage" class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4">
+        <p>{{ successMessage }}</p>
       </div>
       
       <!-- Mensaje de error -->
@@ -72,7 +87,7 @@ import { recipeService } from '../../../services/recipeService';
           
           <div class="flex justify-end space-x-2">
             <button class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm" 
-                   (click)="sendEmail(recipe._id)">
+                   (click)="sendRecipeByEmail(recipe._id)">
               Enviar por Email
             </button>
           </div>
@@ -83,8 +98,11 @@ import { recipeService } from '../../../services/recipeService';
 })
 export class UserRecipesComponent implements OnInit {
   recipes: any[] = [];
-  loading = true;
-  error = '';
+  loading: boolean = false;
+  error: string = '';
+  successMessage: string = '';
+  connectionStatus: string = '';
+  patient: any = {};
   
   constructor(
     private http: HttpClient,
@@ -103,43 +121,49 @@ export class UserRecipesComponent implements OnInit {
     console.log('Usuario actual:', user);
     
     // Obtener el email desde localStorage
-    const userEmail = localStorage.getItem('userEmail');
+    const userEmail = localStorage.getItem('userEmail') || user?.email;
     
-    if (!user || (!user._id && !userEmail)) {
-      this.error = 'No se pudo identificar al usuario actual';
-      this.loading = false;
-      return;
-    }
-    
-    // Primero intentamos usar el email desde localStorage
     if (userEmail) {
       console.log('Cargando recetas por email:', userEmail);
       
-      this.http.get<any>(`http://172.16.57.55:5050//recipes/email/${userEmail}`).subscribe({
-        next: (response) => {
-          console.log('Respuesta del servidor:', response);
-          if (response && response.recipes) {
-            this.recipes = response.recipes;
-            
-            // Ordenar por fecha (más reciente primero)
-            this.recipes.sort((a, b) => {
-              return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-            });
-          } else {
-            this.recipes = [];
-          }
+      recipeService.getRecipesByEmail(userEmail)
+        .then(recipes => {
+          console.log('Recetas obtenidas por email:', recipes);
+          this.recipes = recipes;
           this.loading = false;
-        },
-        error: (err) => {
+          
+          if (recipes.length === 0) {
+            console.log('No se encontraron recetas, intentando cargar por ID de usuario...');
+            // Si no encontramos recetas por email, intentemos por ID
+            if (user && user._id) {
+              this.loadRecipesByUserId(user._id);
+            }
+          }
+        })
+        .catch(err => {
           console.error('Error al cargar recetas por email:', err);
+          
+          // Mostrar detalles específicos del error para depuración
+          if (err.response) {
+            // El servidor respondió con un código de estado que no está en el rango 2xx
+            console.error('Respuesta de error:', err.response.data);
+            console.error('Estado HTTP:', err.response.status);
+            this.error = `Error ${err.response.status}: ${err.response.data?.error || 'Error desconocido'}`;
+          } else if (err.request) {
+            // La petición se hizo pero no se recibió respuesta
+            console.error('No se recibió respuesta del servidor');
+            this.error = 'No se pudo conectar con el servidor. Por favor, verifica tu conexión.';
+          } else {
+            // Ocurrió un error al configurar la petición
+            console.error('Error de configuración:', err.message);
+            this.error = `Error: ${err.message}`;
+          }
           
           // Si falla la carga por email, intentamos por ID de usuario como fallback
           if (user && user._id) {
             this.loadRecipesByUserId(user._id);
           } else {
-            this.error = 'No se pudieron cargar las recetas. Por favor, intenta nuevamente.';
             this.loading = false;
-          }
         }
       });
     } else if (user && user._id) {
@@ -154,38 +178,82 @@ export class UserRecipesComponent implements OnInit {
   loadRecipesByUserId(userId: string): void {
     console.log('Cargando recetas por ID de usuario:', userId);
     
-    this.http.get<any>(`http://172.16.57.55:5050//recipes/patient/${userId}`).subscribe({
-      next: (response) => {
-        console.log('Respuesta del servidor:', response);
-        if (response && response.recipes) {
-          this.recipes = response.recipes;
-          
-          // Ordenar por fecha (más reciente primero)
-          this.recipes.sort((a, b) => {
-            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-          });
-        } else {
-          this.recipes = [];
-        }
+    recipeService.getPatientRecipes(userId)
+      .then(recipes => {
+        console.log('Recetas obtenidas por ID:', recipes);
+        this.recipes = recipes;
         this.loading = false;
-      },
-      error: (err) => {
+      })
+      .catch(err => {
         console.error('Error al cargar recetas por ID:', err);
-        this.error = 'No se pudieron cargar las recetas. Por favor, intenta nuevamente.';
+        
+        // Mostrar detalles específicos del error para depuración
+        if (err.response) {
+          // El servidor respondió con un código de estado que no está en el rango 2xx
+          console.error('Respuesta de error:', err.response.data);
+          console.error('Estado HTTP:', err.response.status);
+          this.error = `Error ${err.response.status}: ${err.response.data?.error || 'Error desconocido'}`;
+        } else if (err.request) {
+          // La petición se hizo pero no se recibió respuesta
+          console.error('No se recibió respuesta del servidor');
+          this.error = 'No se pudo conectar con el servidor. Por favor, verifica tu conexión.';
+        } else {
+          // Ocurrió un error al configurar la petición
+          console.error('Error de configuración:', err.message);
+          this.error = `Error: ${err.message}`;
+        }
+        
         this.loading = false;
-      }
+      });
+  }
+  
+  sendRecipeByEmail(recipeId: string): void {
+    this.loading = true;
+    this.error = '';
+    this.successMessage = '';
+    
+    console.log('Enviando receta por email:', recipeId);
+    
+    recipeService.sendRecipeByEmail(recipeId)
+      .then(response => {
+        console.log('Receta enviada por email:', response);
+        this.successMessage = 'Receta enviada por email correctamente';
+        this.loading = false;
+        
+        // Ocultar el mensaje después de 3 segundos
+        setTimeout(() => {
+          this.successMessage = '';
+        }, 3000);
+      })
+      .catch(err => {
+        console.error('Error al enviar la receta por email:', err);
+        this.error = err.response?.data?.error || 'Error desconocido al enviar la receta por email';
+        this.loading = false;
     });
   }
   
-  sendEmail(recipeId: string): void {
-    this.http.post(`http://172.16.57.55:5050//recipes/send-email/${recipeId}`, {}).subscribe({
-      next: () => {
-        alert('Receta enviada correctamente a tu correo.');
-      },
-      error: (err) => {
-        console.error('Error al enviar email:', err);
-        alert('Error al enviar el correo. Inténtalo más tarde.');
-      }
+  testConnection(): void {
+    this.loading = true;
+    this.error = '';
+    this.connectionStatus = '';
+    
+    recipeService.testConnectivity()
+      .then(status => {
+        console.log(status);
+        this.connectionStatus = status;
+        this.loading = false;
+        
+        // Si se detecta una conexión exitosa, intentar cargar recetas
+        if (status.includes('exitosa')) {
+          setTimeout(() => {
+            this.loadRecipes();
+          }, 1000);
+        }
+      })
+      .catch(err => {
+        console.error('Error al probar conectividad:', err);
+        this.error = 'No se pudo conectar con el servidor. Por favor, verifica tu conexión.';
+        this.loading = false;
     });
   }
 } 

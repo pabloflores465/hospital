@@ -21,6 +21,7 @@ interface Medicamento {
   frecuencia: string;
   duracion: string;
   diagnostico: string;
+  precio?: number;
 }
 
 interface Receta {
@@ -199,92 +200,184 @@ interface DoctorResponse {
           </div>
 
           <!-- Datos del medicamento -->
-          <div class="border-b pb-4 mb-4" formGroupName="medicamento">
+          <div class="border-b pb-4 mb-4">
             <h2 class="text-xl font-semibold mb-3">
               Información del Medicamento
             </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium mb-1"
-                  >Principio Activo</label
-                >
-                <select
-                  formControlName="principioActivo"
-                  class="w-full p-2 border rounded"
-                  (change)="seleccionarMedicamento()"
-                >
-                  <option value="">Seleccione un principio activo</option>
-                  <option
-                    *ngFor="let principio of principiosActivos"
-                    [value]="principio.name || principio.activeMedicament"
+            <div formGroupName="medicamento">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium mb-1"
+                    >Principio Activo</label
                   >
-                    {{ principio.activeMedicament || principio.name }}
-                  </option>
-                </select>
+                  <select
+                    formControlName="principioActivo"
+                    class="w-full p-2 border rounded"
+                    (change)="seleccionarMedicamento()"
+                  >
+                    <option value="">Seleccione un principio activo</option>
+                    <option
+                      *ngFor="let principio of principiosActivos"
+                      [value]="principio.name || principio.activeMedicament"
+                    >
+                      {{ principio.activeMedicament || principio.name }}
+                    </option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-1"
+                    >Concentración</label
+                  >
+                  <input
+                    type="text"
+                    formControlName="concentracion"
+                    class="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-1"
+                    >Presentación</label
+                  >
+                  <input
+                    type="text"
+                    formControlName="presentacion"
+                    class="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-1"
+                    >Forma Farmacéutica</label
+                  >
+                  <input
+                    type="text"
+                    formControlName="formaFarmaceutica"
+                    class="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-1">Dosis (unidades a aplicar)</label>
+                  <input
+                    type="text"
+                    formControlName="dosis"
+                    class="w-full p-2 border rounded"
+                    placeholder="Ej: 1 tableta, 10ml, 2 capsulas"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-1">Frecuencia (tiempo entre tomas)</label>
+                  <input
+                    type="text"
+                    formControlName="frecuencia"
+                    class="w-full p-2 border rounded"
+                    placeholder="Ej: Cada 8 horas, 3 veces al día"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-1">Duración (tiempo total del tratamiento)</label>
+                  <input
+                    type="text"
+                    formControlName="duracion"
+                    class="w-full p-2 border rounded"
+                    placeholder="Ej: 7 días, 2 semanas, 1 mes"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-1"
+                    >Diagnóstico</label
+                  >
+                  <input
+                    type="text"
+                    formControlName="diagnostico"
+                    class="w-full p-2 border rounded"
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-1"
+                    >Precio</label
+                  >
+                  <input
+                    type="number"
+                    formControlName="precio"
+                    class="w-full p-2 border rounded"
+                  />
+                </div>
               </div>
-              <div>
-                <label class="block text-sm font-medium mb-1"
-                  >Concentración</label
+              <div class="flex justify-end mt-4">
+                <button 
+                  type="button" 
+                  class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                  (click)="agregarMedicamento()"
                 >
-                <input
-                  type="text"
-                  formControlName="concentracion"
-                  class="w-full p-2 border rounded"
-                />
+                  Agregar Medicamento
+                </button>
               </div>
-              <div>
-                <label class="block text-sm font-medium mb-1"
-                  >Presentación</label
-                >
-                <input
-                  type="text"
-                  formControlName="presentacion"
-                  class="w-full p-2 border rounded"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium mb-1"
-                  >Forma Farmacéutica</label
-                >
-                <input
-                  type="text"
-                  formControlName="formaFarmaceutica"
-                  class="w-full p-2 border rounded"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium mb-1">Dosis</label>
-                <input
-                  type="text"
-                  formControlName="dosis"
-                  class="w-full p-2 border rounded"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium mb-1">Frecuencia</label>
-                <input
-                  type="text"
-                  formControlName="frecuencia"
-                  class="w-full p-2 border rounded"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium mb-1">Duración</label>
-                <input
-                  type="text"
-                  formControlName="duracion"
-                  class="w-full p-2 border rounded"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium mb-1"
-                  >Diagnóstico</label
-                >
-                <input
-                  type="text"
-                  formControlName="diagnostico"
-                  class="w-full p-2 border rounded"
-                />
+            </div>
+            
+            <!-- Lista de medicamentos agregados -->
+            <div *ngIf="medicamentosAgregados.length > 0" class="mt-4">
+              <h3 class="font-semibold mb-2">Medicamentos Agregados</h3>
+              <div class="overflow-auto max-h-64">
+                <table class="min-w-full bg-white">
+                  <thead>
+                    <tr>
+                      <th class="py-2 px-3 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Principio Activo
+                      </th>
+                      <th class="py-2 px-3 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Concentración
+                      </th>
+                      <th class="py-2 px-3 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Dosis
+                        <span class="block normal-case font-normal">(unidades)</span>
+                      </th>
+                      <th class="py-2 px-3 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Frecuencia
+                        <span class="block normal-case font-normal">(entre tomas)</span>
+                      </th>
+                      <th class="py-2 px-3 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Duración
+                        <span class="block normal-case font-normal">(tratamiento)</span>
+                      </th>
+                      <th class="py-2 px-3 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Precio
+                      </th>
+                      <th class="py-2 px-3 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Acciones
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let med of medicamentosAgregados; let i = index">
+                      <td class="py-2 px-3 border-b border-gray-200">
+                        {{ med.principioActivo }}
+                      </td>
+                      <td class="py-2 px-3 border-b border-gray-200">
+                        {{ med.concentracion }}
+                      </td>
+                      <td class="py-2 px-3 border-b border-gray-200">
+                        {{ med.dosis }}
+                      </td>
+                      <td class="py-2 px-3 border-b border-gray-200">
+                        {{ med.frecuencia }}
+                      </td>
+                      <td class="py-2 px-3 border-b border-gray-200">
+                        {{ med.duracion }}
+                      </td>
+                      <td class="py-2 px-3 border-b border-gray-200">
+                        {{ med.precio || 'No especificado' }}
+                      </td>
+                      <td class="py-2 px-3 border-b border-gray-200">
+                        <button 
+                          type="button" 
+                          class="text-red-600 hover:text-red-800"
+                          (click)="eliminarMedicamento(i)"
+                        >
+                          Eliminar
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -313,7 +406,7 @@ interface DoctorResponse {
             <button
               type="submit"
               class="px-4 py-2 bg-blue-600 text-white rounded"
-              [disabled]="recetaForm.invalid"
+              [disabled]="recetaForm.invalid && !recetaForm.get('paciente')?.value"
             >
               Generar Receta
             </button>
@@ -326,7 +419,10 @@ interface DoctorResponse {
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-xl font-semibold">Vista Previa de Receta</h2>
           <div>
-            <button class="px-4 py-2 bg-green-600 text-white rounded mr-2">
+            <button 
+              class="px-4 py-2 bg-green-600 text-white rounded mr-2"
+              (click)="generarPDF(recetaPreview)"
+            >
               Descargar PDF
             </button>
           </div>
@@ -355,31 +451,30 @@ interface DoctorResponse {
           </div>
 
           <div class="border-b pb-2 mb-2">
-            <p class="font-semibold">Medicamento:</p>
-            <p>
-              {{ recetaPreview.medicamento.principioActivo }}
-              {{ recetaPreview.medicamento.concentracion }}
-            </p>
-            <p>
-              {{ recetaPreview.medicamento.presentacion }} -
-              {{ recetaPreview.medicamento.formaFarmaceutica }}
-            </p>
-            <p class="mt-2">
-              <span class="font-semibold">Dosis:</span>
-              {{ recetaPreview.medicamento.dosis }}
-            </p>
-            <p>
-              <span class="font-semibold">Frecuencia:</span>
-              {{ recetaPreview.medicamento.frecuencia }}
-            </p>
-            <p>
-              <span class="font-semibold">Duración:</span>
-              {{ recetaPreview.medicamento.duracion }}
-            </p>
-            <p class="mt-2">
-              <span class="font-semibold">Diagnóstico:</span>
-              {{ recetaPreview.medicamento.diagnostico }}
-            </p>
+            <p class="font-semibold">Medicamentos:</p>
+            
+            <div *ngFor="let med of recetaPreview.medicamentos" class="mt-2 p-2 bg-gray-50 rounded">
+              <p>
+                <span class="font-medium">{{ med.principioActivo }}</span> 
+                {{ med.concentracion }}
+              </p>
+              <p>
+                {{ med.presentacion }} -
+                {{ med.formaFarmaceutica }}
+              </p>
+              <div class="grid grid-cols-1 gap-1 mt-1 text-sm">
+                <p class="font-semibold">Dosis: <span class="font-normal">{{ med.dosis }}</span> <span class="text-xs text-gray-500">(unidades a aplicar)</span></p>
+                <p class="font-semibold">Frecuencia: <span class="font-normal">{{ med.frecuencia }}</span> <span class="text-xs text-gray-500">(tiempo entre tomas)</span></p>
+                <p class="font-semibold">Duración: <span class="font-normal">{{ med.duracion }}</span> <span class="text-xs text-gray-500">(tiempo total del tratamiento)</span></p>
+              </div>
+              <p class="mt-1 text-sm"><span class="font-semibold">Diagnóstico:</span> {{ med.diagnostico }}</p>
+              <p class="mt-1 text-sm"><span class="font-semibold">Precio:</span> {{ med.precio || 'No especificado' }}</p>
+            </div>
+            
+            <!-- Precio total -->
+            <div class="mt-4 text-right">
+              <p class="font-bold">Total: {{ calcularPrecioTotal() }}</p>
+            </div>
           </div>
 
           <div *ngIf="recetaPreview.notasEspeciales">
@@ -405,6 +500,7 @@ export class RecipesPage implements OnInit {
   doctorActual: any = null;
   principiosActivos: any[] = [];
   recetas: any[] = [];
+  medicamentosAgregados: Medicamento[] = [];
 
   constructor(private fb: FormBuilder, private http: HttpClient) {
     // Inicializar formulario
@@ -417,14 +513,15 @@ export class RecipesPage implements OnInit {
       tieneSeguro: [false],
       codigoSeguro: [''],
       medicamento: this.fb.group({
-        principioActivo: ['', Validators.required],
-        concentracion: ['', Validators.required],
-        presentacion: ['', Validators.required],
-        formaFarmaceutica: ['', Validators.required],
-        dosis: ['', Validators.required],
-        frecuencia: ['', Validators.required],
-        duracion: ['', Validators.required],
-        diagnostico: ['', Validators.required],
+        principioActivo: [''],
+        concentracion: [''],
+        presentacion: [''],
+        formaFarmaceutica: [''],
+        dosis: [''],
+        frecuencia: [''],
+        duracion: [''],
+        diagnostico: [''],
+        precio: [''],
       }),
       notasEspeciales: [''],
     });
@@ -445,28 +542,91 @@ export class RecipesPage implements OnInit {
 
   generarPDF(recetaData: any): void {
     const doc = new jsPDF();
-    const rows = [
+    
+    // Cabecera
+    doc.setFontSize(18);
+    doc.text('Receta Médica', 105, 15, { align: 'center' });
+    
+    // Información general
+    doc.setFontSize(12);
+    const infoGeneral = [
       ['Paciente', recetaData.paciente],
-      ['Nombre Médico', recetaData.nombreMedico],
+      ['Médico', recetaData.nombreMedico],
+      ['Especialidad', recetaData.especialidad || 'No especificada'],
+      ['Fecha', new Date().toLocaleDateString()],
+      ['Código', recetaData.codigo || ''],
       ['Tiene Seguro', recetaData.tieneSeguro ? 'Sí' : 'No'],
       ['Código Seguro', recetaData.codigoSeguro || 'N/A'],
-      ['Código Hospital', recetaData.codigoHospital],
-      ['Principio Activo', recetaData.medicamento.principioActivo],
-      ['Concentracion', recetaData.medicamento.concentracion],
-      ['Presentación', recetaData.medicamento.presentacion],
-      ['Forma Farmacéutica', recetaData.medicamento.formaFarmaceutica],
-      ['Dosis', recetaData.medicamento.dosis],
-      ['Frecuencia', recetaData.medicamento.frecuencia],
-      ['Duración', recetaData.medicamento.duracion],
-      ['Diagnóstico', recetaData.medicamento.diagnostico],
-      ['Notas Especiales', recetaData.notasEspeciales || ''],
+      ['Código Hospital', recetaData.codigoHospital || ''],
     ];
+    
     autoTable(doc, {
       head: [['Campo', 'Valor']],
-      body: rows,
-      startY: 20,
+      body: infoGeneral,
+      startY: 25,
+      theme: 'grid',
+      headStyles: { fillColor: [41, 128, 185], textColor: 255 }
     });
-    doc.save('prescription.pdf');
+    
+    // Tabla de medicamentos
+    const medicamentosRows = [];
+    let totalPrecio = 0;
+    
+    // Si tenemos un solo objeto de medicamento (compatibilidad con versión anterior)
+    if (recetaData.medicamento) {
+      medicamentosRows.push([
+        recetaData.medicamento.principioActivo,
+        recetaData.medicamento.concentracion,
+        recetaData.medicamento.dosis + " (unidades)",
+        recetaData.medicamento.frecuencia + " (entre tomas)",
+        recetaData.medicamento.duracion + " (tratamiento)",
+        recetaData.medicamento.precio || 'N/A'
+      ]);
+      if (recetaData.medicamento.precio) {
+        totalPrecio += parseFloat(recetaData.medicamento.precio.toString());
+      }
+    }
+    // Si tenemos un array de medicamentos
+    else if (recetaData.medicamentos && Array.isArray(recetaData.medicamentos)) {
+      recetaData.medicamentos.forEach((med: Medicamento) => {
+        medicamentosRows.push([
+          med.principioActivo,
+          med.concentracion,
+          med.dosis + " (unidades)",
+          med.frecuencia + " (entre tomas)",
+          med.duracion + " (tratamiento)",
+          med.precio || 'N/A'
+        ]);
+        if (med.precio) {
+          totalPrecio += parseFloat(med.precio.toString());
+        }
+      });
+    }
+    
+    // Agregar la fila de total
+    medicamentosRows.push(['', '', '', '', 'TOTAL', `${totalPrecio.toFixed(2)}`]);
+    
+    const finalY = (doc as any).lastAutoTable.finalY || 70;
+    
+    autoTable(doc, {
+      head: [['Principio Activo', 'Concentración', 'Dosis', 'Frecuencia', 'Duración', 'Precio']],
+      body: medicamentosRows,
+      startY: finalY + 10,
+      theme: 'grid',
+      headStyles: { fillColor: [41, 128, 185], textColor: 255 }
+    });
+    
+    // Notas especiales
+    if (recetaData.notasEspeciales) {
+      const notasY = (doc as any).lastAutoTable.finalY + 10;
+      doc.setFontSize(12);
+      doc.text('Notas Especiales:', 14, notasY);
+      doc.setFontSize(10);
+      doc.text(recetaData.notasEspeciales, 14, notasY + 7);
+    }
+    
+    // Guardar el documento
+    doc.save('receta_medica.pdf');
   }
 
   ngOnInit(): void {
@@ -542,11 +702,17 @@ export class RecipesPage implements OnInit {
 
   async cargarPrincipiosActivos(): Promise<void> {
     // Usar la API externa proporcionada para obtener los medicamentos
-    this.http.get<any>('http://172.16.57.55:8081/api2/medicines').subscribe({
+    this.http.get<any>('http://192.168.0.21:8081/api2/medicines').subscribe({
       next: (response) => {
         // Guardar la respuesta en la variable principiosActivos
         this.principiosActivos = response || [];
         console.log('Principios activos cargados:', this.principiosActivos);
+        
+        // Imprimir una muestra de datos para inspeccionar la estructura
+        if (this.principiosActivos.length > 0) {
+          console.log('Muestra de medicamento:', this.principiosActivos[0]);
+          console.log('Precio del medicamento:', this.principiosActivos[0].price);
+        }
       },
       error: (error) => {
         console.error('Error al cargar los principios activos:', error);
@@ -597,41 +763,66 @@ export class RecipesPage implements OnInit {
 
   async generarReceta(): Promise<void> {
     const url = await back_url();
-    if (this.recetaForm.valid) {
+    
+    console.log('Iniciando generación de receta');
+    console.log('Medicamentos agregados:', this.medicamentosAgregados);
+    console.log('Estado del formulario:', this.recetaForm.value);
+    console.log('Formulario válido:', this.recetaForm.valid);
+    
+    // Verificar los valores requeridos manualmente
+    if (!this.recetaForm.get('paciente')?.value) {
+      alert('Debe seleccionar un paciente');
+      return;
+    }
+    
+    if (!this.recetaForm.get('fecha')?.value) {
+      alert('Debe seleccionar una fecha');
+      return;
+    }
+    
+    // Verificar que haya al menos un medicamento agregado
+    if (this.medicamentosAgregados.length === 0) {
+      // Si no hay medicamentos agregados, pero hay uno en el formulario, agregarlo primero
+      const medicamentoActual = this.recetaForm.get('medicamento')?.value;
+      if (medicamentoActual && medicamentoActual.principioActivo) {
+        this.agregarMedicamento();
+      } else {
+        alert('Debe agregar al menos un medicamento a la receta');
+        return;
+      }
+    }
+    
+    try {
       const formData = this.recetaForm.value;
-
+      
       // Crear objeto para enviar al API
       const recetaData = {
-        paciente: formData.paciente, // Ahora esto contiene el ID del paciente
+        paciente: formData.paciente, // ID del paciente
         nombreMedico: formData.nombreMedico, // ID del médico
-        tieneSeguro: formData.tieneSeguro,
+        tieneSeguro: formData.tieneSeguro || false,
         codigoSeguro: formData.tieneSeguro ? formData.codigoSeguro : null,
         codigoHospital: this.codigoHospital,
-        medicamento: {
-          principioActivo: formData.medicamento.principioActivo,
-          concentracion: formData.medicamento.concentracion,
-          presentacion: formData.medicamento.presentacion,
-          formaFarmaceutica: formData.medicamento.formaFarmaceutica,
-          dosis: formData.medicamento.dosis,
-          frecuencia: formData.medicamento.frecuencia,
-          duracion: formData.medicamento.duracion,
-          diagnostico: formData.medicamento.diagnostico,
-        },
-
-        notasEspeciales: formData.notasEspeciales,
+        // Convertir el array de medicamentos a un solo medicamento (principal)
+        // para mantener compatibilidad con el backend
+        medicamento: this.medicamentosAgregados[0],
+        // Incluir también el array completo por si el backend lo soporta
+        medicamentos: this.medicamentosAgregados,
+        notasEspeciales: formData.notasEspeciales || '',
       };
-      this.generarPDF(recetaData);
-
+      
       console.log('Datos a enviar:', recetaData);
-
+      
+      // Generar PDF primero
+      this.generarPDF(recetaData);
+      
       // Enviar datos al API
       this.http.post(`${url}/recipes/save`, recetaData).subscribe({
         next: (response: any) => {
           console.log('Receta guardada:', response);
-
+          
           // Guardar el ID de la receta generada
           this.recetaGeneradaId = response.recipe_id;
-
+          
           // Enviar automáticamente por email
           this.http
             .post(`${url}/recipes/send-email/${this.recetaGeneradaId}`, {})
@@ -641,20 +832,24 @@ export class RecipesPage implements OnInit {
                 alert(
                   'La receta ha sido guardada y enviada al correo del paciente.'
                 );
+                // Limpiar toda la página después de enviar la receta
+                this.limpiarPagina();
               },
               error: (err) => {
                 console.error('Error al enviar el email:', err);
                 alert(
                   'La receta se guardó correctamente, pero hubo un error al enviar el correo.'
                 );
+                // Limpiar toda la página incluso si falla el envío de email
+                this.limpiarPagina();
               },
             });
-
+          
           // Para la vista previa, buscar el nombre del paciente según su ID
           const pacienteSeleccionado = this.pacientes.find(
             (p) => p._id === formData.paciente
           );
-
+          
           // Crear objeto de receta para vista previa
           this.recetaPreview = {
             ...formData,
@@ -663,18 +858,59 @@ export class RecipesPage implements OnInit {
             // Mostrar nombres en la vista previa
             nombreMedico: this.doctorActual?.username || 'Médico',
             paciente: pacienteSeleccionado?.username || 'Paciente',
+            // Incluir los medicamentos agregados
+            medicamentos: this.medicamentosAgregados
           };
-
+          
           this.recetaGenerada = true;
+          
+          // Limpiar la lista de medicamentos después de guardar
+          this.medicamentosAgregados = [];
         },
         error: (error) => {
           console.error('Error al guardar la receta:', error);
-          alert(
-            'Error al guardar la receta: ' +
+          console.error('Respuesta de error completa:', error.error);
+          
+          // Intentar con un formato alternativo si falla el primero
+          if (error.status === 400) {
+            console.log('Intentando con formato alternativo...');
+            
+            // Formato alternativo: solo enviamos un medicamento en lugar del array
+            const formatoAlternativo = {
+              ...recetaData,
+              medicamento: this.medicamentosAgregados[0],
+              // Eliminar el array de medicamentos
+              medicamentos: undefined
+            };
+            
+            console.log('Enviando con formato alternativo:', formatoAlternativo);
+            
+            this.http.post(`${url}/recipes/save`, formatoAlternativo).subscribe({
+              next: (response: any) => {
+                console.log('Receta guardada con formato alternativo:', response);
+                alert('¡La receta se ha guardado correctamente!');
+                // Limpiar toda la página después de enviar la receta
+                this.limpiarPagina();
+              },
+              error: (err) => {
+                console.error('Error al guardar receta con formato alternativo:', err);
+                alert(
+                  'Error al guardar la receta: ' +
+                  (err.error?.error || 'Error desconocido')
+                );
+              }
+            });
+          } else {
+            alert(
+              'Error al guardar la receta: ' +
               (error.error?.error || 'Error desconocido')
-          );
+            );
+          }
         },
       });
+    } catch (error) {
+      console.error('Error al procesar la receta:', error);
+      alert('Error al procesar la receta. Consulte la consola para más detalles.');
     }
   }
 
@@ -747,7 +983,7 @@ export class RecipesPage implements OnInit {
 
       // Consultar la API para obtener información del usuario por su email
       this.http
-        .get<any>(`http://192.168.0.20:8080/api/users/by-email/${encodeURIComponent(email)}`)
+        .get<any>(`http://192.168.0.21:5051/api/users/by-email/${encodeURIComponent(email)}`)
         .subscribe({
           next: (response: any) => {
             console.log('Usuario obtenido:', response);
@@ -838,7 +1074,7 @@ export class RecipesPage implements OnInit {
 
       // Consultar la API para obtener información del usuario por su email
       this.http
-        .get<any>(`http://172.16.57.55:8080/api/users/by-email/${encodeURIComponent(emailPaciente)}`)
+        .get<any>(`http://192.168.0.21:8080/api/users/by-email/${encodeURIComponent(emailPaciente)}`)
         .subscribe({
           next: (response: any) => {
             if (response) {
@@ -917,6 +1153,20 @@ export class RecipesPage implements OnInit {
     
     if (medicamentoSeleccionado) {
       console.log('Medicamento encontrado:', medicamentoSeleccionado);
+      console.log('Campos disponibles:', Object.keys(medicamentoSeleccionado));
+      console.log('Precio del medicamento:', medicamentoSeleccionado.price);
+      
+      // Extraer el precio del medicamento
+      let precio = '';
+      if (medicamentoSeleccionado.price) {
+        precio = medicamentoSeleccionado.price.toString();
+      } else if (medicamentoSeleccionado.pricing) {
+        precio = medicamentoSeleccionado.pricing.toString();
+      } else if (typeof medicamentoSeleccionado.cost === 'number') {
+        precio = medicamentoSeleccionado.cost.toString();
+      } else if (typeof medicamentoSeleccionado.value === 'number') {
+        precio = medicamentoSeleccionado.value.toString();
+      }
       
       // Actualizar los campos del formulario con la información del medicamento
       this.recetaForm.patchValue({
@@ -924,13 +1174,87 @@ export class RecipesPage implements OnInit {
           // Mantener el principio activo seleccionado
           principioActivo: principioActivoSeleccionado,
           // Actualizar concentración si existe
-          concentracion: medicamentoSeleccionado.concentration || '',
+          concentracion: medicamentoSeleccionado.concentration || medicamentoSeleccionado.concentracion || '',
           // Actualizar presentación si existe
-          presentacion: medicamentoSeleccionado.representation || '',
+          presentacion: medicamentoSeleccionado.representation || medicamentoSeleccionado.presentacion || '',
           // Actualizar forma farmacéutica si existe
-          formaFarmaceutica: medicamentoSeleccionado.description || ''
+          formaFarmaceutica: medicamentoSeleccionado.description || medicamentoSeleccionado.formaFarmaceutica || '',
+          // Actualizar precio si existe
+          precio: precio
         }
       });
     }
+  }
+
+  agregarMedicamento(): void {
+    const medicamentoForm = this.recetaForm.get('medicamento');
+    
+    if (!medicamentoForm || !medicamentoForm.value.principioActivo) {
+      alert('Debe seleccionar un principio activo para agregar el medicamento');
+      return;
+    }
+    
+    const nuevoMedicamento: Medicamento = {
+      principioActivo: medicamentoForm.value.principioActivo,
+      concentracion: medicamentoForm.value.concentracion,
+      presentacion: medicamentoForm.value.presentacion,
+      formaFarmaceutica: medicamentoForm.value.formaFarmaceutica,
+      dosis: medicamentoForm.value.dosis,
+      frecuencia: medicamentoForm.value.frecuencia,
+      duracion: medicamentoForm.value.duracion,
+      diagnostico: medicamentoForm.value.diagnostico,
+      precio: medicamentoForm.value.precio,
+    };
+    
+    console.log('Agregando medicamento:', nuevoMedicamento);
+    this.medicamentosAgregados.push(nuevoMedicamento);
+    
+    // Limpiar el formulario de medicamento
+    medicamentoForm.reset();
+    
+    // Mostrar mensaje de éxito
+    alert('Medicamento agregado a la receta');
+  }
+
+  eliminarMedicamento(index: number): void {
+    this.medicamentosAgregados.splice(index, 1);
+  }
+
+  calcularPrecioTotal(): string {
+    let total = 0;
+    if (this.recetaPreview && this.recetaPreview.medicamentos) {
+      this.recetaPreview.medicamentos.forEach((med: Medicamento) => {
+        if (med.precio) {
+          total += parseFloat(med.precio.toString());
+        }
+      });
+    }
+    return total.toFixed(2);
+  }
+
+  /**
+   * Limpia toda la página después de enviar una receta
+   */
+  limpiarPagina(): void {
+    // Reiniciar el formulario completo
+    this.recetaForm.reset({
+      fecha: new Date().toISOString().split('T')[0],
+      tieneSeguro: false,
+    });
+    
+    // Limpiar medicamentos agregados
+    this.medicamentosAgregados = [];
+    
+    // Ocultar vista previa
+    this.recetaGenerada = false;
+    
+    // Recargar los datos para la nueva receta
+    this.cargarDoctorActual();
+    this.cargarPacientes();
+    
+    // Limpiar el formulario de medicamento
+    this.recetaForm.get('medicamento')?.reset();
+    
+    console.log('Página limpiada correctamente');
   }
 }

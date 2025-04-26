@@ -400,12 +400,12 @@ export class AppointmentsComponent implements OnInit {
 
   // Método auxiliar para cargar todas las citas
   private loadAllAppointments(url: string): void {
-    this.http
-      .get<{ appointments: any[] }>(`${url}/api/appointments/`)
-      .subscribe((r) => {
-        const all = r.appointments || [];
+      this.http
+        .get<{ appointments: any[] }>(`${url}/api/appointments/`)
+        .subscribe((r) => {
+          const all = r.appointments || [];
         console.log('Loaded all appointments:', all);
-        this.appointments = all;
+          this.appointments = all;
         
         // Si el usuario es doctor pero estamos cargando todas las citas, mostrar un mensaje
         if (this.role === 'doctor') {
