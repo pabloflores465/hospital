@@ -195,19 +195,41 @@ export class AddPrescriptionComponent implements OnInit {
       return;
     }
 
+    // Validar que todos los medicamentos tengan los campos requeridos
+    const medicinesMissing = this.medicines.some(
+      med => !med.name || !med.dosis || !med.frequency || !med.duration
+    );
+    
+    if (medicinesMissing) {
+      this.errorMessage.set('Todos los medicamentos deben tener nombre, dosis, frecuencia y duración');
+      return;
+    }
+
     try {
       this.loading.set(true);
-      await this.doctorService.createRecipe({
-        patient: this.patientId,
-        code: this.code,
-        medicines: this.medicines,
-        date: new Date()
-      });
+      this.errorMessage.set('');
+      
+      // Optimización: Crear recetas independientes para cada medicamento
+      // ya que el backend actualmente solo admite un medicamento por receta
+      const promises = this.medicines.map(medicine => 
+        this.doctorService.createRecipe({
+          patient: this.patientId,
+          code: this.code,
+          medicines: [medicine], // Enviamos un solo medicamento por receta
+          date: new Date()
+        })
+      );
+      
+      await Promise.all(promises);
+      
       // Limpiar el formulario después de guardar
       this.patientId = '';
       this.code = '';
       this.medicines = [{ name: '', dosis: '', frequency: '', duration: '' }];
-      this.errorMessage.set('');
+      
+      // Mostrar mensaje de éxito
+      alert('Receta(s) guardada(s) correctamente');
+      
     } catch (error) {
       console.error('Error al crear la receta:', error);
       this.errorMessage.set('Error al guardar la receta médica');

@@ -321,8 +321,21 @@ def save_recipe(request):
                 "dosis": data["medicamento"]["dosis"],
                 "frecuencia": data["medicamento"]["frecuencia"],
                 "duracion": data["medicamento"]["duracion"],
-                "diagnostico": data["medicamento"]["diagnostico"]
+                "diagnostico": data["medicamento"]["diagnostico"],
+                "precio": data["medicamento"].get("precio", 0)
             }
+            
+            # Añadir campos de estimación si están presentes
+            if "unidadesPorPaquete" in data["medicamento"]:
+                medicine_data["unidadesPorPaquete"] = data["medicamento"]["unidadesPorPaquete"]
+            if "estimadoUnidades" in data["medicamento"]:
+                medicine_data["estimadoUnidades"] = data["medicamento"]["estimadoUnidades"]
+            if "estimadoPaquetes" in data["medicamento"]:
+                medicine_data["estimadoPaquetes"] = data["medicamento"]["estimadoPaquetes"]
+            if "costoEstimado" in data["medicamento"]:
+                medicine_data["costoEstimado"] = data["medicamento"]["costoEstimado"]
+            if "stockDisponible" in data["medicamento"]:
+                medicine_data["stockDisponible"] = data["medicamento"]["stockDisponible"]
             
             # Insertar el medicamento
             medicine_id = medicines_collection.insert_one(medicine_data).inserted_id
@@ -338,6 +351,19 @@ def save_recipe(request):
                 "special_notes": data.get("notasEspeciales", ""),
                 "created_at": datetime.now()
             }
+            
+            # Agregar información de costos si está disponible
+            if "subtotal" in data:
+                recipe_data["subtotal"] = data["subtotal"]
+            if "porcentajeDescuento" in data:
+                recipe_data["porcentajeDescuento"] = data["porcentajeDescuento"]
+            elif "tieneSeguro" in data and data["tieneSeguro"]:
+                # Valor por defecto si tiene seguro pero no se especificó el porcentaje
+                recipe_data["porcentajeDescuento"] = 15
+            if "descuento" in data:
+                recipe_data["descuento"] = data["descuento"]
+            if "totalConDescuento" in data:
+                recipe_data["totalConDescuento"] = data["totalConDescuento"]
             
             # Insertar la receta
             recipe_id = recipes_collection.insert_one(recipe_data).inserted_id
@@ -449,12 +475,34 @@ def send_recipe_by_email(request, recipe_id):
             
             # Obtener detalles de los medicamentos
             medicines = []
+            total_cost = 0
             if "medicines" in recipe:
                 for medicine_id in recipe["medicines"]:
                     medicine = medicines_collection.find_one({"_id": ObjectId(medicine_id)})
                     if medicine:
                         medicine = convert_objectid(medicine)
                         medicines.append(medicine)
+                        
+                        # Calcular costo si está disponible
+                        if "precio" in medicine and medicine["precio"]:
+                            try:
+                                price = float(medicine["precio"])
+                                total_cost += price
+                            except (ValueError, TypeError):
+                                pass
+            
+            # Calcular descuento si aplica
+            discount = 0
+            discount_percentage = 0
+            total_with_discount = total_cost
+            
+            if recipe.get("has_insurance", False) and recipe.get("porcentajeDescuento"):
+                try:
+                    discount_percentage = float(recipe["porcentajeDescuento"])
+                    discount = total_cost * (discount_percentage / 100)
+                    total_with_discount = total_cost - discount
+                except (ValueError, TypeError):
+                    pass
             
             # Formatear el código de la receta
             code_string = "-".join(recipe["code"]) if "code" in recipe else ""
@@ -475,14 +523,35 @@ def send_recipe_by_email(request, recipe_id):
             if recipe.get("has_insurance", False) and recipe.get("insurance_code"):
                 message_plain += f"Número de Seguro: {recipe.get('insurance_code', 'N/A')}\n"
             
-            message_plain += "\nMEDICAMENTOS:\n"
-            for med in medicines:
-                message_plain += f"- {med.get('principioActivo', 'N/A')} {med.get('concentracion', 'N/A')}\n"
-                message_plain += f"  Presentación: {med.get('presentacion', 'N/A')} - {med.get('formaFarmaceutica', 'N/A')}\n"
-                message_plain += f"  Dosis: {med.get('dosis', 'N/A')}\n"
-                message_plain += f"  Frecuencia: {med.get('frecuencia', 'N/A')}\n"
-                message_plain += f"  Duración: {med.get('duracion', 'N/A')}\n"
-                message_plain += f"  Diagnóstico: {med.get('diagnostico', 'N/A')}\n\n"
+            message_plain += "\nMEDICAMENTOS EN ESTA RECETA:\n"
+            for idx, med in enumerate(medicines, 1):
+                message_plain += f"\n{idx}. {med.get('principioActivo', 'N/A')} ({med.get('concentracion', 'N/A')})\n"
+                message_plain += f"  Presentación API: {med.get('presentacion', 'N/A')} | Forma: {med.get('formaFarmaceutica', 'N/A')}\n"
+                message_plain += f"  Dosis: {med.get('dosis', 'N/A')} | Frecuencia: {med.get('frecuencia', 'N/A')} | Duración: {med.get('duracion', 'N/A')}\n"
+                
+                # Información de unidades por paquete y precio
+                unidades_paquete = med.get('unidadesPorPaquete', '??')
+                precio = med.get('precio', 0)
+                message_plain += f"  Precio Paquete ({unidades_paquete} u.): Q{precio:.2f}\n"
+                
+                # Información de estimados si está disponible
+                if "estimadoUnidades" in med:
+                    message_plain += f"  Total Unidades Estimado: {med.get('estimadoUnidades')} unidades\n"
+                if "estimadoPaquetes" in med:
+                    message_plain += f"  Total Paquetes Estimado: {med.get('estimadoPaquetes')}\n"
+                if "costoEstimado" in med:
+                    message_plain += f"  Costo Estimado Línea: Q{med.get('costoEstimado'):.2f}\n"
+                
+                message_plain += f"  Diagnóstico: {med.get('diagnostico', 'N/A')}\n"
+            
+            # Agregar resumen de costos
+            message_plain += "\nRESUMEN DE COSTOS:\n"
+            message_plain += f"Subtotal Medicamentos: Q{total_cost:.2f}\n"
+            
+            if discount > 0:
+                message_plain += f"Descuento por Póliza ({discount_percentage}%): -Q{discount:.2f}\n"
+            
+            message_plain += f"TOTAL A PAGAR: Q{total_with_discount:.2f}\n\n"
             
             if "special_notes" in recipe and recipe["special_notes"]:
                 message_plain += "NOTAS ESPECIALES:\n"

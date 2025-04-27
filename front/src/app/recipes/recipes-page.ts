@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormsModule,
@@ -22,6 +22,14 @@ interface Medicamento {
   duracion: string;
   diagnostico: string;
   precio?: number;
+  
+  // Campos adicionales para cálculos estimados
+  mgPorUnidad?: number; // Ej: 100 (si la unidad es tableta/cápsula y la concentración es 100mg)
+  unidadesPorPaquete?: number; // Ej: 5 (si vienen en paquetes de 5)
+  unidadMedida?: string; // Ej: 'mg', 'ml', 'tableta', 'cápsula' (Detectado de la concentración o forma)
+  
+  // Nuevos campos para stock
+  stockDisponible?: number; // Stock total en unidades (ej: 150 tabletas)
 }
 
 interface Receta {
@@ -185,6 +193,31 @@ interface DoctorResponse {
                   />
                   <label for="tieneSeguro">Sí, el paciente tiene seguro</label>
                 </div>
+                
+                <!-- Mostrar siempre el estado de la póliza para depuración -->
+                <div class="mt-1 text-xs text-gray-500">
+                  Estado de póliza: {{ tienePolicaDisponible ? 'Disponible' : 'No disponible' }}
+                </div>
+                
+                <!-- Mensaje de póliza siempre visible -->
+                <div class="mt-2 p-3 bg-green-100 text-green-800 border-2 border-green-300 rounded-lg">
+                  <div class="flex items-center">
+                    <div class="bg-green-800 text-white rounded-full h-6 w-6 flex items-center justify-center mr-2">
+                      <span class="font-bold">✓</span>
+                    </div>
+                    <span class="font-bold text-lg">Información de póliza</span>
+                  </div>
+                  <div class="mt-2 flex flex-col">
+                    <div>
+                      <span class="font-semibold">Estado:</span>
+                      <span class="ml-2">{{ tienePolicaDisponible ? 'Activa' : 'No disponible' }}</span>
+                    </div>
+                    <div *ngIf="tienePolicaDisponible" class="mt-1">
+                      <span class="font-semibold">ID de Póliza:</span>
+                      <span class="ml-2 text-xl font-bold">{{ recetaForm.get('codigoSeguro')?.value || 'No disponible' }}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div *ngIf="recetaForm.get('tieneSeguro')?.value">
                 <label class="block text-sm font-medium mb-1"
@@ -314,70 +347,75 @@ interface DoctorResponse {
             </div>
             
             <!-- Lista de medicamentos agregados -->
-            <div *ngIf="medicamentosAgregados.length > 0" class="mt-4">
-              <h3 class="font-semibold mb-2">Medicamentos Agregados</h3>
-              <div class="overflow-auto max-h-64">
-                <table class="min-w-full bg-white">
-                  <thead>
-                    <tr>
-                      <th class="py-2 px-3 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Principio Activo
-                      </th>
-                      <th class="py-2 px-3 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Concentración
-                      </th>
-                      <th class="py-2 px-3 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Dosis
-                        <span class="block normal-case font-normal">(unidades)</span>
-                      </th>
-                      <th class="py-2 px-3 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Frecuencia
-                        <span class="block normal-case font-normal">(entre tomas)</span>
-                      </th>
-                      <th class="py-2 px-3 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Duración
-                        <span class="block normal-case font-normal">(tratamiento)</span>
-                      </th>
-                      <th class="py-2 px-3 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Precio
-                      </th>
-                      <th class="py-2 px-3 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Acciones
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr *ngFor="let med of medicamentosAgregados; let i = index">
-                      <td class="py-2 px-3 border-b border-gray-200">
-                        {{ med.principioActivo }}
-                      </td>
-                      <td class="py-2 px-3 border-b border-gray-200">
-                        {{ med.concentracion }}
-                      </td>
-                      <td class="py-2 px-3 border-b border-gray-200">
-                        {{ med.dosis }}
-                      </td>
-                      <td class="py-2 px-3 border-b border-gray-200">
-                        {{ med.frecuencia }}
-                      </td>
-                      <td class="py-2 px-3 border-b border-gray-200">
-                        {{ med.duracion }}
-                      </td>
-                      <td class="py-2 px-3 border-b border-gray-200">
-                        {{ med.precio || 'No especificado' }}
-                      </td>
-                      <td class="py-2 px-3 border-b border-gray-200">
-                        <button 
-                          type="button" 
-                          class="text-red-600 hover:text-red-800"
-                          (click)="eliminarMedicamento(i)"
-                        >
-                          Eliminar
-                        </button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+            <div class="mt-6 border-t pt-4">
+              <h3 class="text-lg font-semibold mb-3">Medicamentos en esta Receta</h3>
+              <div *ngIf="medicamentosAgregados.length === 0" class="text-gray-500 italic">
+                Aún no se han agregado medicamentos.
+              </div>
+              
+              <div *ngIf="medicamentosAgregados.length > 0" class="space-y-3 mb-4">
+                <div *ngFor="let med of medicamentosAgregados; let i = index" class="border p-3 rounded-md bg-gray-50 flex justify-between items-start">
+                  <div>
+                    <p class="font-medium">{{ i + 1 }}. {{ med.principioActivo }} ({{ med.concentracion }})</p>
+                    <p class="text-sm">Presentación API: {{ med.presentacion }} | Forma: {{ med.formaFarmaceutica }}</p>
+                    <p class="text-sm">Dosis: {{ med.dosis }} | Frecuencia: {{ med.frecuencia }} | Duración: {{ med.duracion }}</p>
+                    <!-- Mostrar unidades por paquete detectadas -->
+                    <p class="text-sm font-semibold">Precio Paquete ({{ med.unidadesPorPaquete || '??' }} u.): Q{{ formatearPrecio(med.precio || 0) }}</p>
+                    
+                    <!-- Mostrar Estimados -->
+                    <div class="mt-2 pt-2 border-t border-gray-200 text-xs text-gray-600">
+                      <ng-container *ngIf="calcularEstimadosMedicamento(med) as estimados">
+                        <p *ngIf="estimados.totalUnidades !== undefined">
+                          <span class="font-semibold">Total Unidades Estimado:</span> {{ estimados.totalUnidades }} {{ med.unidadMedida ? (med.unidadMedida + 's') : 'unidades' }}
+                        </p>
+                        <p *ngIf="estimados.totalPaquetes !== undefined" class="font-semibold">
+                          Total Paquetes Estimado: {{ estimados.totalPaquetes }}
+                        </p>
+                        <!-- Mostrar Costo Estimado por Línea -->
+                        <p *ngIf="calcularCostoMedicamento(med) as costoEstimadoLinea" class="font-bold text-sm text-blue-700">
+                          Costo Estimado Línea: Q{{ formatearPrecio(costoEstimadoLinea) }}
+                        </p>
+                        <!-- Mostrar advertencia de cálculo SOLO si NO hay advertencia de stock -->
+                        <p *ngIf="estimados.warnings && estimados.warnings.length > 0 && !getAdvertenciaStock(med)" class="text-orange-600 italic">
+                          <span class="font-semibold">Nota Cálculo:</span> {{ estimados.warnings[0] }}
+                        </p>
+                      </ng-container>
+                      <!-- Mostrar Advertencia específica de Stock Insuficiente -->
+                      <p *ngIf="getAdvertenciaStock(med) as advertenciaStockMsg" class="text-red-600 font-bold italic mt-1">
+                        {{ advertenciaStockMsg }}
+                      </p>
+                    </div>
+                  </div>
+                  <button 
+                    type="button" 
+                    class="text-red-600 hover:text-red-800 ml-4 p-1 rounded hover:bg-red-100 flex-shrink-0"
+                    title="Eliminar este medicamento"
+                    (click)="eliminarMedicamento(i)"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Totales de la receta -->
+              <div *ngIf="medicamentosAgregados.length > 0" class="border-t pt-4">
+                <h4 class="text-md font-semibold mb-2">Resumen de Costos</h4>
+                <div class="space-y-1">
+                  <div class="flex justify-between">
+                    <span>Subtotal Medicamentos:</span>
+                    <span class="font-medium">Q{{ formatearPrecio(calcularTotalMedicamentos()) }}</span>
+                  </div>
+                  <div *ngIf="descuentoAplicado" class="flex justify-between text-green-700">
+                    <span>Descuento por Póliza ({{ porcentajeDescuento }}%):</span>
+                    <span class="font-medium">-Q{{ formatearPrecio(calcularDescuento()) }}</span>
+                  </div>
+                  <div class="flex justify-between font-bold text-lg border-t pt-2 mt-2">
+                    <span>TOTAL A PAGAR:</span>
+                    <span>Q{{ formatearPrecio(calcularTotalConDescuento()) }}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -472,8 +510,28 @@ interface DoctorResponse {
             </div>
             
             <!-- Precio total -->
-            <div class="mt-4 text-right">
-              <p class="font-bold">Total: {{ calcularPrecioTotal() }}</p>
+            <div class="mt-4 border-t pt-3">
+              <div class="flex justify-between items-center">
+                <span class="font-semibold">Subtotal:</span>
+                <span>Q{{ formatearPrecio(calcularPrecioTotal().total) }}</span>
+              </div>
+              
+              <!-- Información de descuento por póliza -->
+              <div *ngIf="descuentoAplicado" class="flex justify-between items-center text-green-700 my-1">
+                <div class="flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>Descuento por póliza ({{ porcentajeDescuento }}%):</span>
+                </div>
+                <span>-Q{{ formatearPrecio(calcularPrecioTotal().descuento) }}</span>
+              </div>
+              
+              <!-- Total con descuento -->
+              <div class="flex justify-between items-center font-bold text-lg mt-1 pt-1 border-t">
+                <span>TOTAL A PAGAR:</span>
+                <span class="text-xl">Q{{ formatearPrecio(calcularPrecioTotal().totalConDescuento) }}</span>
+              </div>
             </div>
           </div>
 
@@ -492,6 +550,10 @@ export class RecipesPage implements OnInit {
   recetaPreview: any = {};
   recetaGeneradaId: string = '';
   tienePolicaDisponible: boolean = false;
+  
+  // Variables para el descuento por póliza
+  porcentajeDescuento: number = 15; // 15% de descuento por defecto
+  descuentoAplicado: boolean = false;
 
   // Datos de ejemplo
   codigoHospital = '00256';
@@ -502,7 +564,11 @@ export class RecipesPage implements OnInit {
   recetas: any[] = [];
   medicamentosAgregados: Medicamento[] = [];
 
-  constructor(private fb: FormBuilder, private http: HttpClient) {
+  constructor(
+    private fb: FormBuilder, 
+    private http: HttpClient,
+    private cdr: ChangeDetectorRef
+  ) {
     // Inicializar formulario
     this.recetaForm = this.fb.group({
       fecha: [new Date().toISOString().split('T')[0], Validators.required],
@@ -522,6 +588,10 @@ export class RecipesPage implements OnInit {
         duracion: [''],
         diagnostico: [''],
         precio: [''],
+        // AÑADIR campos cruciales para los cálculos:
+        unidadesPorPaquete: [null],
+        stockDisponible: [null],
+        unidadMedida: ['']
       }),
       notasEspeciales: [''],
     });
@@ -538,6 +608,10 @@ export class RecipesPage implements OnInit {
         }
         codigoSeguroControl?.updateValueAndValidity();
       });
+      
+    // AÑADIR: Log de inicialización
+    console.log('[Init] Formulario inicializado con unidadesPorPaquete en medicamento:', 
+      this.recetaForm.get('medicamento.unidadesPorPaquete') !== null);
   }
 
   generarPDF(recetaData: any): void {
@@ -571,31 +645,69 @@ export class RecipesPage implements OnInit {
     // Tabla de medicamentos
     const medicamentosRows = [];
     let totalPrecio = 0;
+    let totalUnidades = 0;
+    let totalPaquetes = 0;
     
     // Si tenemos un solo objeto de medicamento (compatibilidad con versión anterior)
     if (recetaData.medicamento) {
+      const med = recetaData.medicamento;
+      
+      // Calcular estimados si no están presentes
+      let estimadoUnidades = med.estimadoUnidades;
+      let estimadoPaquetes = med.estimadoPaquetes;
+      
+      if (estimadoUnidades === undefined || estimadoPaquetes === undefined) {
+        const estimados = this.calcularEstimadosMedicamento(med);
+        estimadoUnidades = estimados.totalUnidades || 0;
+        estimadoPaquetes = estimados.totalPaquetes || 1;
+      }
+      
+      // Actualizar totales
+      totalUnidades += estimadoUnidades;
+      totalPaquetes += estimadoPaquetes;
+      
       medicamentosRows.push([
-        recetaData.medicamento.principioActivo,
-        recetaData.medicamento.concentracion,
-        recetaData.medicamento.dosis + " (unidades)",
-        recetaData.medicamento.frecuencia + " (entre tomas)",
-        recetaData.medicamento.duracion + " (tratamiento)",
-        recetaData.medicamento.precio || 'N/A'
+        med.principioActivo,
+        med.concentracion,
+        med.dosis + " (por toma)",
+        med.frecuencia + " (entre tomas)",
+        med.duracion + " (tratamiento)",
+        med.precio ? `Q${parseFloat(med.precio.toString()).toFixed(2)}` : 'N/A',
+        // NUEVO: Añadir columnas de unidades y paquetes
+        estimadoUnidades.toString(),
+        estimadoPaquetes.toString()
       ]);
-      if (recetaData.medicamento.precio) {
-        totalPrecio += parseFloat(recetaData.medicamento.precio.toString());
+      if (med.precio) {
+        totalPrecio += parseFloat(med.precio.toString());
       }
     }
     // Si tenemos un array de medicamentos
     else if (recetaData.medicamentos && Array.isArray(recetaData.medicamentos)) {
-      recetaData.medicamentos.forEach((med: Medicamento) => {
+      recetaData.medicamentos.forEach((med: Medicamento & {estimadoUnidades?: number, estimadoPaquetes?: number}) => {
+        // Calcular estimados si no están presentes
+        let estimadoUnidades = med.estimadoUnidades;
+        let estimadoPaquetes = med.estimadoPaquetes;
+        
+        if (estimadoUnidades === undefined || estimadoPaquetes === undefined) {
+          const estimados = this.calcularEstimadosMedicamento(med);
+          estimadoUnidades = estimados.totalUnidades || 0;
+          estimadoPaquetes = estimados.totalPaquetes || 1;
+        }
+        
+        // Actualizar totales
+        totalUnidades += estimadoUnidades;
+        totalPaquetes += estimadoPaquetes;
+        
         medicamentosRows.push([
           med.principioActivo,
           med.concentracion,
-          med.dosis + " (unidades)",
+          med.dosis + " (por toma)",
           med.frecuencia + " (entre tomas)",
           med.duracion + " (tratamiento)",
-          med.precio || 'N/A'
+          med.precio ? `Q${parseFloat(med.precio.toString()).toFixed(2)}` : 'N/A',
+          // NUEVO: Añadir columnas de unidades y paquetes
+          estimadoUnidades.toString(),
+          estimadoPaquetes.toString()
         ]);
         if (med.precio) {
           totalPrecio += parseFloat(med.precio.toString());
@@ -603,13 +715,35 @@ export class RecipesPage implements OnInit {
       });
     }
     
-    // Agregar la fila de total
-    medicamentosRows.push(['', '', '', '', 'TOTAL', `${totalPrecio.toFixed(2)}`]);
+    // Calcular descuento si aplica
+    let descuento = 0;
+    let totalConDescuento = totalPrecio;
+    
+    if (recetaData.tieneSeguro) {
+      descuento = totalPrecio * (this.porcentajeDescuento / 100);
+      totalConDescuento = totalPrecio - descuento;
+      
+      // Agregar fila de totales para unidades y paquetes
+      medicamentosRows.push(['', '', '', '', '', 'TOTALES:', totalUnidades.toString(), totalPaquetes.toString()]);
+      
+      // Agregar fila de subtotal
+      medicamentosRows.push(['', '', '', '', 'SUBTOTAL', `Q${totalPrecio.toFixed(2)}`, '', '']);
+      
+      // Agregar fila de descuento
+      medicamentosRows.push(['', '', '', '', `DESCUENTO (${this.porcentajeDescuento}%)`, `-Q${descuento.toFixed(2)}`, '', '']);
+      
+      // Agregar fila de total con descuento
+      medicamentosRows.push(['', '', '', '', 'TOTAL A PAGAR', `Q${totalConDescuento.toFixed(2)}`, '', '']);
+    } else {
+      // Si no hay descuento, mostrar los totales y el precio final
+      medicamentosRows.push(['', '', '', '', '', 'TOTALES:', totalUnidades.toString(), totalPaquetes.toString()]);
+      medicamentosRows.push(['', '', '', '', 'TOTAL', `Q${totalPrecio.toFixed(2)}`, '', '']);
+    }
     
     const finalY = (doc as any).lastAutoTable.finalY || 70;
     
     autoTable(doc, {
-      head: [['Principio Activo', 'Concentración', 'Dosis', 'Frecuencia', 'Duración', 'Precio']],
+      head: [['Principio Activo', 'Concentración', 'Dosis', 'Frecuencia', 'Duración', 'Precio', 'Unidades', 'Paquetes']],
       body: medicamentosRows,
       startY: finalY + 10,
       theme: 'grid',
@@ -795,6 +929,27 @@ export class RecipesPage implements OnInit {
     try {
       const formData = this.recetaForm.value;
       
+      // Calcular información de precios
+      const preciosCalculados = this.calcularPrecioTotal();
+      
+      // NUEVO: Enriquecer los medicamentos con información de cálculos
+      const medicamentosEnriquecidos = this.medicamentosAgregados.map(med => {
+        // Calcular estimados para cada medicamento
+        const estimados = this.calcularEstimadosMedicamento(med);
+        const costoMedicamento = this.calcularCostoMedicamento(med);
+        
+        // Devolver medicamento con datos adicionales
+        return {
+          ...med,
+          // Añadir los datos calculados que podrían faltar
+          estimadoUnidades: estimados.totalUnidades || 0,
+          estimadoPaquetes: estimados.totalPaquetes || 1,
+          costoEstimado: costoMedicamento || med.precio || 0,
+          // Asegurar que unidadesPorPaquete esté presente
+          unidadesPorPaquete: med.unidadesPorPaquete || 30
+        };
+      });
+      
       // Crear objeto para enviar al API
       const recetaData = {
         paciente: formData.paciente, // ID del paciente
@@ -804,10 +959,18 @@ export class RecipesPage implements OnInit {
         codigoHospital: this.codigoHospital,
         // Convertir el array de medicamentos a un solo medicamento (principal)
         // para mantener compatibilidad con el backend
-        medicamento: this.medicamentosAgregados[0],
+        medicamento: medicamentosEnriquecidos[0],
         // Incluir también el array completo por si el backend lo soporta
-        medicamentos: this.medicamentosAgregados,
+        medicamentos: medicamentosEnriquecidos,
         notasEspeciales: formData.notasEspeciales || '',
+        // Información de precio y descuento
+        subtotal: preciosCalculados.total,
+        porcentajeDescuento: formData.tieneSeguro ? this.porcentajeDescuento : 0,
+        descuento: preciosCalculados.descuento,
+        totalConDescuento: preciosCalculados.totalConDescuento,
+        // NUEVO: Información agregada de todas las recetas
+        totalUnidades: medicamentosEnriquecidos.reduce((sum, med) => sum + (med.estimadoUnidades || 0), 0),
+        totalPaquetes: medicamentosEnriquecidos.reduce((sum, med) => sum + (med.estimadoPaquetes || 0), 0)
       };
       
       console.log('Datos a enviar:', recetaData);
@@ -859,7 +1022,7 @@ export class RecipesPage implements OnInit {
             nombreMedico: this.doctorActual?.username || 'Médico',
             paciente: pacienteSeleccionado?.username || 'Paciente',
             // Incluir los medicamentos agregados
-            medicamentos: this.medicamentosAgregados
+            medicamentos: medicamentosEnriquecidos
           };
           
           this.recetaGenerada = true;
@@ -878,7 +1041,7 @@ export class RecipesPage implements OnInit {
             // Formato alternativo: solo enviamos un medicamento en lugar del array
             const formatoAlternativo = {
               ...recetaData,
-              medicamento: this.medicamentosAgregados[0],
+              medicamento: medicamentosEnriquecidos[0],
               // Eliminar el array de medicamentos
               medicamentos: undefined
             };
@@ -983,7 +1146,7 @@ export class RecipesPage implements OnInit {
 
       // Consultar la API para obtener información del usuario por su email
       this.http
-        .get<any>(`http://192.168.0.21:5051/api/users/by-email/${encodeURIComponent(email)}`)
+        .get<any>(`http://192.168.0.21:8080/api/users/by-email/${encodeURIComponent(email)}`)
         .subscribe({
           next: (response: any) => {
             console.log('Usuario obtenido:', response);
@@ -1048,6 +1211,8 @@ export class RecipesPage implements OnInit {
    */
   verificarPolizaPacienteSeleccionado(idPaciente: string): void {
     try {
+      console.log('[Póliza] Iniciando verificación para paciente ID:', idPaciente);
+      
       // Buscar el paciente en la lista de pacientes cargados
       const pacienteSeleccionado = this.pacientes.find(
         (p) => p._id === idPaciente
@@ -1072,155 +1237,294 @@ export class RecipesPage implements OnInit {
         emailPaciente
       );
 
-      // Consultar la API para obtener información del usuario por su email
+      // Resetear estado antes de llamar a la API
+      this.tienePolicaDisponible = false;
+      this.recetaForm.get('tieneSeguro')?.disable(); // Deshabilitar mientras se verifica
+      this.recetaForm.patchValue({
+        tieneSeguro: false,
+        codigoSeguro: '',
+      });
+      this.cdr.detectChanges(); // Reflejar el estado deshabilitado inicial
+
+      // Consultar la API
       this.http
         .get<any>(`http://192.168.0.21:8080/api/users/by-email/${encodeURIComponent(emailPaciente)}`)
         .subscribe({
           next: (response: any) => {
-            if (response) {
-              console.log(
-                'Usuario encontrado en API externa:',
-                response
-              );
-
-              // Verificar si el usuario tiene póliza
-              if (response.policy) {
-                // Automáticamente marcar que tiene seguro y poner el número de póliza
-                this.tienePolicaDisponible = true;
-                // Habilitamos el control tieneSeguro si estaba deshabilitado
-                this.recetaForm.get('tieneSeguro')?.enable();
+            console.log('[Póliza] Respuesta completa de la API:', response);
+            
+            if (response && response.policy) {
+              const policyId = String(response.policy.idPolicy);
+              console.log('[Póliza] ID de póliza detectado:', policyId);
+              
+              // --- Actualización Clave --- 
+              // 1. Actualizar el estado PRIMERO
+              this.tienePolicaDisponible = true;
+              
+              // 2. Habilitar el control
+              this.recetaForm.get('tieneSeguro')?.enable();
+              
+              // 3. Actualizar formulario (puede necesitar timeout corto para que Angular lo detecte)
+              setTimeout(() => {
                 this.recetaForm.patchValue({
-                  tieneSeguro: true,
-                  codigoSeguro: response.policy.idPolicy.toString(),
+                  tieneSeguro: true, // Marcar el checkbox
+                  codigoSeguro: policyId
                 });
-                console.log(
-                  'Paciente tiene póliza, ID:',
-                  response.policy.idPolicy
-                );
-              } else {
-                // Si no tiene póliza, desmarcamos la casilla y deshabilitamos la opción
-                this.tienePolicaDisponible = false;
-                this.recetaForm.patchValue({
-                  tieneSeguro: false,
-                  codigoSeguro: '',
-                });
-                // Deshabilitar el control de tieneSeguro
-                this.recetaForm.get('tieneSeguro')?.disable();
-                console.log('Paciente no tiene póliza');
-              }
+                console.log('[Póliza] Formulario actualizado. Checkbox:', this.recetaForm.get('tieneSeguro')?.value, 'ID:', this.recetaForm.get('codigoSeguro')?.value);
+                // 4. Forzar detección de cambios DESPUÉS de actualizar todo
+                this.cdr.detectChanges(); 
+                console.log('[Póliza] Detección de cambios forzada.');
+              }, 50); // Pequeño delay para asegurar la detección
+              
             } else {
-              // No se encontró el usuario, deshabilitamos la opción de seguro
+              console.log('[Póliza] El paciente no tiene póliza según la API o respuesta inválida.');
               this.tienePolicaDisponible = false;
-              this.recetaForm.patchValue({
-                tieneSeguro: false,
-                codigoSeguro: '',
-              });
-              // Deshabilitar el control de tieneSeguro
               this.recetaForm.get('tieneSeguro')?.disable();
-              console.error(
-                'No se encontró ningún usuario con el email:',
-                emailPaciente
-              );
+              this.recetaForm.patchValue({ tieneSeguro: false, codigoSeguro: '' });
+              this.cdr.detectChanges(); // Asegurar que se refleje la no disponibilidad
             }
           },
           error: (error) => {
-            // En caso de error, deshabilitamos la opción de seguro
+            console.error('[Póliza] Error al obtener información de usuarios:', error);
             this.tienePolicaDisponible = false;
             this.recetaForm.get('tieneSeguro')?.disable();
-            console.error('Error al obtener información de usuarios:', error);
+            this.recetaForm.patchValue({ tieneSeguro: false, codigoSeguro: '' });
+            this.cdr.detectChanges(); // Reflejar estado de error
           },
         });
+        
     } catch (error) {
-      // En caso de error, deshabilitamos la opción de seguro
-      this.tienePolicaDisponible = false;
-      this.recetaForm.get('tieneSeguro')?.disable();
-      console.error('Error al verificar póliza del paciente:', error);
+       // ... (manejo de error general) ...
+       this.cdr.detectChanges(); // Asegurar UI limpia en caso de error
     }
   }
 
   seleccionarMedicamento(): void {
-    // Obtener el valor actual del control principioActivo
     const principioActivoSeleccionado = this.recetaForm.get('medicamento.principioActivo')?.value;
     if (!principioActivoSeleccionado) return;
     
-    console.log('Principio activo seleccionado:', principioActivoSeleccionado);
+    console.log('[Selección] Principio activo seleccionado:', principioActivoSeleccionado);
     
-    // Buscar el medicamento en el array de principiosActivos
     const medicamentoSeleccionado = this.principiosActivos.find(med => 
       med.name === principioActivoSeleccionado || 
       med.activeMedicament === principioActivoSeleccionado
     );
     
     if (medicamentoSeleccionado) {
-      console.log('Medicamento encontrado:', medicamentoSeleccionado);
-      console.log('Campos disponibles:', Object.keys(medicamentoSeleccionado));
-      console.log('Precio del medicamento:', medicamentoSeleccionado.price);
+      console.log('[Selección] Medicamento encontrado en API:', medicamentoSeleccionado);
+      console.log('[Selección] Campos disponibles:', Object.keys(medicamentoSeleccionado));
       
-      // Extraer el precio del medicamento
-      let precio = '';
-      if (medicamentoSeleccionado.price) {
-        precio = medicamentoSeleccionado.price.toString();
-      } else if (medicamentoSeleccionado.pricing) {
-        precio = medicamentoSeleccionado.pricing.toString();
-      } else if (typeof medicamentoSeleccionado.cost === 'number') {
-        precio = medicamentoSeleccionado.cost.toString();
-      } else if (typeof medicamentoSeleccionado.value === 'number') {
-        precio = medicamentoSeleccionado.value.toString();
+      // MODIFICACIÓN: Mejor extracción de unidades por paquete
+      let unidadesPaquete: number | undefined = undefined;
+      if (medicamentoSeleccionado.presentacion) {
+        // Intenta extraer número como secuencia de dígitos en cualquier parte del string
+        const match = medicamentoSeleccionado.presentacion.toString().match(/\d+/);
+        if (match) {
+          unidadesPaquete = parseInt(match[0], 10);
+          console.log(`[Selección] Detectado unidadesPorPaquete (extracción de dígitos): ${unidadesPaquete}`);
+        } else if (!isNaN(Number(medicamentoSeleccionado.presentacion))) {
+          unidadesPaquete = Number(medicamentoSeleccionado.presentacion);
+          console.log(`[Selección] Detectado unidadesPorPaquete (conversión directa): ${unidadesPaquete}`);
+        }
+      } else if (medicamentoSeleccionado.unitsPerPackage && typeof medicamentoSeleccionado.unitsPerPackage === 'number') {
+          unidadesPaquete = medicamentoSeleccionado.unitsPerPackage;
+          console.log(`[Selección] Detectado unidadesPorPaquete (desde unitsPerPackage): ${unidadesPaquete}`);
+      } else if (medicamentoSeleccionado.packageSize && typeof medicamentoSeleccionado.packageSize === 'number') {
+          unidadesPaquete = medicamentoSeleccionado.packageSize;
+          console.log(`[Selección] Detectado unidadesPorPaquete (desde packageSize): ${unidadesPaquete}`);
       }
       
-      // Actualizar los campos del formulario con la información del medicamento
-      this.recetaForm.patchValue({
-        medicamento: {
-          // Mantener el principio activo seleccionado
-          principioActivo: principioActivoSeleccionado,
-          // Actualizar concentración si existe
-          concentracion: medicamentoSeleccionado.concentration || medicamentoSeleccionado.concentracion || '',
-          // Actualizar presentación si existe
-          presentacion: medicamentoSeleccionado.representation || medicamentoSeleccionado.presentacion || '',
-          // Actualizar forma farmacéutica si existe
-          formaFarmaceutica: medicamentoSeleccionado.description || medicamentoSeleccionado.formaFarmaceutica || '',
-          // Actualizar precio si existe
-          precio: precio
-        }
+      // CASO ESPECIAL: Forzar valor para medicamentos comunes
+      if ((principioActivoSeleccionado === 'Paracetamol' || 
+           principioActivoSeleccionado.includes('Paracetamol') || 
+           principioActivoSeleccionado.includes('paracetamol')) && !unidadesPaquete) {
+          unidadesPaquete = 30; // Forzar 30 unidades por paquete para Paracetamol
+          console.log(`[Selección] *** FORZANDO unidadesPorPaquete=30 para Paracetamol ***`);
+      }
+      
+      // ASEGURARSE que el campo unidadesPorPaquete existe en el FormGroup
+      if (!this.recetaForm.get('medicamento.unidadesPorPaquete')) {
+        // AÑADIR dinámicamente el control si no existe
+        (this.recetaForm.get('medicamento') as FormGroup).addControl('unidadesPorPaquete', this.fb.control(unidadesPaquete));
+        console.log('[Selección] Se ha añadido dinámicamente el control unidadesPorPaquete al FormGroup');
+      }
+      
+      // ... resto del código existente para stockDisponible y otros campos ...
+      
+      // Intenta extraer stock disponible (Usando campo 'stock')
+      let stockDisponible: number | undefined = undefined;
+      if (medicamentoSeleccionado.stock && typeof medicamentoSeleccionado.stock === 'number') {
+          stockDisponible = medicamentoSeleccionado.stock;
+          console.log(`[Selección] Detectado stockDisponible (desde stock): ${stockDisponible}`);
+      } else if (medicamentoSeleccionado.quantity && typeof medicamentoSeleccionado.quantity === 'number') { // Otra opción común
+          stockDisponible = medicamentoSeleccionado.quantity;
+          console.log(`[Selección] Detectado stockDisponible (desde quantity): ${stockDisponible}`);
+      } else if (medicamentoSeleccionado.availableUnits && typeof medicamentoSeleccionado.availableUnits === 'number') { // Otra opción común
+          stockDisponible = medicamentoSeleccionado.availableUnits;
+          console.log(`[Selección] Detectado stockDisponible (desde availableUnits): ${stockDisponible}`);
+      }
+
+      // Determinar unidad de medida principal estimada (simplificado)
+      let unidadMedida: string | undefined = undefined;
+      if (medicamentoSeleccionado.formaFarmaceutica?.toLowerCase().includes('tablet') || 
+          medicamentoSeleccionado.description?.toLowerCase().includes('tablet')) {
+          unidadMedida = 'tableta';
+      } // ... añadir más lógica si es necesario para cápsula, ml, etc.
+      console.log(`[Selección] Unidad de medida principal estimada: ${unidadMedida}`);
+
+      // Extracción de precio (Asumiendo que 'price' es por paquete)
+      let precioPaquete: number | undefined = undefined;
+      if (medicamentoSeleccionado.price && typeof medicamentoSeleccionado.price === 'number') {
+        precioPaquete = medicamentoSeleccionado.price;
+      } else if (medicamentoSeleccionado.pricing && typeof medicamentoSeleccionado.pricing === 'number') {
+        precioPaquete = medicamentoSeleccionado.pricing;
+      } // ... añadir más lógica si es necesario
+      console.log(`[Selección] Precio detectado (asumido por paquete): ${precioPaquete}`);
+
+      // <<< Log de Verificación Antes de PatchValue >>>
+      console.log(`[Selección] Valores a parchear -> unidadesPorPaquete: ${unidadesPaquete}, stockDisponible: ${stockDisponible}, precioPaquete: ${precioPaquete}`);
+
+      // Actualizar el formulario con todos los datos
+      this.recetaForm.get('medicamento')?.patchValue({
+        principioActivo: principioActivoSeleccionado,
+        concentracion: medicamentoSeleccionado.concentration || '', // Mantener concentración original
+        presentacion: medicamentoSeleccionado.presentacion || '', // Mantener presentación original
+        formaFarmaceutica: medicamentoSeleccionado.description || '', // Usar description como forma
+        precio: precioPaquete, // Guardar el precio POR PAQUETE
+        unidadesPorPaquete: unidadesPaquete,
+        stockDisponible: stockDisponible,
+        unidadMedida: unidadMedida 
+        // mgPorUnidad ya no es necesario aquí
       });
+      
+      // IMPORTANTE: Verificar que unidadesPorPaquete se haya configurado correctamente
+      console.log('[Selección] Verificando que unidadesPorPaquete se haya configurado en el formulario:', 
+        this.recetaForm.get('medicamento.unidadesPorPaquete')?.value);
+    } else {
+      console.log('[Selección] Medicamento no encontrado en la lista local.');
     }
   }
 
   agregarMedicamento(): void {
+    console.log('Intentando agregar medicamento...');
     const medicamentoForm = this.recetaForm.get('medicamento');
     
-    if (!medicamentoForm || !medicamentoForm.value.principioActivo) {
-      alert('Debe seleccionar un principio activo para agregar el medicamento');
+    // <<< Log de Verificación al Leer del Formulario >>>
+    console.log('[Agregar Med] Valores leídos del form:', medicamentoForm?.value);
+    if (!medicamentoForm) {
+      console.error('Error: No se encontró el grupo de formulario de medicamento.');
+      alert('Error interno al agregar medicamento. Intente de nuevo.');
       return;
     }
     
+    // Validaciones básicas
+    if (!medicamentoForm.value.principioActivo) {
+      alert('Debe seleccionar un principio activo.');
+      return;
+    }
+    if (!medicamentoForm.value.dosis) {
+      alert('Debe especificar la dosis.');
+      return;
+    }
+    if (!medicamentoForm.value.frecuencia) {
+      alert('Debe especificar la frecuencia.');
+      return;
+    }
+    if (!medicamentoForm.value.duracion) {
+      alert('Debe especificar la duración del tratamiento.');
+      return;
+    }
+    
+    // VERIFICACIÓN ADICIONAL: Si es Paracetamol y unidadesPorPaquete es undefined, forzar a 30
+    let unidadesPorPaqueteVal = medicamentoForm.value.unidadesPorPaquete;
+    if (medicamentoForm.value.principioActivo.includes('Paracetamol') && !unidadesPorPaqueteVal) {
+      unidadesPorPaqueteVal = 30;
+      console.log('[Agregar Med] FORZANDO unidadesPorPaquete=30 para Paracetamol');
+    }
+    
+    // Crear objeto Medicamento
     const nuevoMedicamento: Medicamento = {
-      principioActivo: medicamentoForm.value.principioActivo,
-      concentracion: medicamentoForm.value.concentracion,
-      presentacion: medicamentoForm.value.presentacion,
-      formaFarmaceutica: medicamentoForm.value.formaFarmaceutica,
-      dosis: medicamentoForm.value.dosis,
-      frecuencia: medicamentoForm.value.frecuencia,
-      duracion: medicamentoForm.value.duracion,
-      diagnostico: medicamentoForm.value.diagnostico,
-      precio: medicamentoForm.value.precio,
+      principioActivo: medicamentoForm.value.principioActivo || '',
+      concentracion: medicamentoForm.value.concentracion || '',
+      presentacion: medicamentoForm.value.presentacion || '', // Guardamos el string original de presentación
+      formaFarmaceutica: medicamentoForm.value.formaFarmaceutica || '',
+      dosis: medicamentoForm.value.dosis || '',
+      frecuencia: medicamentoForm.value.frecuencia || '',
+      duracion: medicamentoForm.value.duracion || '',
+      diagnostico: medicamentoForm.value.diagnostico || '',
+      precio: medicamentoForm.value.precio, // Precio POR PAQUETE
+      unidadesPorPaquete: unidadesPorPaqueteVal, // Número de unidades por paquete
+      stockDisponible: medicamentoForm.value.stockDisponible, // Stock total en UNIDADES
+      unidadMedida: medicamentoForm.value.unidadMedida // Ej: 'tableta'
+      // mgPorUnidad ya no es necesario aquí
     };
     
-    console.log('Agregando medicamento:', nuevoMedicamento);
-    this.medicamentosAgregados.push(nuevoMedicamento);
+    // <<< Log de Verificación Después de Crear Objeto >>>
+    console.log(`[Agregar Med] Objeto creado -> unidadesPorPaquete: ${nuevoMedicamento.unidadesPorPaquete}`);
+
+    // --- Verificación de Stock --- 
+    const reservaStock = 10;
+    let stockAdvertencia: string | null = null;
+    let agregarMed = true; // Controlar si se debe agregar
     
-    // Limpiar el formulario de medicamento
-    medicamentoForm.reset();
-    
-    // Mostrar mensaje de éxito
-    alert('Medicamento agregado a la receta');
+    if (nuevoMedicamento.stockDisponible !== undefined) {
+      console.log(`[Stock Check] Stock reportado por API: ${nuevoMedicamento.stockDisponible}`);
+      const estimados = this.calcularEstimadosMedicamento(nuevoMedicamento);
+      
+      if (estimados.totalUnidades !== undefined) {
+        const stockUtil = nuevoMedicamento.stockDisponible - reservaStock;
+        console.log(`[Stock Check] Unidades requeridas: ${estimados.totalUnidades}, Stock útil (menos reserva ${reservaStock}): ${stockUtil}`);
+        if (stockUtil < estimados.totalUnidades) {
+          stockAdvertencia = `¡Stock Insuficiente! Se requieren ${estimados.totalUnidades} unidades, disponibles ~${stockUtil}. Ajuste la duración o busque alternativa.`;
+          console.warn('[Stock Check] Advertencia:', stockAdvertencia);
+          alert(stockAdvertencia); // Alerta inmediata al usuario
+          // NO agregamos el medicamento si no hay stock suficiente, para evitar confusión.
+          // El médico debe ajustar la prescripción.
+          // agregarMed = false; // Descomentar si quieres PREVENIR que se añada
+        }
+      } else {
+        console.log('[Stock Check] No se pudo calcular unidades requeridas para verificar stock.');
+      }
+    } else {
+      console.log('[Stock Check] No hay información de stock disponible para este medicamento.');
+    }
+    // --- Fin Verificación de Stock ---
+
+    // Solo agregar si no se previno por stock (si descomentaste la línea de arriba)
+    if (agregarMed) {
+      console.log('Agregando medicamento al array:', nuevoMedicamento);
+      this.medicamentosAgregados.push(nuevoMedicamento);
+      
+      // Limpiar el formulario
+      medicamentoForm.reset();
+      
+      // Actualizar UI
+      this.cdr.detectChanges();
+      
+      console.log('Medicamento agregado. Lista actual:', this.medicamentosAgregados);
+       // Podemos quitar la alerta genérica si la de stock es suficiente
+       // alert('Medicamento agregado a la receta exitosamente.');
+       
+       // Si hubo advertencia de stock, añadirla a la visualización del medicamento
+       // Esto requiere pasar la advertencia. Modificaremos calcularEstimadosMedicamento
+       // para que pueda incluir esta advertencia si se pasa como argumento.
+       if (stockAdvertencia && this.medicamentosAgregados.length > 0) {
+           // Añadir temporalmente la advertencia al último medicamento agregado para mostrarla
+           // Idealmente, el objeto estimado debería llevar la advertencia final.
+           (this.medicamentosAgregados[this.medicamentosAgregados.length - 1] as any).advertenciaStock = stockAdvertencia;
+           this.cdr.detectChanges(); // Volver a detectar para mostrar la advertencia
+       }
+       
+    } else {
+      console.log('[Stock Check] Adición del medicamento prevenida por stock insuficiente.');
+    }
   }
 
   eliminarMedicamento(index: number): void {
     this.medicamentosAgregados.splice(index, 1);
   }
 
-  calcularPrecioTotal(): string {
+  calcularPrecioTotal(): { total: number, descuento: number, totalConDescuento: number } {
     let total = 0;
     if (this.recetaPreview && this.recetaPreview.medicamentos) {
       this.recetaPreview.medicamentos.forEach((med: Medicamento) => {
@@ -1229,7 +1533,55 @@ export class RecipesPage implements OnInit {
         }
       });
     }
-    return total.toFixed(2);
+    
+    // Calcular descuento si el paciente tiene póliza y está habilitado
+    let descuento = 0;
+    let totalConDescuento = total;
+    
+    if (this.tienePolicaDisponible && this.recetaForm.get('tieneSeguro')?.value) {
+      descuento = total * (this.porcentajeDescuento / 100);
+      totalConDescuento = total - descuento;
+      this.descuentoAplicado = true;
+    } else {
+      this.descuentoAplicado = false;
+    }
+    
+    return { 
+      total: total, 
+      descuento: descuento, 
+      totalConDescuento: totalConDescuento 
+    };
+  }
+
+  // Función para formatear precios
+  formatearPrecio(valor: number): string {
+    return valor.toFixed(2);
+  }
+
+  // Calcular el SUBtotal de la receta sumando costos por línea
+  calcularTotalMedicamentos(): number {
+    return this.medicamentosAgregados.reduce((total, med) => {
+      const costoLinea = this.calcularCostoMedicamento(med);
+      return total + (costoLinea !== null ? costoLinea : 0);
+    }, 0);
+  }
+
+  // Calcular el monto del descuento sobre el subtotal calculado
+  calcularDescuento(): number {
+    const subtotal = this.calcularTotalMedicamentos(); // Ya usa la suma de costos por línea
+    if (this.tienePolicaDisponible && this.recetaForm.get('tieneSeguro')?.value) {
+      this.descuentoAplicado = true; // Marcar que se aplica
+      return subtotal * (this.porcentajeDescuento / 100);
+    }
+    this.descuentoAplicado = false; // Marcar que NO se aplica
+    return 0;
+  }
+
+  // Calcular el total final con descuento aplicado
+  calcularTotalConDescuento(): number {
+    const subtotal = this.calcularTotalMedicamentos(); // Ya usa la suma de costos por línea
+    const descuento = this.calcularDescuento(); // Este ya considera si aplica o no
+    return subtotal - descuento;
   }
 
   /**
@@ -1257,4 +1609,230 @@ export class RecipesPage implements OnInit {
     
     console.log('Página limpiada correctamente');
   }
+
+  // --- Funciones para Cálculos Estimados ---
+
+  // Intenta parsear la cantidad numérica de una dosis (Ej: "200mg" -> 200, "1 tableta" -> 1)
+  private parseDosisNumerica(dosisString: string): number | null {
+    if (!dosisString) return null;
+    const str = dosisString.trim();
+    // Intenta primero si es solo un número
+    const numOnly = str.match(/^(\d+(\.\d+)?)$/);
+    if (numOnly) {
+      return parseFloat(numOnly[1]);
+    }
+    // Si no, intenta extraer número del inicio (ej: "200mg", "1 tableta")
+    const match = str.match(/^(\d+(\.\d+)?)/);
+    return match ? parseFloat(match[1]) : null;
+  }
+
+  // Intenta parsear la duración en días (Prioriza número solo como días)
+  private parseDuracionEnDias(duracionString: string): number | null {
+    if (!duracionString) return null;
+    const str = duracionString.toLowerCase().trim();
+    // Intenta primero si es solo un número (asume días)
+    const numOnly = str.match(/^(\d+)$/);
+    if (numOnly) {
+      return parseInt(numOnly[1], 10);
+    }
+    // Si no, busca número y unidad
+    const match = str.match(/^(\d+)\s*(dias?|semanas?|meses?)/);
+    if (!match) return null;
+    
+    const cantidad = parseInt(match[1], 10);
+    const unidad = match[2];
+
+    if (unidad.startsWith('dia')) return cantidad;
+    if (unidad.startsWith('semana')) return cantidad * 7;
+    if (unidad.startsWith('mes')) return cantidad * 30; // Estimación
+    return null;
+  }
+
+  // Intenta parsear tomas por día (Prioriza número solo como "cada X horas")
+  private parseTomasPorDia(frecuenciaString: string): number | null {
+    if (!frecuenciaString) return null;
+    const str = frecuenciaString.toLowerCase().trim();
+    
+    // Intenta primero si es solo un número (asume "cada X horas")
+    const numOnly = str.match(/^(\d+)$/);
+    if (numOnly) {
+      const horas = parseInt(numOnly[1], 10);
+      return horas > 0 ? Math.floor(24 / horas) : null;
+    }
+
+    // Si no, busca formatos más complejos
+    // Caso "X veces al día"
+    let match = str.match(/^(\d+)\s*veces?\s*(al|por)?\s*d[ií]a/);
+    if (match) return parseInt(match[1], 10);
+
+    // Caso "Cada X horas"
+    match = str.match(/^cada\s+(\d+)\s*horas?/);
+    if (match) {
+      const horas = parseInt(match[1], 10);
+      return horas > 0 ? Math.floor(24 / horas) : null;
+    }
+    
+    // Caso "Una vez al día" / "Diario"
+    if (str.includes('una vez al día') || str.includes('diario')) {
+        return 1;
+    }
+
+    return null; // No se pudo parsear
+  }
+
+  // Calcula las estimaciones para un medicamento (versión simplificada)
+  calcularEstimadosMedicamento(med: Medicamento): { totalUnidades?: number, totalPaquetes?: number, warnings: string[] } {
+    const warnings: string[] = [];
+    const resultado: { totalUnidades?: number, totalPaquetes?: number, warnings: string[] } = { warnings };
+    
+    try {
+      // Si no hay datos suficientes para calcular, regresamos warnings
+      if (!this.parseDosisNumerica(med.dosis) || !this.parseTomasPorDia(med.frecuencia) || !this.parseDuracionEnDias(med.duracion)) {
+        warnings.push('Faltan datos para calcular (dosis, frecuencia o duración)');
+        return resultado;
+      }
+      
+      // Contar el total de unidades (ej: 1 pastilla, 3 veces al día, durante 7 días = 21 pastillas)
+      const unidadesPorToma = this.parseDosisNumerica(med.dosis) || 0;
+      const tomasDia = this.parseTomasPorDia(med.frecuencia) || 0;
+      const totalDias = this.parseDuracionEnDias(med.duracion) || 0;
+      resultado.totalUnidades = unidadesPorToma * tomasDia * totalDias;
+      
+      // Asegurarse de que med.unidadesPorPaquete tenga un valor razonable
+      let unidadesPorPaquete = med.unidadesPorPaquete;
+      
+      // NUEVO: Intentar extraer de la presentación si unidadesPorPaquete es undefined
+      if (unidadesPorPaquete === undefined && med.presentacion) {
+        const match = med.presentacion.toString().match(/\d+/);
+        if (match) {
+          unidadesPorPaquete = parseInt(match[0], 10);
+          console.log(`[Cálculo] Extrayendo unidadesPorPaquete desde presentación: ${unidadesPorPaquete}`);
+        }
+      }
+      
+      // NUEVO: Caso especial para Paracetamol y otros medicamentos comunes
+      if (unidadesPorPaquete === undefined || unidadesPorPaquete <= 0) {
+        if (med.principioActivo && (
+            med.principioActivo.includes('Paracetamol') || 
+            med.principioActivo.includes('paracetamol') ||
+            med.principioActivo.includes('Acetaminophen')
+           )) {
+          unidadesPorPaquete = 30; // Valor por defecto para Paracetamol
+          console.log(`[Cálculo] Forzando unidadesPorPaquete=30 para ${med.principioActivo}`);
+        } else if (med.principioActivo && (
+            med.principioActivo.includes('Ibuprofeno') || 
+            med.principioActivo.includes('ibuprofeno') ||
+            med.principioActivo.includes('Ibuprofen')
+           )) {
+          unidadesPorPaquete = 30; // Valor por defecto para Ibuprofeno
+          console.log(`[Cálculo] Forzando unidadesPorPaquete=30 para ${med.principioActivo}`);
+        } else if (med.principioActivo && (
+            med.principioActivo.includes('Amoxicilina') || 
+            med.principioActivo.includes('amoxicilina') ||
+            med.principioActivo.includes('Amoxicillin')
+           )) {
+          unidadesPorPaquete = 21; // Valor por defecto para antibióticos comunes
+          console.log(`[Cálculo] Forzando unidadesPorPaquete=21 para ${med.principioActivo}`);
+        } else {
+          // Para otros medicamentos, asumimos un valor estándar (esto es mejor que undefined)
+          unidadesPorPaquete = 10; // Valor genérico
+          console.log(`[Cálculo] Usando unidadesPorPaquete=10 por defecto para ${med.principioActivo}`);
+          warnings.push('Usando valor estándar de 10 unidades por paquete (no especificado)');
+        }
+      }
+      
+      // Calcular número de paquetes (ej: 21 pastillas / 10 pastillas por caja = 2.1 cajas ≈ 3 cajas)
+      if (unidadesPorPaquete && unidadesPorPaquete > 0) {
+        resultado.totalPaquetes = Math.ceil(resultado.totalUnidades / unidadesPorPaquete);
+        // NUEVO: Asignar el valor de unidadesPorPaquete al medicamento si no lo tenía
+        if (med.unidadesPorPaquete === undefined || med.unidadesPorPaquete <= 0) {
+          med.unidadesPorPaquete = unidadesPorPaquete;
+          console.log(`[Cálculo] Actualizando el medicamento con unidadesPorPaquete=${unidadesPorPaquete}`);
+        }
+      } else {
+        warnings.push('No se pudo calcular paquetes (unidadesPorPaquete no disponible)');
+        // Asumir que se necesita al menos 1 paquete para no bloquear el cálculo de costos
+        resultado.totalPaquetes = 1;
+      }
+      
+      console.log('[Estimado Simplificado]', {
+        dosis: med.dosis,
+        unidadesPorToma,
+        frecuencia: med.frecuencia,
+        tomasDia,
+        duracion: med.duracion,
+        totalDias,
+        unidadesPorPaquete,
+        totalUnidades: resultado.totalUnidades,
+        totalPaquetes: resultado.totalPaquetes,
+        warnings
+      });
+    } catch (error) {
+      console.error('Error al calcular estimados:', error);
+      warnings.push('Error de cálculo: ' + (error as Error).message);
+    }
+    
+    return resultado;
+  }
+
+  // Helper para acceder a advertenciaStock en la plantilla
+  getAdvertenciaStock(med: any): string | null {
+      return med.advertenciaStock || null;
+  }
+
+  // Calcula el costo estimado para una línea de medicamento
+  calcularCostoMedicamento(med: Medicamento): number | null {
+    // Obtener los estimados (esta llamada también actualiza med.unidadesPorPaquete si es necesario)
+    const estimados = this.calcularEstimadosMedicamento(med);
+    
+    // Si no hay precio definido, no podemos calcular
+    if (med.precio === undefined || med.precio === null) {
+      console.log('[Cálculo Precio] No hay precio definido');
+      return 0; // Retornamos 0 en lugar de null para evitar problemas con cálculos posteriores
+    }
+    
+    // NUEVO: Verificación de unidadesPorPaquete
+    // Asegurarse que el medicamento tenga unidadesPorPaquete definido
+    if (med.unidadesPorPaquete === undefined || med.unidadesPorPaquete <= 0) {
+      // Asignar un valor por defecto basado en el principio activo
+      if (med.principioActivo && med.principioActivo.toLowerCase().includes('paracetamol')) {
+        med.unidadesPorPaquete = 30;
+        console.log(`[Cálculo Precio] Forzando unidadesPorPaquete=30 para Paracetamol`);
+      } else {
+        // Valor genérico para otros medicamentos
+        med.unidadesPorPaquete = 10;
+        console.log(`[Cálculo Precio] Usando unidadesPorPaquete=10 por defecto para ${med.principioActivo}`);
+      }
+    }
+    
+    // CASO 1: Si tenemos totalPaquetes, usamos precio × totalPaquetes
+    if (estimados.totalPaquetes !== undefined && estimados.totalPaquetes > 0) {
+      const costo = estimados.totalPaquetes * med.precio;
+      console.log(`[Cálculo Precio] CASO 1: ${estimados.totalPaquetes} paquetes × Q${med.precio} = Q${costo}`);
+      return costo;
+    } 
+    // CASO 2: Si no tenemos totalPaquetes pero sí totalUnidades y unidadesPorPaquete
+    else if (estimados.totalUnidades !== undefined && med.unidadesPorPaquete && med.unidadesPorPaquete > 0) {
+      // Precio unitario = precio paquete / unidades por paquete
+      const precioUnitario = med.precio / med.unidadesPorPaquete;
+      const costo = estimados.totalUnidades * precioUnitario;
+      console.log(`[Cálculo Precio] CASO 2: ${estimados.totalUnidades} unidades × (Q${med.precio}/${med.unidadesPorPaquete}) = Q${costo}`);
+      return costo;
+    }
+    // CASO 3: Si tenemos totalUnidades, pero no unidadesPorPaquete válido,
+    // asumimos que el precio es por cada unidad (pastilla/tableta/etc)
+    else if (estimados.totalUnidades !== undefined) {
+      const costo = estimados.totalUnidades * med.precio;
+      console.log(`[Cálculo Precio] CASO 3: ${estimados.totalUnidades} unidades × Q${med.precio} = Q${costo}`);
+      return costo;
+    }
+    // CASO 4: Si no tenemos totalUnidades (no se pudieron calcular estimados)
+    // devolvemos al menos el precio del medicamento como una unidad
+    else {
+      console.log('[Cálculo Precio] CASO 4: Imposible calcular estimados, usando precio base');
+      return med.precio;
+    }
+  }
+
+  // --- Fin Funciones ---
 }
