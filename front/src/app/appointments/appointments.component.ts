@@ -12,6 +12,20 @@ import { back_url } from '../../environments/back_url';
   template: `
     <div class="calendar-container">
       <h2 class="title">Calendario de Citas</h2>
+      
+      <!-- Controles de calendario -->
+      <div class="calendar-controls">
+        <button class="control-btn" (click)="previousWeek()">
+          &laquo; Semana anterior
+        </button>
+        <span class="current-week">
+          {{ weekStartDate | date: 'dd/MM/yyyy' }} - {{ weekEndDate | date: 'dd/MM/yyyy' }}
+        </span>
+        <button class="control-btn" (click)="nextWeek()">
+          Semana siguiente &raquo;
+        </button>
+      </div>
+      
       <div class="calendar">
         <div class="calendar-header">
           <div class="time-column"></div>
@@ -25,18 +39,19 @@ import { back_url } from '../../environments/back_url';
             <div
               class="slot"
               *ngFor="let day of weekDays"
-              [class.taken]="isSlotTaken(day, time)"
+              [class.taken]="false"
               [class.selected]="
                 selectedSlot?.date?.toDateString() === day.toDateString() &&
                 selectedSlot?.time === time
               "
-              (click)="
-                isSlotTaken(day, time)
-                  ? onSlotClick(day, time)
-                  : selectSlot(day, time)
-              "
+              (click)="selectSlot(day, time)"
             >
-              <span *ngIf="isSlotTaken(day, time)">Ocupado</span>
+              <!-- Mostrar citas existentes para ese slot -->
+              <div *ngFor="let appt of getAppointmentsForSlot(day, time)" 
+                   class="appointment-indicator"
+                   [title]="getAppointmentTooltip(appt)">
+                <span class="doctor-name">{{ getDoctorName(appt.doctor) }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -58,7 +73,7 @@ import { back_url } from '../../environments/back_url';
               required
             >
               <option value="">Seleccione un doctor</option>
-              <option *ngFor="let d of doctors" [value]="d._id">
+              <option *ngFor="let d of availableDoctorsForSlot" [value]="d._id">
                 {{ d.username }}
               </option>
             </select>
@@ -133,6 +148,26 @@ import { back_url } from '../../environments/back_url';
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         margin-top: 2rem;
       }
+      .calendar-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+      }
+      .control-btn {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+      }
+      .control-btn:hover {
+        background-color: #217dbb;
+      }
+      .current-week {
+        font-weight: bold;
+      }
       .calendar {
         border: 1px solid #ddd;
         border-radius: 4px;
@@ -164,17 +199,27 @@ import { back_url } from '../../environments/back_url';
         padding: 0.5rem;
         min-height: 40px;
         cursor: pointer;
+        position: relative;
       }
-      .slot:hover:not(.taken) {
+      .slot:hover {
         background-color: #e3f2fd;
-      }
-      .slot.taken {
-        background-color: #a52019 !important;
-        cursor: not-allowed;
-        pointer-events: none;
       }
       .slot.selected {
         background-color: #bbdefb;
+      }
+      .appointment-indicator {
+        background-color: #a52019;
+        color: white;
+        border-radius: 3px;
+        padding: 2px 4px;
+        margin-bottom: 2px;
+        font-size: 0.8rem;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+      .doctor-name {
+        font-weight: bold;
       }
       .appointment-form {
         margin-top: 2rem;
@@ -259,8 +304,12 @@ export class AppointmentsComponent implements OnInit {
 
   doctors: any[] = [];
   appointments: any[] = [];
+  availableDoctorsForSlot: any[] = [];
   selectedSlot: { date: Date; time: string } | null = null;
   weekDays: Date[] = [];
+  weekStartDate: Date = new Date();
+  weekEndDate: Date = new Date();
+  
   timeSlots = [
     '08:00 AM',
     '08:30 AM',
@@ -313,12 +362,48 @@ export class AppointmentsComponent implements OnInit {
   }
 
   initializeWeekDays(): void {
+    this.weekDays = [];
     const today = new Date();
+    this.weekStartDate = new Date(today);
+    
+    // Comenzar desde hoy y mostrar los próximos 7 días
     for (let i = 0; i < 7; i++) {
       const day = new Date(today);
       day.setDate(today.getDate() + i);
       this.weekDays.push(day);
     }
+    
+    this.weekEndDate = new Date(this.weekDays[6]);
+  }
+
+  previousWeek(): void {
+    const firstDay = new Date(this.weekDays[0]);
+    firstDay.setDate(firstDay.getDate() - 7);
+    this.weekDays = [];
+    this.weekStartDate = new Date(firstDay);
+    
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(firstDay);
+      day.setDate(firstDay.getDate() + i);
+      this.weekDays.push(day);
+    }
+    
+    this.weekEndDate = new Date(this.weekDays[6]);
+  }
+
+  nextWeek(): void {
+    const firstDay = new Date(this.weekDays[0]);
+    firstDay.setDate(firstDay.getDate() + 7);
+    this.weekDays = [];
+    this.weekStartDate = new Date(firstDay);
+    
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(firstDay);
+      day.setDate(firstDay.getDate() + i);
+      this.weekDays.push(day);
+    }
+    
+    this.weekEndDate = new Date(this.weekDays[6]);
   }
 
   async loadDoctors(): Promise<void> {
@@ -398,46 +483,35 @@ export class AppointmentsComponent implements OnInit {
     }
   }
 
-  // Método auxiliar para cargar todas las citas
   private loadAllAppointments(url: string): void {
       this.http
         .get<{ appointments: any[] }>(`${url}/api/appointments/`)
         .subscribe((r) => {
           const all = r.appointments || [];
-        console.log('Loaded all appointments:', all);
+          console.log('Loaded all appointments:', all);
           this.appointments = all;
         
-        // Si el usuario es doctor pero estamos cargando todas las citas, mostrar un mensaje
-        if (this.role === 'doctor') {
+          // Si el usuario es doctor pero estamos cargando todas las citas, mostrar un mensaje
+          if (this.role === 'doctor') {
+            setTimeout(() => {
+              alert('No se pudieron cargar sus citas específicas como doctor. Se están mostrando todas las citas disponibles.');
+            }, 1000);
+          }
+        }, (error) => {
+          console.error('Error loading all appointments:', error);
+          this.appointments = [];
+          
+          // Mensaje de error si falla todo
           setTimeout(() => {
-            alert('No se pudieron cargar sus citas específicas como doctor. Se están mostrando todas las citas disponibles.');
+            alert('Error al cargar las citas. Por favor, intente nuevamente más tarde.');
           }, 1000);
-        }
-      }, (error) => {
-        console.error('Error loading all appointments:', error);
-        this.appointments = [];
-        
-        // Mensaje de error si falla todo
-        setTimeout(() => {
-          alert('Error al cargar las citas. Por favor, intente nuevamente más tarde.');
-        }, 1000);
-      });
+        });
   }
 
-  isSlotTaken(day: Date, time: string): boolean {
-    const [timePart, period] = time.split(' ');
-    const [hour, minute] = timePart.split(':').map(Number);
-    let h24 =
-      period === 'PM' && hour < 12
-        ? hour + 12
-        : period === 'AM' && hour === 12
-        ? 0
-        : hour;
-    const time24 = `${h24.toString().padStart(2, '0')}:${minute
-      .toString()
-      .padStart(2, '0')}`;
-
-    return this.appointments.some((appt) => {
+  getAppointmentsForSlot(day: Date, time: string): any[] {
+    const time24 = this.convertTo24(time);
+    
+    return this.appointments.filter((appt) => {
       const startStr = appt.start as string | undefined;
       if (!startStr) return false;
       const date = new Date(startStr);
@@ -450,34 +524,69 @@ export class AppointmentsComponent implements OnInit {
     });
   }
 
+  getDoctorName(doctorId: string): string {
+    const doctor = this.doctors.find(d => d._id === doctorId);
+    return doctor ? doctor.username : 'Doctor';
+  }
+
+  getAppointmentTooltip(appointment: any): string {
+    return `Paciente: ${appointment.patient?.username || 'Desconocido'}
+Doctor: ${this.getDoctorName(appointment.doctor)}
+Motivo: ${appointment.reason || 'No especificado'}`;
+  }
+
   selectSlot(day: Date, time: string): void {
+    this.selectedAppointment = null;
     this.selectedSlot = { date: day, time };
     const year = day.getFullYear();
     const month = (day.getMonth() + 1).toString().padStart(2, '0');
     const date = day.getDate().toString().padStart(2, '0');
     this.appointment.date = `${year}-${month}-${date}`;
     this.appointment.time = time;
-  }
-
-  onSlotClick(day: Date, time: string): void {
-    if (this.role === 'doctor' && this.isSlotTaken(day, time)) {
-      const appt = this.appointments.find((a) => {
-        const d = new Date(a.start);
-        return (
-          d.toDateString() === day.toDateString() &&
-          d.toTimeString().slice(0, 5) === this.convertTo24(time)
-        );
-      });
+    
+    // Obtener citas para este slot
+    const appointmentsForSlot = this.getAppointmentsForSlot(day, time);
+    
+    // Obtener doctores que ya tienen cita en este slot
+    const doctorsWithAppointments = appointmentsForSlot.map(a => a.doctor);
+    
+    // Filtrar doctores disponibles (los que no tienen cita en este slot)
+    this.availableDoctorsForSlot = this.doctors.filter(d => 
+      !doctorsWithAppointments.includes(d._id)
+    );
+    
+    // Si el usuario es doctor y está seleccionado un slot para ver citas
+    if (this.role === 'doctor') {
+      const appt = appointmentsForSlot.find(a => a.doctor === this.currentUserId);
       if (appt) {
         this.selectedSlot = null;
         this.selectedAppointment = appt;
         this.result = {
-          diagnosis: '',
-          exams: '',
-          medicines: '',
-          next_steps: '',
+          diagnosis: appt.diagnosis || '',
+          exams: appt.exams || '',
+          medicines: appt.medicines || '',
+          next_steps: appt.next_steps || '',
         };
       }
+    }
+  }
+
+  onSlotClick(day: Date, time: string): void {
+    if (this.role === 'doctor') {
+      const appointmentsForSlot = this.getAppointmentsForSlot(day, time);
+      const appt = appointmentsForSlot.find(a => a.doctor === this.currentUserId);
+      if (appt) {
+        this.selectedSlot = null;
+        this.selectedAppointment = appt;
+        this.result = {
+          diagnosis: appt.diagnosis || '',
+          exams: appt.exams || '',
+          medicines: appt.medicines || '',
+          next_steps: appt.next_steps || '',
+        };
+      }
+    } else {
+      this.selectSlot(day, time);
     }
   }
 
