@@ -286,10 +286,14 @@ def save_recipe(request):
             data = json.loads(request.body)
             
             # Validar que estén todos los campos necesarios
-            required_fields = ["paciente", "nombreMedico", "medicamento"]
+            required_fields = ["paciente", "nombreMedico"]
             for field in required_fields:
                 if field not in data:
                     return JsonResponse({"error": f"Falta el campo requerido: {field}"}, status=400)
+            
+            # Verificar que exista al menos un medicamento
+            if "medicamento" not in data and ("medicamentos" not in data or not data["medicamentos"]):
+                return JsonResponse({"error": "Debe proporcionar al menos un medicamento"}, status=400)
             
             # Convertir IDs a ObjectId
             doctor_id = ObjectId(data["nombreMedico"])
@@ -312,45 +316,80 @@ def save_recipe(request):
             random_part = str(random.randint(1000, 9999))
             codigo.append(random_part)
             
-            # Crear objeto de medicamento para guardar
-            medicine_data = {
-                "principioActivo": data["medicamento"]["principioActivo"],
-                "concentracion": data["medicamento"]["concentracion"],
-                "presentacion": data["medicamento"]["presentacion"],
-                "formaFarmaceutica": data["medicamento"]["formaFarmaceutica"],
-                "dosis": data["medicamento"]["dosis"],
-                "frecuencia": data["medicamento"]["frecuencia"],
-                "duracion": data["medicamento"]["duracion"],
-                "diagnostico": data["medicamento"]["diagnostico"],
-                "precio": data["medicamento"].get("precio", 0)
-            }
+            # Lista para guardar los IDs de los medicamentos
+            medicine_ids = []
             
-            # Añadir campos de estimación si están presentes
-            if "unidadesPorPaquete" in data["medicamento"]:
-                medicine_data["unidadesPorPaquete"] = data["medicamento"]["unidadesPorPaquete"]
-            if "estimadoUnidades" in data["medicamento"]:
-                medicine_data["estimadoUnidades"] = data["medicamento"]["estimadoUnidades"]
-            if "estimadoPaquetes" in data["medicamento"]:
-                medicine_data["estimadoPaquetes"] = data["medicamento"]["estimadoPaquetes"]
-            if "costoEstimado" in data["medicamento"]:
-                medicine_data["costoEstimado"] = data["medicamento"]["costoEstimado"]
-            if "stockDisponible" in data["medicamento"]:
-                medicine_data["stockDisponible"] = data["medicamento"]["stockDisponible"]
+            # Procesar los medicamentos (ya sea un medicamento único o un array)
+            medicamentos_a_procesar = []
             
-            # Insertar el medicamento
-            medicine_id = medicines_collection.insert_one(medicine_data).inserted_id
+            if "medicamentos" in data and isinstance(data["medicamentos"], list) and len(data["medicamentos"]) > 0:
+                # Si hay un array de medicamentos, usamos ese
+                medicamentos_a_procesar = data["medicamentos"]
+            elif "medicamento" in data:
+                # Si solo hay un medicamento, lo convertimos en lista
+                medicamentos_a_procesar = [data["medicamento"]]
+            
+            # Guardar cada medicamento
+            for medicamento in medicamentos_a_procesar:
+                # Crear objeto de medicamento para guardar
+                medicine_data = {
+                    "principioActivo": medicamento["principioActivo"],
+                    "concentracion": medicamento["concentracion"],
+                    "presentacion": medicamento["presentacion"],
+                    "formaFarmaceutica": medicamento["formaFarmaceutica"],
+                    "dosis": medicamento["dosis"],
+                    "frecuencia": medicamento["frecuencia"],
+                    "duracion": medicamento["duracion"],
+                    "diagnostico": medicamento["diagnostico"],
+                    "precio": medicamento.get("precio", 0)
+                }
+                
+                # Añadir campos de estimación si están presentes
+                if "unidadesPorPaquete" in medicamento:
+                    medicine_data["unidadesPorPaquete"] = medicamento["unidadesPorPaquete"]
+                if "estimadoUnidades" in medicamento:
+                    medicine_data["estimadoUnidades"] = medicamento["estimadoUnidades"]
+                if "estimadoPaquetes" in medicamento:
+                    medicine_data["estimadoPaquetes"] = medicamento["estimadoPaquetes"]
+                if "costoEstimado" in medicamento:
+                    medicine_data["costoEstimado"] = medicamento["costoEstimado"]
+                if "stockDisponible" in medicamento:
+                    medicine_data["stockDisponible"] = medicamento["stockDisponible"]
+                
+                # Insertar el medicamento
+                medicine_id = medicines_collection.insert_one(medicine_data).inserted_id
+                # Añadir el ID a la lista
+                medicine_ids.append(str(medicine_id))
             
             # Crear objeto de receta para guardar
             recipe_data = {
                 "patient": patient_id,
                 "doctor": doctor_id,
-                "medicines": [str(medicine_id)],
+                "medicines": medicine_ids,  # Lista de IDs de medicamentos
                 "code": codigo,
                 "has_insurance": data.get("tieneSeguro", False),
                 "insurance_code": data.get("codigoSeguro", ""),
                 "special_notes": data.get("notasEspeciales", ""),
                 "created_at": datetime.now()
             }
+            
+            # Agregar appointmentId si está presente en los datos
+            if "appointmentId" in data and data["appointmentId"]:
+                try:
+                    # Intentar convertir a ObjectId si es una cadena válida
+                    appointment_id = ObjectId(data["appointmentId"])
+                    recipe_data["appointment_id"] = appointment_id
+                except:
+                    # Si no es un ObjectId válido, guardarlo como string
+                    recipe_data["appointment_id"] = data["appointmentId"]
+            
+            # Agregar información de diagnóstico de la cita si está presente
+            if "diagnosis" in data:
+                recipe_data["diagnosis"] = data["diagnosis"]
+            if "exams" in data:
+                recipe_data["exams"] = data["exams"]
+            if "next_steps" in data:
+                recipe_data["next_steps"] = data["next_steps"]
             
             # Agregar información de costos si está disponible
             if "subtotal" in data:
@@ -375,7 +414,8 @@ def save_recipe(request):
                 "success": True,
                 "message": "Receta guardada correctamente",
                 "recipe_id": str(recipe_id),
-                "code": code_string
+                "code": code_string,
+                "total_medicines": len(medicine_ids)
             }, status=201)
             
         except Exception as e:

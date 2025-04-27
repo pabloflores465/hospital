@@ -567,6 +567,10 @@ export class RecipesPage implements OnInit {
   principiosActivos: any[] = [];
   recetas: any[] = [];
   medicamentosAgregados: Medicamento[] = [];
+  
+  // Variables para la asociación con citas médicas
+  appointmentId: string | null = null;
+  citaInfo: {diagnosis?: string, exams?: string, nextSteps?: string} | null = null;
 
   constructor(
     private fb: FormBuilder, 
@@ -793,6 +797,66 @@ export class RecipesPage implements OnInit {
         this.recetaForm.patchValue({ tieneSeguro: false, codigoSeguro: '' });
       }
     });
+
+    // Verificar si hay parámetros en la URL para una cita médica
+    this.cargarParametrosCitaMedica();
+  }
+
+  /**
+   * Verifica si hay parámetros en la URL relacionados con una cita médica
+   * y pre-llena el formulario correspondiente.
+   */
+  cargarParametrosCitaMedica(): void {
+    // Obtener los parámetros de la URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const patientId = urlParams.get('patientId');
+    const appointmentId = urlParams.get('appointmentId');
+    const diagnosis = urlParams.get('diagnosis');
+    const exams = urlParams.get('exams');
+    const nextSteps = urlParams.get('nextSteps');
+
+    // Si hay un ID de paciente en la URL, seleccionarlo automáticamente
+    if (patientId) {
+      console.log('Paciente de la cita seleccionado automáticamente:', patientId);
+      this.recetaForm.patchValue({ paciente: patientId });
+    }
+
+    // Guardar el ID de la cita para asociarlo a la receta
+    if (appointmentId) {
+      console.log('Receta asociada a la cita:', appointmentId);
+      this.appointmentId = appointmentId;
+    }
+
+    // Guardar información del diagnóstico, exámenes y siguientes pasos
+    if (diagnosis || exams || nextSteps) {
+      console.log('Información de la cita cargada');
+      
+      // Guardar información para incluirla en la receta
+      this.citaInfo = {
+        diagnosis: diagnosis || '',
+        exams: exams || '',
+        nextSteps: nextSteps || ''
+      };
+
+      // Añadir la información del diagnóstico a las notas especiales si existe
+      let notasEspeciales = '';
+      
+      if (diagnosis) {
+        notasEspeciales += `Diagnóstico: ${diagnosis}\n\n`;
+      }
+      
+      if (exams) {
+        notasEspeciales += `Exámenes: ${exams}\n\n`;
+      }
+      
+      if (nextSteps) {
+        notasEspeciales += `Siguientes pasos: ${nextSteps}\n\n`;
+      }
+      
+      if (notasEspeciales) {
+        this.recetaForm.patchValue({ notasEspeciales });
+      }
+    }
   }
 
   async cargarDoctorActual(): Promise<void> {
@@ -954,18 +1018,17 @@ export class RecipesPage implements OnInit {
         };
       });
       
-      // Crear objeto para enviar al API
-      const recetaData = {
+      // Crear objeto para enviar al API, con tipo correcto para evitar errores de TypeScript
+      const recetaData: any = {
         paciente: formData.paciente, // ID del paciente
         nombreMedico: formData.nombreMedico, // ID del médico
         tieneSeguro: formData.tieneSeguro || false,
         codigoSeguro: formData.tieneSeguro ? formData.codigoSeguro : null,
         codigoHospital: this.codigoHospital,
-        // Convertir el array de medicamentos a un solo medicamento (principal)
-        // para mantener compatibilidad con el backend
-        medicamento: medicamentosEnriquecidos[0],
-        // Incluir también el array completo por si el backend lo soporta
+        // Incluir todos los medicamentos en un array
         medicamentos: medicamentosEnriquecidos,
+        // Para mantener compatibilidad con el backend, también enviamos el primer medicamento
+        medicamento: medicamentosEnriquecidos[0],
         notasEspeciales: formData.notasEspeciales || '',
         // Información de precio y descuento
         subtotal: preciosCalculados.total,
@@ -977,18 +1040,36 @@ export class RecipesPage implements OnInit {
         totalPaquetes: medicamentosEnriquecidos.reduce((sum, med) => sum + (med.estimadoPaquetes || 0), 0)
       };
       
+      // Añadir información de la cita si existe
+      if (this.appointmentId) {
+        recetaData.appointmentId = this.appointmentId;
+      }
+      
+      // Añadir información del diagnóstico, exámenes y siguientes pasos si existe
+      if (this.citaInfo) {
+        if (this.citaInfo.diagnosis) recetaData.diagnosis = this.citaInfo.diagnosis;
+        if (this.citaInfo.exams) recetaData.exams = this.citaInfo.exams;
+        if (this.citaInfo.nextSteps) recetaData.next_steps = this.citaInfo.nextSteps;
+      }
+      
       console.log('Datos a enviar:', recetaData);
       
       // Generar PDF primero
       this.generarPDF(recetaData);
       
-      // Enviar datos al API
-      this.http.post(`${url}/recipes/save`, recetaData).subscribe({
+      // Enviar todos los medicamentos en una sola receta
+      this.http.post<any>(`${url}/recipes/save`, recetaData).subscribe({
         next: (response: any) => {
           console.log('Receta guardada:', response);
           
           // Guardar el ID de la receta generada
           this.recetaGeneradaId = response.recipe_id;
+          
+          // Mostrar un mensaje que incluya el número de medicamentos guardados
+          const numMedicamentos = response.total_medicines || medicamentosEnriquecidos.length;
+          const mensajeExito = numMedicamentos > 1 
+            ? `Receta guardada con ${numMedicamentos} medicamentos correctamente.` 
+            : 'Receta guardada correctamente.';
           
           // Enviar automáticamente por email
           this.http
@@ -996,89 +1077,56 @@ export class RecipesPage implements OnInit {
             .subscribe({
               next: () => {
                 console.log('Receta enviada por email exitosamente');
-                alert(
-                  'La receta ha sido guardada y enviada al correo del paciente.'
-                );
+                alert(mensajeExito + ' Se ha enviado al correo del paciente.');
                 // Limpiar toda la página después de enviar la receta
                 this.limpiarPagina();
               },
               error: (err) => {
                 console.error('Error al enviar el email:', err);
-                alert(
-                  'La receta se guardó correctamente, pero hubo un error al enviar el correo.'
-                );
+                alert(mensajeExito + ' Pero hubo un error al enviar el correo.');
                 // Limpiar toda la página incluso si falla el envío de email
                 this.limpiarPagina();
               },
             });
           
-          // Para la vista previa, buscar el nombre del paciente según su ID
-          const pacienteSeleccionado = this.pacientes.find(
-            (p) => p._id === formData.paciente
-          );
-          
-          // Crear objeto de receta para vista previa
-          this.recetaPreview = {
-            ...formData,
-            codigo: response.code,
-            fecha: new Date(formData.fecha),
-            // Mostrar nombres en la vista previa
-            nombreMedico: this.doctorActual?.username || 'Médico',
-            paciente: pacienteSeleccionado?.username || 'Paciente',
-            // Incluir los medicamentos agregados
-            medicamentos: medicamentosEnriquecidos
-          };
-          
-          this.recetaGenerada = true;
-          
-          // Limpiar la lista de medicamentos después de guardar
-          this.medicamentosAgregados = [];
+          this.mostrarVistaPrevia(formData, response, medicamentosEnriquecidos);
         },
         error: (error) => {
           console.error('Error al guardar la receta:', error);
           console.error('Respuesta de error completa:', error.error);
           
-          // Intentar con un formato alternativo si falla el primero
-          if (error.status === 400) {
-            console.log('Intentando con formato alternativo...');
-            
-            // Formato alternativo: solo enviamos un medicamento en lugar del array
-            const formatoAlternativo = {
-              ...recetaData,
-              medicamento: medicamentosEnriquecidos[0],
-              // Eliminar el array de medicamentos
-              medicamentos: undefined
-            };
-            
-            console.log('Enviando con formato alternativo:', formatoAlternativo);
-            
-            this.http.post(`${url}/recipes/save`, formatoAlternativo).subscribe({
-              next: (response: any) => {
-                console.log('Receta guardada con formato alternativo:', response);
-                alert('¡La receta se ha guardado correctamente!');
-                // Limpiar toda la página después de enviar la receta
-                this.limpiarPagina();
-              },
-              error: (err) => {
-                console.error('Error al guardar receta con formato alternativo:', err);
-                alert(
-                  'Error al guardar la receta: ' +
-                  (err.error?.error || 'Error desconocido')
-                );
-              }
-            });
-          } else {
-            alert(
-              'Error al guardar la receta: ' +
-              (error.error?.error || 'Error desconocido')
-            );
-          }
+          alert('Error al guardar la receta: ' + (error.error?.error || 'Error desconocido'));
         },
       });
     } catch (error) {
       console.error('Error al procesar la receta:', error);
       alert('Error al procesar la receta. Consulte la consola para más detalles.');
     }
+  }
+
+  // Método auxiliar para mostrar la vista previa de la receta
+  private mostrarVistaPrevia(formData: any, response: any, medicamentosEnriquecidos: Medicamento[]): void {
+    // Para la vista previa, buscar el nombre del paciente según su ID
+    const pacienteSeleccionado = this.pacientes.find(
+      (p) => p._id === formData.paciente
+    );
+    
+    // Crear objeto de receta para vista previa
+    this.recetaPreview = {
+      ...formData,
+      codigo: response.code,
+      fecha: new Date(formData.fecha),
+      // Mostrar nombres en la vista previa
+      nombreMedico: this.doctorActual?.username || 'Médico',
+      paciente: pacienteSeleccionado?.username || 'Paciente',
+      // Incluir los medicamentos agregados
+      medicamentos: medicamentosEnriquecidos
+    };
+    
+    this.recetaGenerada = true;
+    
+    // Limpiar la lista de medicamentos después de guardar
+    this.medicamentosAgregados = [];
   }
 
   cancelar(): void {

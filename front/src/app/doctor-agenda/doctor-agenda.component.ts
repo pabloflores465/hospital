@@ -249,8 +249,14 @@ export class DoctorAgendaComponent implements OnInit {
           alert('Resultados guardados correctamente');
           this.loadAppointments();
           this.selectedAppointment = null;
-          // Redirigir a la página de recetas con el paciente seleccionado
-          window.location.href = `http://192.168.0.21:5051/doctor/recipes?patientId=${patientId}`;
+          
+          // Codificar los resultados para pasarlos en la URL
+          const encodedDiagnosis = encodeURIComponent(this.result.diagnosis || '');
+          const encodedExams = encodeURIComponent(this.result.exams || '');
+          const encodedNextSteps = encodeURIComponent(this.result.next_steps || '');
+          
+          // Redirigir a la página de recetas con el paciente seleccionado y los datos de la cita
+          window.location.href = `http://192.168.0.21:5051/doctor/recipes?patientId=${patientId}&appointmentId=${id}&diagnosis=${encodedDiagnosis}&exams=${encodedExams}&nextSteps=${encodedNextSteps}`;
         },
         error: (err) =>
           alert('Error al guardar resultados: ' + err.error?.error),

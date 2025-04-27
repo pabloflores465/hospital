@@ -5,6 +5,8 @@ import { MedicalRecordService } from '../services/medical-record.service';
 import { UserService } from '../services/user.service';
 import { User } from '../models/user.model';
 import { ActivatedRoute, Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { back_url } from '../../environments/back_url';
 
 interface MedicalRecord {
   personal_info: {
@@ -46,6 +48,30 @@ interface MedicalRecord {
       file_url: string;
     }>;
   }>;
+  appointments?: Array<{
+    _id: string;
+    start: string;
+    end?: string;
+    details: string;
+    reason: string;
+    doctor: any;
+    completed: boolean;
+    diagnosis?: string;
+    exams?: string;
+    next_steps?: string;
+  }>;
+  recipes?: Array<{
+    _id: string;
+    code: string;
+    created_at: string;
+    formatted_date?: string;
+    doctor_details?: any;
+    medicines?: Array<any>;
+    diagnosis?: string;
+    exams?: string;
+    next_steps?: string;
+    special_notes?: string;
+  }>;
 }
 
 @Component({
@@ -69,7 +95,8 @@ export class MedicalRecordComponent implements OnInit {
     private medicalRecordService: MedicalRecordService,
     private userService: UserService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private http: HttpClient
   ) {}
 
   ngOnInit() {
@@ -84,6 +111,9 @@ export class MedicalRecordComponent implements OnInit {
     // Determinar si el usuario es médico o paciente
     this.isDoctor = this.currentUser.rol.toLowerCase() === 'doctor';
 
+    // Comprobar si estamos en la ruta del dashboard del paciente
+    const isInPatientDashboard = this.router.url.includes('/patient/dashboard');
+
     // Obtener patientId de la URL si existe
     this.route.paramMap.subscribe((params) => {
       const urlPatientId = params.get('patientId');
@@ -93,7 +123,7 @@ export class MedicalRecordComponent implements OnInit {
         this.patientId = urlPatientId;
         this.loadPatientRecord();
       }
-      // Si es paciente, usar su propio ID
+      // Si es paciente, usar su propio ID (tanto en la ruta directa como en el dashboard)
       else if (!this.isDoctor && this.currentUser) {
         this.patientId = this.currentUser._id;
         this.loadPatientRecord();
@@ -108,67 +138,208 @@ export class MedicalRecordComponent implements OnInit {
 
   async loadPatientRecord() {
     if (!this.patientId) {
-      this.errorMessage = 'ID de paciente no válido';
+      this.errorMessage = 'No se ha especificado un paciente';
       this.isLoading = false;
       return;
     }
 
-    this.isLoading = true;
-
     try {
-      // Cargar datos reales desde la API en lugar de datos de prueba
-      const observable = await this.medicalRecordService.getPatientRecord(
+      // En un entorno real, se cargaría desde el backend
+      if (this.inDevelopment) {
+        // Usar datos de ejemplo para desarrollo
+        this.loadMockData();
+        // Cargar citas y recetas adicionales
+        await this.loadAppointments();
+        await this.loadRecipes();
+        this.isLoading = false;
+        return;
+      }
+
+      // En un entorno real, se obtendría de una API
+      const recordObservable = await this.medicalRecordService.getPatientRecord(
         this.patientId
       );
 
-      observable.subscribe({
-        next: (response: any) => {
-          console.log('Datos recibidos de la API:', response);
-          this.record = response.record;
-
-          if (this.record?.procedures) {
-            // Ordenar procedimientos por fecha (más reciente primero)
-            this.record.procedures.sort((a, b) => {
-              return new Date(b.date).getTime() - new Date(a.date).getTime();
-            });
-
-            // Procesar cada procedimiento para formatear fechas y datos
-            this.record.procedures.forEach((procedure) => {
-              // Manejar el formato de fecha o cualquier otro procesamiento necesario
-              if (procedure.service_id) {
-                // Podríamos cargar información adicional del servicio si es necesario
-                console.log(
-                  'Procedimiento asociado al servicio:',
-                  procedure.service_id
-                );
-              }
-            });
-          }
-
+      recordObservable.subscribe({
+        next: (data) => {
+          this.record = data;
           this.isLoading = false;
-          this.inDevelopment = false; // Ya no estamos en modo desarrollo porque usamos datos reales
         },
         error: (error) => {
-          console.error('Error al cargar la ficha médica:', error);
+          console.error('Error al cargar el registro médico:', error);
           this.errorMessage =
-            'Error al cargar la ficha médica. Intente nuevamente más tarde.';
+            'Error al cargar el registro médico. ' + error.message;
           this.isLoading = false;
-
-          // Si hay un error, cargar datos de prueba en modo desarrollo
-          if (this.inDevelopment) {
-            setTimeout(() => {
-              this.loadMockData();
-              this.isLoading = false;
-            }, 1000);
-          }
         },
       });
-    } catch (error: any) {
-      console.error('Error al obtener observable de ficha médica:', error);
-      this.errorMessage = `Error al obtener datos del paciente: ${
-        error.message || 'Error desconocido'
-      }`;
+    } catch (error) {
+      console.error('Error en loadPatientRecord:', error);
+      this.errorMessage = 'Error al cargar los datos del paciente';
       this.isLoading = false;
+    }
+  }
+
+  getServiceName(serviceId: string): string {
+    // Aquí se podría obtener el nombre del servicio desde una API
+    // Por ahora, devolvemos valores codificados
+    const services: { [key: string]: string } = {
+      serv1: 'Cardiología',
+      serv2: 'Laboratorio',
+      serv3: 'Radiología',
+    };
+    return services[serviceId] || 'Servicio general';
+  }
+
+  addComment(procedureId: string) {
+    if (!this.newComment[procedureId]?.trim()) {
+      return;
+    }
+
+    // En un entorno real, se enviaría a una API
+    if (this.inDevelopment) {
+      // Solo para desarrollo, añadir localmente
+      if (this.record) {
+        const procedure = this.record.procedures.find(
+          (p) => p._id === procedureId
+        );
+        if (procedure) {
+          procedure.comments.push({
+            user_role: this.isDoctor ? 'doctor' : 'patient',
+            created_at: new Date().toISOString(),
+            content: this.newComment[procedureId],
+          });
+          this.newComment[procedureId] = '';
+        }
+      }
+      return;
+    }
+
+    // En un entorno real, se enviaría a la API
+  }
+
+  onFileSelected(event: any, procedureId: string) {
+    const file = event.target.files[0];
+    if (file) {
+      this.selectedFile[procedureId] = file;
+    }
+  }
+
+  uploadFile(procedureId: string) {
+    if (!this.selectedFile[procedureId]) {
+      return;
+    }
+
+    // En un entorno real, se enviaría a una API
+    if (this.inDevelopment) {
+      // Solo para desarrollo, simular subida
+      if (this.record) {
+        const procedure = this.record.procedures.find(
+          (p) => p._id === procedureId
+        );
+        if (procedure) {
+          procedure.attachments.push({
+            file_name: this.selectedFile[procedureId].name,
+            file_url: '#',
+          });
+          delete this.selectedFile[procedureId];
+        }
+      }
+      return;
+    }
+
+    // En un entorno real, se enviaría a la API
+  }
+
+  goToPatientList() {
+    this.router.navigate(['/medical-record/patients']);
+  }
+
+  async loadAppointments() {
+    if (!this.patientId || !this.record) return;
+
+    try {
+      const url = await back_url();
+      // Asegurar que las solicitudes funcionen tanto en localhost como en IP específica
+      const apiUrl = url.replace('localhost', '192.168.0.21');
+      
+      this.http.get<any>(`${apiUrl}/api/appointments/patient/${this.patientId}`).subscribe({
+        next: (data) => {
+          if (data && data.appointments) {
+            // Asegurarse de que existe la propiedad appointments en el record
+            if (!this.record!.appointments) {
+              this.record!.appointments = [];
+            }
+            
+            // Agregar las citas al registro médico
+            this.record!.appointments = data.appointments.map((appt: any) => {
+              return {
+                _id: appt._id,
+                start: appt.start,
+                end: appt.end || '',
+                details: appt.details || '',
+                reason: appt.reason || 'Sin especificar',
+                doctor: appt.doctor || {},
+                completed: appt.completed || false,
+                diagnosis: appt.diagnosis || '',
+                exams: appt.exams || '',
+                next_steps: appt.next_steps || ''
+              };
+            });
+          }
+        },
+        error: (error) => {
+          console.error('Error al cargar citas médicas:', error);
+        }
+      });
+    } catch (error) {
+      console.error('Error al obtener citas médicas:', error);
+    }
+  }
+
+  async loadRecipes() {
+    if (!this.patientId || !this.record) return;
+
+    try {
+      const url = await back_url();
+      // Asegurar que las solicitudes funcionen tanto en localhost como en IP específica
+      const apiUrl = url.replace('localhost', '192.168.0.21');
+      
+      this.http.get<any>(`${apiUrl}/recipes/patient/${this.patientId}`).subscribe({
+        next: (data) => {
+          if (data && (data.recipes || Array.isArray(data))) {
+            // Asegurarse de que existe la propiedad recipes en el record
+            if (!this.record!.recipes) {
+              this.record!.recipes = [];
+            }
+            
+            // Determinar si la respuesta es un array directo o está en data.recipes
+            const recipesData = Array.isArray(data) ? data : data.recipes;
+            
+            if (Array.isArray(recipesData)) {
+              // Agregar las recetas al registro médico
+              this.record!.recipes = recipesData.map((recipe: any) => {
+                return {
+                  _id: recipe._id,
+                  code: recipe.formatted_code || recipe.code || '',
+                  created_at: recipe.created_at || new Date().toISOString(),
+                  formatted_date: recipe.formatted_date || new Date(recipe.created_at).toLocaleDateString(),
+                  doctor_details: recipe.doctor_details || {},
+                  medicines: recipe.medicines || [],
+                  diagnosis: recipe.diagnosis || '',
+                  exams: recipe.exams || '',
+                  next_steps: recipe.next_steps || '',
+                  special_notes: recipe.special_notes || ''
+                };
+              });
+            }
+          }
+        },
+        error: (error) => {
+          console.error('Error al cargar recetas médicas:', error);
+        }
+      });
+    } catch (error) {
+      console.error('Error al obtener recetas médicas:', error);
     }
   }
 
@@ -246,6 +417,66 @@ export class MedicalRecordComponent implements OnInit {
           ],
         },
       ],
+      // Datos de ejemplo para citas médicas
+      appointments: [
+        {
+          _id: 'appt1',
+          start: '2023-11-05T10:00:00Z',
+          end: '2023-11-05T10:30:00Z',
+          details: 'Revisión mensual',
+          reason: 'Control de presión arterial',
+          doctor: {
+            _id: 'doc1',
+            username: 'Dra. María López',
+            speciality: 'Cardiología'
+          },
+          completed: true,
+          diagnosis: 'Presión arterial controlada',
+          exams: 'Electrocardiograma de control',
+          next_steps: 'Continuar con medicación actual'
+        },
+        {
+          _id: 'appt2',
+          start: '2023-12-10T15:00:00Z',
+          end: '2023-12-10T15:30:00Z',
+          details: 'Consulta de seguimiento',
+          reason: 'Evaluación de tratamiento',
+          doctor: {
+            _id: 'doc2',
+            username: 'Dr. Juan García',
+            speciality: 'Medicina interna'
+          },
+          completed: false
+        }
+      ],
+      // Datos de ejemplo para recetas médicas
+      recipes: [
+        {
+          _id: 'rec1',
+          code: '00256-SEG987654321-20231015-4567',
+          created_at: '2023-10-15T10:30:00Z',
+          formatted_date: '15/10/2023',
+          doctor_details: {
+            username: 'Dra. María López',
+            especialidad: 'Cardiología',
+            noLicencia: '12345'
+          },
+          medicines: [
+            {
+              principioActivo: 'Enalapril',
+              concentracion: '10 mg',
+              presentacion: 'Tabletas',
+              formaFarmaceutica: 'Oral',
+              dosis: '1 tableta',
+              frecuencia: 'Cada 12 horas',
+              duracion: '30 días',
+              diagnostico: 'Hipertensión arterial leve'
+            }
+          ],
+          diagnosis: 'Hipertensión arterial leve',
+          special_notes: 'Tomar con comidas. Evitar consumo de alcohol.'
+        }
+      ]
     };
 
     // Si estamos viendo un paciente específico, personalizar los datos
@@ -260,122 +491,5 @@ export class MedicalRecordComponent implements OnInit {
       this.record.personal_info.contact_info =
         'pablopolis2016@gmail.com / +502 5555-5678';
     }
-  }
-
-  async addComment(procedureId: string) {
-    if (!this.newComment[procedureId]?.trim() || !this.currentUser) return;
-
-    if (this.inDevelopment) {
-      // Simulación en modo desarrollo
-      const now = new Date();
-      const procedure = this.record?.procedures.find(
-        (p) => p._id === procedureId
-      );
-      if (procedure) {
-        procedure.comments.push({
-          user_role: this.currentUser.rol,
-          created_at: now.toISOString(),
-          content: this.newComment[procedureId],
-        });
-        this.newComment[procedureId] = '';
-      }
-      return;
-    }
-
-    const commentData = {
-      procedure_id: procedureId,
-      user_id: this.currentUser._id,
-      user_role: this.currentUser.rol,
-      content: this.newComment[procedureId],
-    };
-
-    try {
-      const observable = await this.medicalRecordService.addComment(
-        commentData
-      );
-
-      observable.subscribe({
-        next: () => {
-          this.loadPatientRecord();
-          this.newComment[procedureId] = '';
-        },
-        error: (error: any) => {
-          console.error('Error al agregar comentario:', error);
-          this.errorMessage =
-            'Error al agregar el comentario. Intente nuevamente.';
-        },
-      });
-    } catch (error: any) {
-      console.error(
-        'Error al obtener observable para agregar comentario:',
-        error
-      );
-      this.errorMessage = `Error al agregar comentario: ${
-        error.message || 'Error desconocido'
-      }`;
-    }
-  }
-
-  onFileSelected(event: any, procedureId: string) {
-    const file = event.target.files[0];
-    if (file) {
-      this.selectedFile[procedureId] = file;
-    }
-  }
-
-  async uploadFile(procedureId: string) {
-    if (!this.selectedFile[procedureId] || !this.currentUser) return;
-
-    if (this.inDevelopment) {
-      // Simulación en modo desarrollo
-      const procedure = this.record?.procedures.find(
-        (p) => p._id === procedureId
-      );
-      if (procedure) {
-        procedure.attachments.push({
-          file_name: this.selectedFile[procedureId].name,
-          file_url: '#',
-        });
-        delete this.selectedFile[procedureId];
-      }
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('file', this.selectedFile[procedureId]);
-    formData.append('procedure_id', procedureId);
-    formData.append('user_id', this.currentUser._id);
-
-    try {
-      const observable = await this.medicalRecordService.uploadAttachment(
-        formData
-      );
-
-      observable.subscribe({
-        next: () => {
-          this.loadPatientRecord();
-          delete this.selectedFile[procedureId];
-        },
-        error: (error: any) => {
-          console.error('Error al subir archivo:', error);
-          this.errorMessage = 'Error al subir el archivo. Intente nuevamente.';
-        },
-      });
-    } catch (error: any) {
-      console.error('Error al obtener observable para subir archivo:', error);
-      this.errorMessage = `Error al subir archivo: ${
-        error.message || 'Error desconocido'
-      }`;
-    }
-  }
-
-  // Método para obtener el nombre amigable del servicio
-  getServiceName(serviceId: string): string {
-    return this.medicalRecordService.getServiceNameById(serviceId);
-  }
-
-  // Método para navegar a la lista de pacientes
-  goToPatientList(): void {
-    this.router.navigate(['/medical-record/patients']);
   }
 }
