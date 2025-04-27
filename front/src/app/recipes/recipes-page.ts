@@ -216,6 +216,10 @@ interface DoctorResponse {
                       <span class="font-semibold">ID de Póliza:</span>
                       <span class="ml-2 text-xl font-bold">{{ recetaForm.get('codigoSeguro')?.value || 'No disponible' }}</span>
                     </div>
+                    <div *ngIf="tienePolicaDisponible" class="mt-1">
+                      <span class="font-semibold">Cobertura:</span>
+                      <span class="ml-2 text-xl font-bold">{{ porcentajeDescuento }}%</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -407,7 +411,7 @@ interface DoctorResponse {
                     <span>Subtotal Medicamentos:</span>
                     <span class="font-medium">Q{{ formatearPrecio(calcularTotalMedicamentos()) }}</span>
                   </div>
-                  <div *ngIf="descuentoAplicado" class="flex justify-between text-green-700">
+                  <div *ngIf="descuentoAplicado" class="flex justify-between items-center text-green-700 my-1">
                     <span>Descuento por Póliza ({{ porcentajeDescuento }}%):</span>
                     <span class="font-medium">-Q{{ formatearPrecio(calcularDescuento()) }}</span>
                   </div>
@@ -1154,6 +1158,22 @@ export class RecipesPage implements OnInit {
             if (response) {
               // Verificar si el usuario tiene póliza
               if (response.policy) {
+                // NUEVO: Obtener el porcentaje de cobertura de la póliza
+                let porcentajeCobertura = 15; // Valor por defecto
+                
+                if (response.policy.percentage && !isNaN(response.policy.percentage)) {
+                  porcentajeCobertura = Number(response.policy.percentage);
+                  console.log('[Póliza] Porcentaje de cobertura detectado (percentage):', porcentajeCobertura);
+                } else if (response.policy.percentageCovered && !isNaN(response.policy.percentageCovered)) {
+                  porcentajeCobertura = Number(response.policy.percentageCovered);
+                  console.log('[Póliza] Porcentaje de cobertura detectado (percentageCovered):', porcentajeCobertura);
+                } else {
+                  console.log('[Póliza] Usando porcentaje de cobertura por defecto:', porcentajeCobertura);
+                }
+                
+                // Actualizar el porcentaje de descuento en la clase
+                this.porcentajeDescuento = porcentajeCobertura;
+                
                 // Automáticamente marcar que tiene seguro y poner el número de póliza
                 this.tienePolicaDisponible = true;
                 this.recetaForm.patchValue({
@@ -1256,6 +1276,22 @@ export class RecipesPage implements OnInit {
             if (response && response.policy) {
               const policyId = String(response.policy.idPolicy);
               console.log('[Póliza] ID de póliza detectado:', policyId);
+              
+              // NUEVO: Obtener el porcentaje de cobertura de la póliza
+              let porcentajeCobertura = 15; // Valor por defecto
+              
+              if (response.policy.percentage && !isNaN(response.policy.percentage)) {
+                porcentajeCobertura = Number(response.policy.percentage);
+                console.log('[Póliza] Porcentaje de cobertura detectado (percentage):', porcentajeCobertura);
+              } else if (response.policy.percentageCovered && !isNaN(response.policy.percentageCovered)) {
+                porcentajeCobertura = Number(response.policy.percentageCovered);
+                console.log('[Póliza] Porcentaje de cobertura detectado (percentageCovered):', porcentajeCobertura);
+              } else {
+                console.log('[Póliza] Usando porcentaje de cobertura por defecto:', porcentajeCobertura);
+              }
+              
+              // Actualizar el porcentaje de descuento en la clase
+              this.porcentajeDescuento = porcentajeCobertura;
               
               // --- Actualización Clave --- 
               // 1. Actualizar el estado PRIMERO
