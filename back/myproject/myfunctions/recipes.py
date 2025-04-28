@@ -404,6 +404,18 @@ def save_recipe(request):
             if "totalConDescuento" in data:
                 recipe_data["totalConDescuento"] = data["totalConDescuento"]
             
+            # Agregar estados de aprobación
+            if "is_approved" in data:
+                recipe_data["is_approved"] = data["is_approved"]
+            else:
+                recipe_data["is_approved"] = False  # Por defecto, no está aprobada
+                
+            if "pending_approval" in data:
+                recipe_data["pending_approval"] = data["pending_approval"]
+            else:
+                # Si tiene seguro y no se especificó, queda pendiente de aprobación
+                recipe_data["pending_approval"] = data.get("tieneSeguro", False)
+            
             # Insertar la receta
             recipe_id = recipes_collection.insert_one(recipe_data).inserted_id
             

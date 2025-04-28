@@ -1037,7 +1037,10 @@ export class RecipesPage implements OnInit {
         totalConDescuento: this.calcularTotalConDescuento(),
         // Información agregada de todas las recetas
         totalUnidades: medicamentosEnriquecidos.reduce((sum, med) => sum + (med.estimadoUnidades || 0), 0),
-        totalPaquetes: medicamentosEnriquecidos.reduce((sum, med) => sum + (med.estimadoPaquetes || 0), 0)
+        totalPaquetes: medicamentosEnriquecidos.reduce((sum, med) => sum + (med.estimadoPaquetes || 0), 0),
+        // Estado de aprobación para seguros
+        is_approved: false,
+        pending_approval: formData.tieneSeguro ? true : false
       };
       
       // Añadir información de la cita si existe
