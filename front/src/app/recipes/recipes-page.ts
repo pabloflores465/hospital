@@ -926,7 +926,7 @@ export class RecipesPage implements OnInit {
 
   async cargarPrincipiosActivosLocal(): Promise<void> {
     const url = await back_url();
-    this.http.get<any>(`${url}/medicines/principios-activos`).subscribe({
+    this.http.get<any>(`${url}/medicines`).subscribe({
       next: (response) => {
         this.principiosActivos = response.principios_activos || [];
         console.log('Principios activos cargados (local):', this.principiosActivos);
@@ -1030,12 +1030,12 @@ export class RecipesPage implements OnInit {
         // Para mantener compatibilidad con el backend, también enviamos el primer medicamento
         medicamento: medicamentosEnriquecidos[0],
         notasEspeciales: formData.notasEspeciales || '',
-        // Información de precio y descuento
-        subtotal: preciosCalculados.total,
+        // Costos estimados
+        subtotal: this.calcularTotalMedicamentos(),
         porcentajeDescuento: formData.tieneSeguro ? this.porcentajeDescuento : 0,
-        descuento: preciosCalculados.descuento,
-        totalConDescuento: preciosCalculados.totalConDescuento,
-        // NUEVO: Información agregada de todas las recetas
+        descuento: this.calcularDescuento(),
+        totalConDescuento: this.calcularTotalConDescuento(),
+        // Información agregada de todas las recetas
         totalUnidades: medicamentosEnriquecidos.reduce((sum, med) => sum + (med.estimadoUnidades || 0), 0),
         totalPaquetes: medicamentosEnriquecidos.reduce((sum, med) => sum + (med.estimadoPaquetes || 0), 0)
       };
