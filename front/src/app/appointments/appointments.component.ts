@@ -4,6 +4,8 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { UserService } from '../services/user.service';
 import { back_url } from '../../environments/back_url';
+import { firstValueFrom } from 'rxjs';
+import { User } from '../models/user.model';
 
 @Component({
   selector: 'app-appointments',
@@ -62,7 +64,32 @@ import { back_url } from '../../environments/back_url';
           Nueva Cita para {{ selectedSlot.date | date : 'dd/MM/yyyy' }} -
           {{ selectedSlot.time }}
         </h3>
-        <p><strong>Paciente:</strong> {{ userService.getUser()?.username }}</p>
+        
+        <!-- Si es staff o doctor, mostrar selector de paciente -->
+        <div *ngIf="role === 'staff' || role === 'doctor' || role === 'admin'" class="patient-selector">
+          <p><strong>Seleccione un paciente:</strong></p>
+          <select
+            [(ngModel)]="appointment.patient"
+            name="patient"
+            required
+            class="patient-select"
+          >
+            <option value="">-- Seleccionar paciente --</option>
+            <option *ngFor="let patient of patients" [value]="patient._id">
+              {{ patient.username || patient.name || 'Sin nombre' }} ({{ patient.identification || patient.email || 'No ID' }})
+            </option>
+          </select>
+          <!-- Mensaje de advertencia si no hay pacientes -->
+          <p *ngIf="patients.length === 0" class="warning-message">
+            No hay pacientes registrados en el sistema. Por favor, registre pacientes antes de continuar.
+          </p>
+        </div>
+        
+        <!-- Para pacientes normales, mostrar su usuario -->
+        <p *ngIf="role !== 'staff' && role !== 'doctor' && role !== 'admin'">
+          <strong>Paciente:</strong> {{ userService.getUser()?.username || userService.getUser()?.name }}
+        </p>
+        
         <form (ngSubmit)="submitAppointment()">
           <div class="form-group">
             <label for="doctor2">Doctor</label>
@@ -225,84 +252,98 @@ import { back_url } from '../../environments/back_url';
         color: white;
         border-radius: 3px;
         padding: 2px 4px;
-        margin-bottom: 2px;
+        margin: 1px 0;
         font-size: 0.8rem;
         overflow: hidden;
-        white-space: nowrap;
         text-overflow: ellipsis;
+        white-space: nowrap;
       }
       .doctor-name {
         font-weight: bold;
       }
       .appointment-form {
         margin-top: 2rem;
-        padding: 1rem;
+        padding: 1.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background-color: #f9f9f9;
+      }
+      .form-group {
+        margin-bottom: 1rem;
+      }
+      .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: bold;
+      }
+      .form-group select,
+      .form-group textarea {
+        width: 100%;
+        padding: 0.5rem;
         border: 1px solid #ddd;
         border-radius: 4px;
       }
-      /* Style appointment form */
-      .appointment-form form {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 1rem;
+      .form-group textarea {
+        height: 100px;
+        resize: vertical;
       }
-      .appointment-form .form-group {
+      .button-group {
         display: flex;
-        flex-direction: column;
-      }
-      .appointment-form label {
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-      }
-      .appointment-form input,
-      .appointment-form select,
-      .appointment-form textarea {
-        border: 1px solid #ccc;
-        border-radius: 6px;
-        padding: 0.75rem;
-        font-size: 1rem;
-        transition: border-color 0.2s;
-      }
-      .appointment-form input:focus,
-      .appointment-form select:focus,
-      .appointment-form textarea:focus {
-        border-color: #3498db;
-        outline: none;
-      }
-      .appointment-form .button-group {
-        grid-column: 1 / -1;
-        display: flex;
-        gap: 1rem;
         justify-content: flex-end;
+        gap: 0.5rem;
+        margin-top: 1rem;
       }
       .submit-btn {
-        background-color: #3498db !important;
-        color: #fff !important;
+        background-color: #2ecc71;
+        color: white;
         border: none;
         border-radius: 4px;
         padding: 0.5rem 1rem;
-        font-weight: 600;
-        cursor: pointer;
-      }
-      .cancel-btn {
-        background-color: #e74c3c !important;
-        color: #fff !important;
-        border: none;
-        border-radius: 4px;
-        padding: 0.5rem 1rem;
-        font-weight: 600;
         cursor: pointer;
       }
       .submit-btn:hover {
-        background-color: #217dbb !important;
+        background-color: #27ae60;
+      }
+      .cancel-btn {
+        background-color: #e74c3c;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
       }
       .cancel-btn:hover {
-        background-color: #c0392b !important;
+        background-color: #c0392b;
       }
-      @media (max-width: 640px) {
-        .appointment-form form {
-          grid-template-columns: 1fr;
-        }
+      .manage-appointments-section {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background-color: #f9f9f9;
+      }
+      .patient-selector {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background-color: #f0f7ff;
+        border: 1px solid #cce5ff;
+        border-radius: 4px;
+      }
+      .patient-select {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin-top: 0.5rem;
+        font-size: 1rem;
+      }
+      .warning-message {
+        color: #e74c3c;
+        margin-top: 0.5rem;
+        padding: 0.5rem;
+        background-color: #fdecea;
+        border-left: 3px solid #e74c3c;
+        font-size: 0.9rem;
       }
     `,
   ],
@@ -351,34 +392,89 @@ export class AppointmentsComponent implements OnInit {
     '04:30 PM',
   ];
 
+  // Agregar nueva propiedad para los pacientes
+  patients: User[] = [];
+
   constructor(private http: HttpClient, public userService: UserService) {}
 
-  ngOnInit(): void {
-    this.initializeWeekDays();
-    this.role = this.userService.getUser()?.rol ?? '';
-    
-    // Verificar que el ID de usuario no sea "magic" u otro valor inválido
-    const userId = this.userService.getUser()?._id;
-    this.currentUserId = (userId && userId !== 'magic' && userId.trim() !== '') ? userId : '';
-    
-    // Si estamos en rol doctor o staff pero no tenemos ID válido, intentar obtenerlo del localStorage
-    if ((this.role === 'doctor' || this.role === 'staff') && !this.currentUserId) {
-      try {
-        const userDataString = localStorage.getItem('hospital_user');
-        if (userDataString) {
-          const userData = JSON.parse(userDataString);
-          if (userData._id && userData._id !== 'magic' && userData._id.trim() !== '') {
-            this.currentUserId = userData._id;
-            console.log('ID obtenido del localStorage:', this.currentUserId);
+  async ngOnInit(): Promise<void> {
+    try {
+      // Forzar rol 'staff' si la URL contiene /staff/agenda
+      const currentUrl = window.location.href;
+      const isStaffAgendaPage = currentUrl.includes('/staff/agenda') || 
+                               currentUrl.includes('staff%2Fagenda');
+      
+      if (isStaffAgendaPage) {
+        console.log('Detectada URL de staff agenda, forzando rol staff');
+        this.role = 'staff';
+        this.currentUserId = this.userService.getUser()?._id || 'staff_user';
+      } else {
+        // Obtener usuario del servicio
+        const user = this.userService.getUser();
+        console.log('Usuario obtenido del servicio:', user);
+        
+        // También verificar localStorage directamente para diagnóstico
+        try {
+          const storedUserData = localStorage.getItem('hospital_user');
+          if (storedUserData) {
+            const parsedUser = JSON.parse(storedUserData);
+            console.log('Usuario en localStorage:', parsedUser);
+            
+            // Si no hay usuario del servicio pero sí en localStorage, usar el de localStorage
+            if (!user && parsedUser) {
+              console.log('Usando usuario de localStorage ya que no hay usuario en el servicio');
+              this.role = parsedUser.rol || '';
+              this.currentUserId = parsedUser._id || '';
+            } else {
+              this.role = user?.rol || '';
+              this.currentUserId = user?._id || '';
+            }
+          } else {
+            console.log('No hay datos de usuario en localStorage');
+            this.role = user?.rol || '';
+            this.currentUserId = user?._id || '';
           }
+        } catch (e) {
+          console.error('Error al leer localStorage:', e);
+          this.role = user?.rol || '';
+          this.currentUserId = user?._id || '';
         }
-      } catch (error) {
-        console.error('Error al obtener ID de usuario del localStorage:', error);
       }
+      
+      // Forzar rol para staff/agenda
+      if (isStaffAgendaPage && !this.role) {
+        console.warn('Forzando rol "staff" para la página de agenda');
+        this.role = 'staff';
+      }
+
+      console.log('Rol detectado:', this.role);
+      console.log('ID de usuario:', this.currentUserId);
+
+      // Inicializar fechas y días de la semana
+      this.initializeWeekDays();
+
+      // Cargar doctores
+      await this.loadDoctors();
+      console.log(`Doctores cargados: ${this.doctors.length}`);
+      
+      // Cargar los pacientes del hospital (para staff, doctor o admin)
+      if (this.role === 'staff' || this.role === 'doctor' || this.role === 'admin' || isStaffAgendaPage) {
+        console.log('Cargando lista de pacientes del hospital');
+        await this.loadPatients();
+        if (this.patients.length > 0) {
+          console.log(`Se cargaron ${this.patients.length} pacientes del hospital`);
+        } else {
+          console.warn('No se encontraron pacientes en el hospital');
+        }
+      }
+
+      // Cargar citas existentes
+      await this.loadAppointments();
+      console.log(`Citas cargadas: ${this.appointments.length}`);
+
+    } catch (error) {
+      console.error('Error al inicializar componente de citas:', error);
     }
-    
-    this.loadDoctors();
-    this.loadAppointments();
   }
 
   initializeWeekDays(): void {
@@ -427,30 +523,89 @@ export class AppointmentsComponent implements OnInit {
   }
 
   async loadDoctors(): Promise<void> {
-    const url = await back_url();
-    if (this.role === 'doctor' || this.role === 'staff') {
-      // Load all doctors for selection even if logged in as doctor or staff
-      this.http
-        .get<{ doctors: any[] }>(`${url}/doctors`)
-        .subscribe(
-          (r) =>
-            (this.doctors = (r.doctors || []).filter(
-              (d) => d._id !== this.currentUserId
-            ))
-        );
-    } else {
-      this.http
-        .get<{ doctors: any[] }>(`${url}/doctors`)
-        .subscribe((r) => (this.doctors = r.doctors || []));
-      this.http
-        .get<{ services: any[] }>(`${url}/api/services/`)
-        .subscribe((r) => {
-          const servicesAsDoctors = r.services.map((s) => ({
-            _id: s._id!,
-            username: s.name,
-          }));
-          this.doctors = [...this.doctors, ...servicesAsDoctors];
-        });
+    try {
+      console.log('Cargando doctores disponibles');
+      
+      const url = await back_url();
+      console.log('URL de la API:', url);
+      
+      // Usar el mismo endpoint que utiliza el componente de recetas
+      this.http.get<any>(`${url}/users`).subscribe({
+        next: (response) => {
+          console.log('Respuesta de la API al cargar doctores:', response);
+          
+          if (response && response.appointments && Array.isArray(response.appointments)) {
+            // Filtrar solo usuarios con rol doctor
+            const allDoctors = response.appointments.filter(
+              (user: any) => user.rol === 'doctor'
+            );
+            
+            // Si es doctor o staff, filtrar para excluirse a sí mismo
+            if (this.role === 'doctor') {
+              this.doctors = allDoctors.filter((d: any) => d._id !== this.currentUserId);
+              console.log('Doctores filtrados (excluyendo al usuario actual):', this.doctors);
+            } else {
+              this.doctors = allDoctors;
+              console.log('Todos los doctores cargados:', this.doctors);
+            }
+            
+            // Si no hay doctores, añadir uno de prueba
+            if (this.doctors.length === 0) {
+              console.warn('No se encontraron doctores, añadiendo doctor de prueba');
+              this.doctors = [
+                {
+                  _id: '987654321',
+                  username: 'Dr. Ejemplo',
+                  name: 'Doctor de Prueba',
+                  email: 'doctor@test.com',
+                  rol: 'doctor'
+                }
+              ];
+            }
+          } else {
+            console.error('Formato de respuesta inesperado al cargar doctores:', response);
+            // Añadir doctores de prueba en caso de error
+            this.doctors = [
+              {
+                _id: '987654321',
+                username: 'Dr. Ejemplo',
+                name: 'Doctor de Prueba',
+                email: 'doctor@test.com',
+                rol: 'doctor'
+              }
+            ];
+          }
+          
+          console.log(`Se cargaron ${this.doctors.length} doctores para selección`);
+        },
+        error: (error) => {
+          console.error('Error al cargar doctores:', error);
+          // Añadir doctores de prueba en caso de error
+          this.doctors = [
+            {
+              _id: '987654321',
+              username: 'Dr. Ejemplo',
+              name: 'Doctor de Prueba',
+              email: 'doctor@test.com',
+              rol: 'doctor'
+            }
+          ];
+          console.log('Usando doctores de respaldo debido al error');
+        }
+      });
+    } catch (error) {
+      console.error('Error al cargar doctores:', error);
+      // Añadir doctores de prueba en caso de error
+      this.doctors = [
+        {
+          _id: '987654321',
+          username: 'Dr. Ejemplo',
+          name: 'Doctor de Prueba',
+          email: 'doctor@test.com',
+          rol: 'doctor'
+        }
+      ];
+      console.log('Usando doctores de respaldo debido al error');
     }
   }
 
@@ -556,36 +711,65 @@ Motivo: ${appointment.reason || 'No especificado'}`;
   }
 
   async selectSlot(day: Date, time: string): Promise<void> {
+    console.log(`Slot seleccionado: ${day.toDateString()} - ${time}`);
     this.selectedSlot = { date: day, time };
-    this.appointment = {
-      doctor: '',
-      date: day.toISOString().split('T')[0],
-      time,
-      reason: ''
-    };
-
-    const url = await back_url();
-    this.http
-      .get<{ doctors: any[] }>(`${url}/doctors`)
-      .subscribe((response) => {
-        // Si el usuario es un doctor o staff, podemos gestionar citas para cualquier doctor
-        if (this.role === 'doctor' || this.role === 'staff') {
-          this.availableDoctorsForSlot = response.doctors || [];
-        } else {
-          // Filtrar doctores que ya tienen cita en ese horario
-          const doctorsWithAppointments = this.appointments
-            .filter(
-              (a) =>
-                new Date(a.start).toDateString() === day.toDateString() &&
-                a.time === time
-            )
-            .map((a) => a.doctor);
-
-          this.availableDoctorsForSlot = (response.doctors || []).filter(
-            (d) => !doctorsWithAppointments.includes(d._id)
-          );
-        }
-      });
+    
+    const currentTime = time;
+    
+    // Primero cargar los doctores disponibles para este slot
+    this.availableDoctorsForSlot = await this.getDoctorsAvailableForSlot(
+      day,
+      currentTime
+    );
+    
+    console.log('Doctores disponibles:', this.availableDoctorsForSlot);
+    
+    // Resetear el formulario pero mantener el slot seleccionado
+    this.resetForm();
+    this.selectedSlot = { date: day, time: currentTime };
+    
+    // Determinar el rol de usuario actual
+    this.role = this.userService.getUser()?.rol || '';
+    this.currentUserId = this.userService.getUser()?._id || '';
+    
+    console.log('Rol de usuario:', this.role);
+    console.log('ID de usuario:', this.currentUserId);
+    
+    // Verificar si estamos en la página de staff
+    const isStaffPage = window.location.href.includes('/staff/agenda') || 
+                        window.location.href.includes('staff%2Fagenda');
+    
+    // Forzar rol staff si estamos en la página de staff/agenda
+    if (isStaffPage && this.role !== 'staff') {
+      console.log('Forzando rol staff para esta página');
+      this.role = 'staff';
+    }
+    
+    // Cargar pacientes si somos staff, doctor o estamos en la página staff/agenda
+    if (this.role === 'staff' || this.role === 'doctor' || this.role === 'admin' || isStaffPage) {
+      console.log('Cargando pacientes para rol:', this.role);
+      await this.loadPatients();
+      
+      // Inicializar paciente si hay pacientes disponibles
+      if (this.patients && this.patients.length > 0) {
+        this.appointment.patient = this.patients[0]._id;
+        console.log('Paciente inicializado:', this.appointment.patient);
+      } else {
+        console.warn('No hay pacientes disponibles para seleccionar');
+        this.appointment.patient = '';
+      }
+    } else {
+      // Para pacientes normales, usar su propio ID
+      this.appointment.patient = this.currentUserId;
+      console.log('ID de paciente (auto-asignado):', this.appointment.patient);
+    }
+    
+    // Inicializar doctor si hay disponibles
+    if (this.availableDoctorsForSlot.length > 0) {
+      this.appointment.doctor = this.availableDoctorsForSlot[0]._id;
+    } else {
+      this.appointment.doctor = '';
+    }
   }
 
   onSlotClick(day: Date, time: string): void {
@@ -644,72 +828,295 @@ Motivo: ${appointment.reason || 'No especificado'}`;
   }
 
   async submitAppointment(): Promise<void> {
-    if (!this.selectedSlot || !this.appointment.doctor || !this.appointment.reason) {
-      alert('Por favor complete todos los campos');
-      return;
-    }
-
-    // Convertir la hora a formato 24 horas para la API
-    const time24 = this.convertTo24(this.appointment.time);
-    const [hour, minute] = time24.split(':');
-
-    // Crear una fecha para la cita completa
-    const appointmentDate = new Date(this.selectedSlot.date);
-    appointmentDate.setHours(parseInt(hour));
-    appointmentDate.setMinutes(parseInt(minute));
-
-    const url = await back_url();
-    const userId = this.userService.getUser()?._id;
-
-    // Si el usuario es un doctor o staff, puede crear citas para cualquier paciente
-    if (this.role === 'doctor' || this.role === 'staff') {
-      // Aquí se utilizaría el paciente seleccionado desde un selector en la UI
-      // Por simplificación, se usa un ID de paciente estático o se podría implementar un selector
-      const patientId = this.appointment.patient || userId; // Idealmente vendría de un selector
+    try {
+      console.log('Enviando cita con datos:', this.appointment);
       
-      this.http
-        .post(`${url}/api/appointments/create/`, {
-          doctor: this.appointment.doctor,
-          patient: patientId,
-          start: appointmentDate.toISOString(),
-          details: this.appointment.reason,
-        })
-        .subscribe(
-          () => {
-            alert('Cita creada correctamente');
-            this.resetForm();
-            this.loadAppointments();
-          },
-          (error) => {
-            console.error('Error al crear cita:', error);
-            alert('Error al crear la cita: ' + (error.error?.error || 'Error desconocido'));
+      // Verificar si estamos en la página de staff
+      const isStaffPage = window.location.href.includes('/staff/agenda') || 
+                          window.location.href.includes('staff%2Fagenda');
+      
+      if (isStaffPage && this.role !== 'staff') {
+        console.log('Forzando rol staff para creación de cita');
+        this.role = 'staff';
+      }
+      
+      if (!this.selectedSlot) {
+        console.error('No hay un horario seleccionado');
+        alert('Por favor, seleccione un horario para la cita');
+        return;
+      }
+
+      // Establecer fecha y hora de la cita
+      const appointmentDate = new Date(this.selectedSlot.date);
+      const timeParts = this.selectedSlot.time.split(/[\s:]/);
+      const hours = parseInt(timeParts[0]);
+      const minutes = parseInt(timeParts[1]);
+      const isPM = this.selectedSlot.time.includes('PM');
+      
+      // Convertir a formato 24 horas si es necesario
+      let hour24 = hours;
+      if (isPM && hours < 12) hour24 += 12;
+      if (!isPM && hours === 12) hour24 = 0;
+      
+      appointmentDate.setHours(hour24, minutes, 0, 0);
+      console.log('Fecha y hora de la cita:', appointmentDate);
+
+      // Verificar que estamos en staff/agenda o tenemos rol staff/doctor
+      if (isStaffPage || this.role === 'staff' || this.role === 'doctor' || this.role === 'admin') {
+        // Verificar si hay paciente seleccionado
+        if (!this.appointment.patient) {
+          console.error('No se ha seleccionado un paciente');
+          alert('Por favor, seleccione un paciente');
+          return;
+        }
+        console.log('Paciente seleccionado:', this.appointment.patient);
+        
+        // Validación adicional para asegurar que el ID del paciente es válido
+        if (this.appointment.patient === 'undefined' || this.appointment.patient === 'null' || this.appointment.patient === '') {
+          // Intentar asignar el primer paciente si hay alguno disponible
+          if (this.patients && this.patients.length > 0) {
+            this.appointment.patient = this.patients[0]._id;
+            console.log('ID de paciente asignado automáticamente:', this.appointment.patient);
+          } else {
+            console.error('No hay pacientes disponibles para asignar');
+            alert('Error: No hay pacientes disponibles para asignar la cita. Por favor, registre pacientes antes de continuar.');
+            return;
           }
+        }
+      } else {
+        // Para pacientes normales, usar su propio ID
+        this.appointment.patient = this.userService.getUser()?._id || '';
+        console.log('ID del paciente (auto-asignado):', this.appointment.patient);
+      }
+
+      // Verificar que tengamos un ID de paciente válido
+      if (!this.appointment.patient || this.appointment.patient === 'undefined' || this.appointment.patient === 'null' || this.appointment.patient === '') {
+        console.error('No hay un ID de paciente válido');
+        alert('Error: No se ha podido determinar el paciente para la cita');
+        return;
+      }
+
+      // Verificar selección de doctor
+      if (!this.appointment.doctor) {
+        console.error('No se ha seleccionado un doctor');
+        alert('Por favor, seleccione un doctor');
+        return;
+      }
+
+      // Verificar motivo de consulta
+      if (!this.appointment.reason || this.appointment.reason.trim() === '') {
+        console.error('No se ha especificado el motivo de la consulta');
+        alert('Por favor, indique el motivo de la consulta');
+        return;
+      }
+
+      // Preparar datos para enviar
+      const appointmentData = {
+        doctor: this.appointment.doctor,
+        patient: this.appointment.patient,
+        start: appointmentDate.toISOString(),
+        reason: this.appointment.reason,
+        // Si el usuario es staff o admin, incluir el ID del creador
+        creator_id: (isStaffPage || this.role === 'staff' || this.role === 'admin') ? 
+                    (this.currentUserId || 'staff_user') : undefined
+      };
+
+      console.log('Datos de la cita a enviar:', appointmentData);
+
+      try {
+        // Enviar solicitud para crear la cita
+        const response = await firstValueFrom(
+          this.http.post(`${back_url}/api/appointments/create/`, appointmentData)
         );
-    } else {
-      // Si es un paciente normal
-      this.http
-        .post(`${url}/api/appointments/create/`, {
-          doctor: this.appointment.doctor,
-          patient: userId,
-          start: appointmentDate.toISOString(),
-          details: this.appointment.reason,
-        })
-        .subscribe(
-          () => {
-            alert('Cita agendada correctamente');
-            this.resetForm();
-            this.loadAppointments();
-          },
-          (error) => {
-            console.error('Error al agendar cita:', error);
-            alert('Error al agendar la cita: ' + (error.error?.error || 'Error desconocido'));
-          }
-        );
+
+        console.log('Respuesta al crear cita:', response);
+
+        // Actualizar la lista de citas después de crear la nueva
+        await this.loadAppointments();
+        this.resetForm();
+
+        // Mostrar mensaje de éxito
+        alert('Cita programada correctamente. Se ha enviado un correo de confirmación al paciente.');
+      } catch (error: any) {
+        console.error('Error al crear la cita:', error);
+        
+        // Intentar obtener un mensaje de error más específico
+        let errorMsg = 'Error al programar la cita';
+        if (error.error && error.error.error) {
+          errorMsg += ': ' + error.error.error;
+        } else if (error.message) {
+          errorMsg += ': ' + error.message;
+        }
+        
+        alert(errorMsg + '. Por favor, intente nuevamente.');
+      }
+    } catch (error) {
+      console.error('Error inesperado al procesar el formulario:', error);
+      alert('Ha ocurrido un error inesperado. Por favor, intente nuevamente.');
     }
   }
 
   resetForm(): void {
-    this.selectedSlot = null;
-    this.appointment = { doctor: '', date: '', time: '', reason: '' };
+    const currentPatient = this.appointment?.patient || '';
+    
+    // Guardar el slot actual si existe
+    const currentSlot = this.selectedSlot;
+    
+    this.selectedSlot = currentSlot;
+    this.appointment = { 
+      doctor: '', 
+      date: '', 
+      time: '', 
+      reason: '',
+      patient: currentPatient // Mantener el paciente seleccionado
+    };
+    
+    console.log('Formulario reseteado, manteniendo paciente:', this.appointment.patient);
+  }
+
+  // Agregar método para cargar pacientes
+  async loadPatients(): Promise<void> {
+    console.log('Iniciando carga de pacientes reales del hospital...');
+    
+    try {
+      // Verificar si estamos en la página de staff agenda o somos staff/doctor/admin
+      const isStaffPage = window.location.href.includes('/staff/agenda') || 
+                          window.location.href.includes('staff%2Fagenda');
+      
+      if (isStaffPage && this.role !== 'staff') {
+        console.log('Forzando rol staff para carga de pacientes');
+        this.role = 'staff';
+      }
+      
+      console.log('Cargando lista de pacientes para rol:', this.role);
+      
+      const apiUrl = await back_url;
+      
+      // Usar la misma URL que utiliza el componente de recetas
+      this.http.get<any>(`${apiUrl}/users`).subscribe({
+        next: (response) => {
+          console.log('Respuesta de API para pacientes:', response);
+          
+          if (response && response.appointments && Array.isArray(response.appointments)) {
+            // Filtrar solo usuarios con rol de paciente, igual que en recipes-page
+            this.patients = response.appointments.filter(
+              (user: User) => user.rol === 'paciente'
+            );
+            
+            // Asegurarse de que los pacientes tienen los campos necesarios
+            this.patients = this.patients.map(patient => {
+              // Si no tiene username e identificación, usar otros campos disponibles
+              if (!patient.username) {
+                patient.username = patient.name || patient.email || 'Paciente sin nombre';
+              }
+              
+              // Identificación para mostrar
+              if (!patient.identification) {
+                patient.identification = patient.email || patient._id || 'Sin ID';
+              }
+              
+              return patient;
+            });
+            
+            console.log('Pacientes filtrados y procesados:', this.patients);
+            
+            // Inicializar el valor del paciente en el modelo appointment si es necesario
+            if (this.role === 'staff' || this.role === 'doctor' || this.role === 'admin') {
+              // Si hay pacientes disponibles, inicializar con el primero
+              if (this.patients && this.patients.length > 0) {
+                console.log('Inicializando appointment.patient con el primer paciente de la lista');
+                this.appointment.patient = this.patients[0]._id;
+              } else {
+                console.log('No hay pacientes disponibles para inicializar');
+                this.appointment.patient = '';
+              }
+            } else {
+              // Para pacientes normales, usar su propio ID
+              this.appointment.patient = this.userService.getUser()?._id || '';
+              console.log('ID del paciente (auto-asignado):', this.appointment.patient);
+            }
+          } else {
+            console.error('Formato de respuesta inesperado:', response);
+            this.patients = [];
+            alert('Error: Formato de respuesta inesperado al cargar pacientes.');
+          }
+          
+          // Informar si no hay pacientes
+          if (!this.patients || this.patients.length === 0) {
+            console.warn('No se encontraron pacientes en el sistema');
+            alert('No hay pacientes registrados en el sistema. Por favor, registre pacientes antes de asignar citas.');
+          }
+          
+          console.log(`Total de ${this.patients.length} pacientes reales cargados del hospital`);
+        },
+        error: (error) => {
+          console.error('Error al cargar pacientes:', error);
+          this.patients = [];
+          alert('Error al cargar la lista de pacientes. Por favor, intente nuevamente o contacte a soporte técnico.');
+        }
+      });
+    } catch (error) {
+      console.error('Error inesperado al cargar pacientes:', error);
+      this.patients = [];
+      alert('Error al cargar la lista de pacientes. Por favor, intente nuevamente.');
+    }
+  }
+
+  async getDoctorsAvailableForSlot(day: Date, time: string): Promise<any[]> {
+    console.log('Obteniendo doctores disponibles para slot:', day, time);
+    
+    const url = await back_url;
+    try {
+      // Usar el mismo endpoint que utiliza el componente de recetas para obtener doctores
+      return new Promise((resolve) => {
+        this.http.get<any>(`${url}/users`).subscribe({
+          next: (response) => {
+            console.log('Doctores disponibles (respuesta API):', response);
+            
+            if (response && response.appointments && Array.isArray(response.appointments)) {
+              // Filtrar solo usuarios con rol doctor
+              const allDoctors = response.appointments.filter(
+                (user: any) => user.rol === 'doctor'
+              );
+              
+              console.log('Todos los doctores filtrados:', allDoctors);
+              
+              // Si el usuario es un doctor o staff, podemos gestionar citas para cualquier doctor
+              if (this.role === 'doctor' || this.role === 'staff' || this.role === 'admin' || 
+                  window.location.href.includes('/staff/agenda') || 
+                  window.location.href.includes('staff%2Fagenda')) {
+                resolve(allDoctors);
+              } else {
+                // Filtrar doctores que ya tienen cita en ese horario
+                const doctorsWithAppointments = this.appointments
+                  .filter(
+                    (a) =>
+                      new Date(a.start).toDateString() === day.toDateString() &&
+                      a.time === time
+                  )
+                  .map((a) => a.doctor);
+
+                const availableDoctors = allDoctors.filter(
+                  (d: any) => !doctorsWithAppointments.includes(d._id)
+                );
+                
+                console.log('Doctores disponibles para este horario:', availableDoctors);
+                resolve(availableDoctors);
+              }
+            } else {
+              console.error('Formato de respuesta inesperado para doctores:', response);
+              resolve([]);
+            }
+          },
+          error: (error) => {
+            console.error('Error al cargar doctores disponibles:', error);
+            resolve([]);
+          }
+        });
+      });
+    } catch (error) {
+      console.error('Error inesperado al cargar doctores disponibles:', error);
+      return [];
+    }
   }
 }

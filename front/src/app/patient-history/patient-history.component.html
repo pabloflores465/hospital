@@ -1,9 +1,102 @@
 <div class="history-container">
   <h2>Ficha Histórica de Pacientes</h2>
+  
+  <!-- Mensaje de error -->
+  <div *ngIf="errorMessage" class="error-message">
+    {{ errorMessage }}
+  </div>
+  
+  <!-- Indicador de carga -->
+  <div *ngIf="loading" class="loading-indicator">
+    Cargando datos...
+  </div>
+  
+  <!-- Buscador de pacientes -->
   <div class="search-box">
     <input type="text" [(ngModel)]="searchTerm" placeholder="Buscar paciente..." (input)="searchHistories()">
   </div>
-  <div class="history-list">
+  
+  <div class="patient-history-container">
+    <!-- Lista de pacientes -->
+    <div class="patients-list">
+      <h3>Pacientes</h3>
+      <div *ngIf="patients.length === 0 && !loading">
+        No se encontraron pacientes.
+      </div>
+      <div class="patient-item" *ngFor="let patient of patients" 
+           [class.selected]="selectedPatient && selectedPatient._id === patient._id"
+           (click)="selectPatient(patient)">
+        <h4>{{ patient.name }}</h4>
+        <p *ngIf="patient.identification">ID: {{ patient.identification }}</p>
+        <p>{{ patient.email }}</p>
+      </div>
+    </div>
+    
+    <!-- Detalles del paciente seleccionado -->
+    <div class="patient-details" *ngIf="selectedPatient">
+      <h3>Historial de {{ selectedPatient.name }}</h3>
+      
+      <!-- Sección de consultas -->
+      <div class="consultations-section">
+        <h4>Consultas médicas</h4>
+        <div *ngIf="patientConsultations.length === 0">
+          No hay consultas registradas.
+        </div>
+        <div class="consultation-card" *ngFor="let consultation of patientConsultations">
+          <div class="consultation-header">
+            <h5>{{ consultation.type }}</h5>
+            <span class="consultation-date">{{ formatDate(consultation.date) }}</span>
+          </div>
+          <div class="consultation-body">
+            <p><strong>Diagnóstico:</strong> {{ consultation.diagnosis }}</p>
+            <p *ngIf="consultation.procedures && consultation.procedures.length > 0">
+              <strong>Procedimientos:</strong> {{ consultation.procedures.join(', ') }}
+            </p>
+            <div *ngIf="hasResponses(consultation)" class="consultation-responses">
+              <h6>Respuestas del médico:</h6>
+              <div class="doctor-response" *ngFor="let response of getDoctorResponses(consultation)">
+                <p>{{ response.content }}</p>
+                <small>{{ formatDate(response.date) }}</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Sección de recetas -->
+      <div class="recipes-section">
+        <h4>Recetas médicas</h4>
+        <div *ngIf="patientRecipes.length === 0">
+          No hay recetas registradas.
+        </div>
+        <div class="recipe-card" *ngFor="let recipe of patientRecipes">
+          <div class="recipe-header">
+            <h5>Receta #{{ recipe.formatted_code || recipe.code }}</h5>
+            <span class="recipe-date">{{ formatDate(recipe.created_at || recipe.date) }}</span>
+          </div>
+          <div class="recipe-body">
+            <div *ngIf="recipe.doctor_details">
+              <p><strong>Doctor:</strong> {{ recipe.doctor_details.name }}</p>
+            </div>
+            <div *ngIf="recipe.medicines && recipe.medicines.length > 0">
+              <h6>Medicamentos:</h6>
+              <ul class="medicines-list">
+                <li *ngFor="let medicine of recipe.medicines">
+                  <strong>{{ medicine.name }}</strong>
+                  <p *ngIf="medicine.dosis">Dosis: {{ medicine.dosis }}</p>
+                  <p *ngIf="medicine.frequency">Frecuencia: {{ medicine.frequency }}</p>
+                  <p *ngIf="medicine.duration">Duración: {{ medicine.duration }}</p>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Datos históricos (mantener temporalmente) -->
+  <div class="history-list" *ngIf="!selectedPatient">
     <div *ngFor="let history of filteredHistories" class="history-card">
       <h3>{{ history.name }}</h3>
       <p><strong>Diagnósticos:</strong> {{ history.diagnoses.join(', ') }}</p>

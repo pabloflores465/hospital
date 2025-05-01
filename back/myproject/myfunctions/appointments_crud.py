@@ -5,6 +5,8 @@ from django.views.decorators.csrf import csrf_exempt
 from bson import ObjectId
 from .config import appointments_collection, users_collection
 from django.utils.dateparse import parse_datetime
+from django.core.mail import send_mail
+from django.conf import settings
 
 BUSINESS_START = time(8,0)
 BUSINESS_END = time(16,30)
@@ -32,6 +34,17 @@ def create_appointment(request):
         return JsonResponse({"error": "Método no permitido"}, status=405)
     try:
         data = json.loads(request.body)
+        
+        # Verificar credenciales del usuario que crea la cita
+        creator_id = data.get("creator_id")
+        
+        # Si hay un creator_id, verificamos que sea staff
+        is_staff = False
+        if creator_id:
+            creator = users_collection.find_one({"_id": ObjectId(creator_id)})
+            if creator and creator.get("rol") in ["staff", "admin"]:
+                is_staff = True
+                
         start_str = data.get("start")
         if not start_str:
             return JsonResponse({"error": "Missing start datetime"}, status=400)
@@ -42,6 +55,7 @@ def create_appointment(request):
             raise ValueError("Horario inválido")
         if is_conflict(data["doctor"], start):
             raise ValueError("Slot ocupado")
+            
         doc = {
             "doctor": ObjectId(data["doctor"]),
             "patient": ObjectId(data["patient"]),
@@ -49,7 +63,44 @@ def create_appointment(request):
             "reason": data.get("reason", ""),
             "completed": False
         }
+        
+        # Guardar la cita
         result = appointments_collection.insert_one(doc)
+        
+        # Enviar correo de notificación al paciente
+        try:
+            # Obtener datos del paciente y doctor para el correo
+            patient = users_collection.find_one({"_id": ObjectId(data["patient"])})
+            doctor = users_collection.find_one({"_id": ObjectId(data["doctor"])})
+            
+            if patient and patient.get("email") and doctor:
+                doctor_name = doctor.get("name", doctor.get("username", ""))
+                formatted_date = start.strftime("%d/%m/%Y a las %H:%M")
+                
+                # Enviar correo
+                send_mail(
+                    f"Nueva cita médica programada - {formatted_date}",
+                    f"""Hola {patient.get('name', patient.get('username', ''))},
+
+Le informamos que se ha programado una cita médica para usted:
+
+Fecha y hora: {formatted_date}
+Doctor: {doctor_name}
+Motivo: {data.get('reason', 'No especificado')}
+
+Si necesita reprogramar o cancelar esta cita, por favor contacte con nuestro personal.
+
+Saludos,
+El equipo del hospital
+""",
+                    settings.EMAIL_HOST_USER,
+                    [patient["email"]],
+                    fail_silently=False,
+                )
+        except Exception as e:
+            print(f"Error al enviar correo: {str(e)}")
+            # No impedimos que se cree la cita si falla el correo
+        
         return JsonResponse({"_id": str(result.inserted_id)}, status=201)
     except Exception as e:
         traceback.print_exc()

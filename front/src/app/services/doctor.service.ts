@@ -3,6 +3,7 @@ import { environment } from '../../environments/environment';
 import axios from 'axios';
 import { HttpClient } from '@angular/common/http';
 import { back_url } from '../../environments/back_url';
+import { firstValueFrom } from 'rxjs';
 
 export interface Doctor {
   _id: string;
@@ -49,9 +50,7 @@ export class DoctorService {
   async getDoctorRecipes(doctorId: string): Promise<Recipe[]> {
     try {
       const url = await back_url();
-      const response = await this.http
-        .get<Recipe[]>(`${url}/recipes/${doctorId}`)
-        .toPromise();
+      const response = await firstValueFrom(this.http.get<Recipe[]>(`${url}/recipes/${doctorId}`));
       return response || [];
     } catch (error) {
       console.error('Error fetching doctor recipes:', error);
@@ -108,10 +107,8 @@ export class DoctorService {
   async createRecipe(recipe: Recipe): Promise<Recipe> {
     try {
       const url = await back_url();
-      const response = await this.http
-        .post<Recipe>(`${url}/recipes`, recipe)
-        .toPromise();
-      return response!;
+      const response = await firstValueFrom(this.http.post<Recipe>(`${url}/recipes`, recipe));
+      return response;
     } catch (error) {
       console.error('Error creating recipe:', error);
       throw error;
