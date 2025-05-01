@@ -137,6 +137,11 @@ import { back_url } from '../../environments/back_url';
           </div>
         </form>
       </div>
+
+      <div class="manage-appointments-section" *ngIf="selectTemplate()">
+        <h3>Gestión de Citas</h3>
+        <p>{{ selectTemplate() }}</p>
+      </div>
     </div>
   `,
   styles: [
@@ -147,6 +152,9 @@ import { back_url } from '../../environments/back_url';
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         margin-top: 2rem;
+        max-width: 1200px;
+        margin-left: auto;
+        margin-right: auto;
       }
       .calendar-controls {
         display: flex;
@@ -172,16 +180,21 @@ import { back_url } from '../../environments/back_url';
         border: 1px solid #ddd;
         border-radius: 4px;
         overflow: auto;
+        max-height: 600px;
+        position: relative;
       }
       .calendar-header {
         display: grid;
         grid-template-columns: 80px repeat(7, 1fr);
         background-color: #f8f9fa;
         border-bottom: 1px solid #ddd;
+        position: sticky;
+        top: 0;
+        z-index: 10;
       }
       .day-column,
       .time-label {
-        padding: 1rem;
+        padding: 0.5rem;
         text-align: center;
         font-weight: bold;
       }
@@ -196,8 +209,8 @@ import { back_url } from '../../environments/back_url';
       }
       .slot {
         border-left: 1px solid #eee;
-        padding: 0.5rem;
-        min-height: 40px;
+        padding: 0.3rem;
+        min-height: 30px;
         cursor: pointer;
         position: relative;
       }
@@ -295,7 +308,14 @@ import { back_url } from '../../environments/back_url';
   ],
 })
 export class AppointmentsComponent implements OnInit {
-  appointment = { doctor: '', date: '', time: '', reason: '' };
+  appointment: { 
+    doctor: string; 
+    date: string; 
+    time: string; 
+    reason: string;
+    patient?: string;
+  } = { doctor: '', date: '', time: '', reason: '' };
+  
   selectedAppointment: any = null;
   result = { diagnosis: '', exams: '', medicines: '', next_steps: '' };
 
@@ -341,8 +361,8 @@ export class AppointmentsComponent implements OnInit {
     const userId = this.userService.getUser()?._id;
     this.currentUserId = (userId && userId !== 'magic' && userId.trim() !== '') ? userId : '';
     
-    // Si estamos en rol doctor pero no tenemos ID válido, intentar obtenerlo del localStorage
-    if (this.role === 'doctor' && !this.currentUserId) {
+    // Si estamos en rol doctor o staff pero no tenemos ID válido, intentar obtenerlo del localStorage
+    if ((this.role === 'doctor' || this.role === 'staff') && !this.currentUserId) {
       try {
         const userDataString = localStorage.getItem('hospital_user');
         if (userDataString) {
@@ -408,8 +428,8 @@ export class AppointmentsComponent implements OnInit {
 
   async loadDoctors(): Promise<void> {
     const url = await back_url();
-    if (this.role === 'doctor') {
-      // Load all doctors for selection even if logged in as doctor
+    if (this.role === 'doctor' || this.role === 'staff') {
+      // Load all doctors for selection even if logged in as doctor or staff
       this.http
         .get<{ doctors: any[] }>(`${url}/doctors`)
         .subscribe(
@@ -437,37 +457,37 @@ export class AppointmentsComponent implements OnInit {
   async loadAppointments(): Promise<void> {
     const url = await back_url();
     
-    // Si el usuario es un doctor, cargar citas usando su email desde localStorage
-    if (this.role === 'doctor') {
+    // Si el usuario es un doctor o staff, cargar citas usando su email desde localStorage
+    if (this.role === 'doctor' || this.role === 'staff') {
       try {
         // Obtener datos del localStorage y parsearlo correctamente
         const userDataString = localStorage.getItem('hospital_user');
-        let doctorEmail = '';
+        let userEmail = '';
         
         if (userDataString) {
           const userData = JSON.parse(userDataString);
-          doctorEmail = userData.email;
-          console.log('Doctor email from localStorage:', doctorEmail);
+          userEmail = userData.email;
+          console.log(`${this.role} email from localStorage:`, userEmail);
         }
         
         // Verificar si tenemos un email o ID válido
-        const doctorIdentifier = doctorEmail || this.currentUserId;
+        const userIdentifier = userEmail || this.currentUserId;
         
-        if (doctorIdentifier && doctorIdentifier !== 'magic' && doctorIdentifier.trim() !== '') {
-          console.log('Requesting appointments for doctor:', doctorIdentifier);
+        if (userIdentifier && userIdentifier !== 'magic' && userIdentifier.trim() !== '') {
+          console.log(`Requesting appointments for ${this.role}:`, userIdentifier);
           this.http
-            .get<{ appointments: any[] }>(`${url}/api/appointments/doctor/${doctorIdentifier}/`)
+            .get<{ appointments: any[] }>(`${url}/api/appointments/doctor/${userIdentifier}/`)
             .subscribe((r) => {
               const all = r.appointments || [];
-              console.log('Loaded doctor appointments (raw):', all);
+              console.log(`Loaded ${this.role} appointments (raw):`, all);
               this.appointments = all;
-              console.log('Filtered doctor appointments:', this.appointments);
+              console.log(`Filtered ${this.role} appointments:`, this.appointments);
             }, (error) => {
-              console.error('Error loading doctor appointments:', error);
+              console.error(`Error loading ${this.role} appointments:`, error);
               this.appointments = [];
             });
         } else {
-          console.error('No hay un identificador válido para el doctor. Cargando todas las citas.');
+          console.error(`No hay un identificador válido para el ${this.role}. Cargando todas las citas.`);
           // Si no hay identificador válido, cargar todas las citas como fallback
           this.loadAllAppointments(url);
         }
@@ -491,10 +511,10 @@ export class AppointmentsComponent implements OnInit {
           console.log('Loaded all appointments:', all);
           this.appointments = all;
         
-          // Si el usuario es doctor pero estamos cargando todas las citas, mostrar un mensaje
-          if (this.role === 'doctor') {
+          // Si el usuario es doctor o staff pero estamos cargando todas las citas, mostrar un mensaje
+          if (this.role === 'doctor' || this.role === 'staff') {
             setTimeout(() => {
-              alert('No se pudieron cargar sus citas específicas como doctor. Se están mostrando todas las citas disponibles.');
+              alert(`No se pudieron cargar sus citas específicas como ${this.role}. Se están mostrando todas las citas disponibles.`);
             }, 1000);
           }
         }, (error) => {
@@ -535,40 +555,37 @@ Doctor: ${this.getDoctorName(appointment.doctor)}
 Motivo: ${appointment.reason || 'No especificado'}`;
   }
 
-  selectSlot(day: Date, time: string): void {
-    this.selectedAppointment = null;
+  async selectSlot(day: Date, time: string): Promise<void> {
     this.selectedSlot = { date: day, time };
-    const year = day.getFullYear();
-    const month = (day.getMonth() + 1).toString().padStart(2, '0');
-    const date = day.getDate().toString().padStart(2, '0');
-    this.appointment.date = `${year}-${month}-${date}`;
-    this.appointment.time = time;
-    
-    // Obtener citas para este slot
-    const appointmentsForSlot = this.getAppointmentsForSlot(day, time);
-    
-    // Obtener doctores que ya tienen cita en este slot
-    const doctorsWithAppointments = appointmentsForSlot.map(a => a.doctor);
-    
-    // Filtrar doctores disponibles (los que no tienen cita en este slot)
-    this.availableDoctorsForSlot = this.doctors.filter(d => 
-      !doctorsWithAppointments.includes(d._id)
-    );
-    
-    // Si el usuario es doctor y está seleccionado un slot para ver citas
-    if (this.role === 'doctor') {
-      const appt = appointmentsForSlot.find(a => a.doctor === this.currentUserId);
-      if (appt) {
-        this.selectedSlot = null;
-        this.selectedAppointment = appt;
-        this.result = {
-          diagnosis: appt.diagnosis || '',
-          exams: appt.exams || '',
-          medicines: appt.medicines || '',
-          next_steps: appt.next_steps || '',
-        };
-      }
-    }
+    this.appointment = {
+      doctor: '',
+      date: day.toISOString().split('T')[0],
+      time,
+      reason: ''
+    };
+
+    const url = await back_url();
+    this.http
+      .get<{ doctors: any[] }>(`${url}/doctors`)
+      .subscribe((response) => {
+        // Si el usuario es un doctor o staff, podemos gestionar citas para cualquier doctor
+        if (this.role === 'doctor' || this.role === 'staff') {
+          this.availableDoctorsForSlot = response.doctors || [];
+        } else {
+          // Filtrar doctores que ya tienen cita en ese horario
+          const doctorsWithAppointments = this.appointments
+            .filter(
+              (a) =>
+                new Date(a.start).toDateString() === day.toDateString() &&
+                a.time === time
+            )
+            .map((a) => a.doctor);
+
+          this.availableDoctorsForSlot = (response.doctors || []).filter(
+            (d) => !doctorsWithAppointments.includes(d._id)
+          );
+        }
+      });
   }
 
   onSlotClick(day: Date, time: string): void {
@@ -612,41 +629,83 @@ Motivo: ${appointment.reason || 'No especificado'}`;
       });
   }
 
+  selectTemplate(): string {
+    // Determina la plantilla base según el rol del usuario
+    if (this.role === 'doctor' || this.role === 'staff') {
+      return `
+        <div class="manage-appointments-section">
+          <h3>Gestión de Citas</h3>
+          <p>Como ${this.role}, puedes gestionar citas para pacientes.</p>
+          <button class="btn-primary" (click)="showScheduleForm()">Programar Nueva Cita</button>
+        </div>
+      `;
+    }
+    return '';
+  }
+
   async submitAppointment(): Promise<void> {
-    const url = await back_url();
-    if (!this.appointment.doctor) {
-      alert('Debe seleccionar un doctor');
+    if (!this.selectedSlot || !this.appointment.doctor || !this.appointment.reason) {
+      alert('Por favor complete todos los campos');
       return;
     }
-    const patientId = this.userService.getUser()?._id ?? '';
-    let [timePart, period] = this.appointment.time.split(' ');
-    let [hour, minute] = timePart.split(':').map(Number);
-    if (period === 'PM' && hour < 12) hour += 12;
-    if (period === 'AM' && hour === 12) hour = 0;
-    const time24 = `${hour.toString().padStart(2, '0')}:${minute
-      .toString()
-      .padStart(2, '0')}`;
 
-    const startDateTime = `${this.appointment.date}T${time24}:00`;
-    const payload = {
-      doctor: this.appointment.doctor,
-      start: startDateTime,
-      reason: this.appointment.reason,
-      patient: patientId,
-    };
-    console.log('Submitting appointment payload:', payload);
-    this.http.post(`${url}/api/appointments/create/`, payload).subscribe(
-      () => {
-        this.loadAppointments();
-        this.resetForm();
-      },
-      (error) => {
-        console.error('Error creating appointment:', error);
-        alert(
-          'Error al crear la cita: ' + (error.error.detail || error.statusText)
+    // Convertir la hora a formato 24 horas para la API
+    const time24 = this.convertTo24(this.appointment.time);
+    const [hour, minute] = time24.split(':');
+
+    // Crear una fecha para la cita completa
+    const appointmentDate = new Date(this.selectedSlot.date);
+    appointmentDate.setHours(parseInt(hour));
+    appointmentDate.setMinutes(parseInt(minute));
+
+    const url = await back_url();
+    const userId = this.userService.getUser()?._id;
+
+    // Si el usuario es un doctor o staff, puede crear citas para cualquier paciente
+    if (this.role === 'doctor' || this.role === 'staff') {
+      // Aquí se utilizaría el paciente seleccionado desde un selector en la UI
+      // Por simplificación, se usa un ID de paciente estático o se podría implementar un selector
+      const patientId = this.appointment.patient || userId; // Idealmente vendría de un selector
+      
+      this.http
+        .post(`${url}/api/appointments/create/`, {
+          doctor: this.appointment.doctor,
+          patient: patientId,
+          start: appointmentDate.toISOString(),
+          details: this.appointment.reason,
+        })
+        .subscribe(
+          () => {
+            alert('Cita creada correctamente');
+            this.resetForm();
+            this.loadAppointments();
+          },
+          (error) => {
+            console.error('Error al crear cita:', error);
+            alert('Error al crear la cita: ' + (error.error?.error || 'Error desconocido'));
+          }
         );
-      }
-    );
+    } else {
+      // Si es un paciente normal
+      this.http
+        .post(`${url}/api/appointments/create/`, {
+          doctor: this.appointment.doctor,
+          patient: userId,
+          start: appointmentDate.toISOString(),
+          details: this.appointment.reason,
+        })
+        .subscribe(
+          () => {
+            alert('Cita agendada correctamente');
+            this.resetForm();
+            this.loadAppointments();
+          },
+          (error) => {
+            console.error('Error al agendar cita:', error);
+            alert('Error al agendar la cita: ' + (error.error?.error || 'Error desconocido'));
+          }
+        );
+    }
   }
 
   resetForm(): void {

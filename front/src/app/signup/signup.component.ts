@@ -55,7 +55,7 @@ export class SignupComponent {
         throw new Error('Error en el registro');
       }
 
-      alert('Registro exitoso. Revisa tu correo para confirmar tu cuenta.');
+      alert('Registro exitoso. Tu cuenta está pendiente de activación por un administrador. Recibirás un correo cuando sea activada.');
 
       // 🔹 Redirigir a la página de login después de registrarse
       this.router.navigate(['/login']);

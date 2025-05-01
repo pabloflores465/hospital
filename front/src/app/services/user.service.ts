@@ -111,6 +111,10 @@ export class UserService {
         console.log('Redirigiendo a dashboard doctor');
         this.router.navigate(['/doctor/dashboard']);
         break;
+      case 'staff':
+        console.log('Redirigiendo a dashboard staff');
+        this.router.navigate(['/staff/dashboard']);
+        break;
       case 'patient':
       case 'paciente':
         console.log('Redirigiendo a dashboard paciente');
@@ -158,6 +162,15 @@ export class UserService {
           { label: 'Nueva Receta', route: '/doctor/prescriptions/new' },
           { label: 'Historial de Pacientes', route: '/doctor/patient-history' },
           { label: 'Ficha Médica', route: '/medical-record/patients' },
+        ];
+      case 'staff':
+        return [
+          { label: 'Dashboard', route: '/staff/dashboard' },
+          { label: 'Agenda', route: '/staff/agenda' },
+          { label: 'Citas', route: '/appointments' },
+          { label: 'Historial de Pacientes', route: '/staff/patient-history' },
+          { label: 'Ficha Médica', route: '/medical-record/patients' },
+          { label: 'Reportes', route: '/doctor-reports' },
         ];
       case 'patient':
       case 'paciente':

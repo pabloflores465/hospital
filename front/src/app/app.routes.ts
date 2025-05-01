@@ -5,7 +5,6 @@ import { DefaultLayoutComponent } from './default-layout/default-layout.componen
 import { LoginComponent } from './login/login.component';
 import { MainPageComponent } from './main-page/main-page.component';
 import { SignupComponent } from './signup/signup.component';
-import { ValidateUserComponent } from './validate-user/validate-user.component';
 import { AppointmentsComponent } from './appointments/appointments.component';
 import { DoctorsComponent } from './doctors/doctors.component';
 import { PrescriptionsComponent } from './prescriptions/prescriptions.component';
@@ -35,6 +34,7 @@ import { ModerationComponent } from './moderation/moderation';
 import { DoctorReportsComponent } from './doctor-reports/doctor-reports.component';
 import { MedicinesReportComponent } from './medicines-report/medicines-report.component';
 import { RejectedUsersReportComponent } from './rejected-users-report/rejected-users-report.component';
+import { StaffDashboardComponent } from './staff-dashboard/staff-dashboard.component';
 
 export const routes: Routes = [
   {
@@ -55,24 +55,23 @@ export const routes: Routes = [
       { path: '', component: MainPageComponent },
       { path: 'login', component: LoginComponent },
       { path: 'signup', component: SignupComponent },
-      { path: 'validate', component: ValidateUserComponent },
       { 
         path: 'doctor-reports', 
         component: DoctorReportsComponent,
         canActivate: [authGuard],
-        data: { roles: ['doctor', 'admin'] }
+        data: { roles: ['doctor', 'admin', 'staff'] }
       },
       { 
         path: 'dashboard/reports', 
         component: DoctorReportsComponent,
         canActivate: [authGuard],
-        data: { roles: ['doctor', 'admin'] }
+        data: { roles: ['doctor', 'admin', 'staff'] }
       },
       { 
         path: 'dashboard/medicines-report', 
         component: MedicinesReportComponent,
         canActivate: [authGuard],
-        data: { roles: ['doctor', 'admin'] }
+        data: { roles: ['doctor', 'admin', 'staff'] }
       },
       { 
         path: 'dashboard/rejected-users-report', 
@@ -96,7 +95,7 @@ export const routes: Routes = [
         path: 'appointments',
         component: AppointmentsComponent,
         canActivate: [authGuard],
-        data: { roles: ['patient', 'doctor'] },
+        data: { roles: ['patient', 'doctor', 'staff'] },
       },
       {
         path: 'admin/doctors',
@@ -124,6 +123,26 @@ export const routes: Routes = [
           { path: 'prescriptions', component: PrescriptionsComponent },
           { path: 'prescriptions/new', component: AddPrescriptionComponent },
           { path: 'recipes', component: RecipesPage },
+          { path: 'doctor-reports', component: DoctorReportsComponent },
+        ],
+      },
+      {
+        path: 'staff',
+        canActivate: [authGuard],
+        data: { roles: ['staff'] },
+        children: [
+          {
+            path: 'dashboard',
+            component: StaffDashboardComponent,
+            children: [
+              { path: '', redirectTo: 'agenda', pathMatch: 'full' },
+              { path: 'agenda', component: DoctorAgendaComponent },
+              { path: 'patient-history', component: PatientHistoryComponent },
+              { path: 'reports', component: DoctorReportsComponent }
+            ],
+          },
+          { path: 'agenda', component: DoctorAgendaComponent },
+          { path: 'patient-history', component: PatientHistoryComponent },
           { path: 'doctor-reports', component: DoctorReportsComponent },
         ],
       },
@@ -167,19 +186,19 @@ export const routes: Routes = [
         path: 'medical-record/patients',
         component: PatientSelectorComponent,
         canActivate: [authGuard],
-        data: { roles: ['doctor', 'admin'] },
+        data: { roles: ['doctor', 'admin', 'staff'] },
       },
       {
         path: 'medical-record/:patientId',
         component: MedicalRecordComponent,
         canActivate: [authGuard],
-        data: { roles: ['patient', 'paciente', 'doctor', 'admin'] },
+        data: { roles: ['patient', 'paciente', 'doctor', 'admin', 'staff'] },
       },
       {
         path: 'medical-record',
         component: MedicalRecordComponent,
         canActivate: [authGuard],
-        data: { roles: ['patient', 'paciente', 'doctor', 'admin'] },
+        data: { roles: ['patient', 'paciente', 'doctor', 'admin', 'staff'] },
       },
     ],
   },

@@ -2,40 +2,93 @@
   class="flex justify-center items-center bg-gray-100 min-h-screen bg-[url('/patient.jpg')] bg-cover bg-center fade-in"
 >
   <div class="bg-white shadow-md rounded-2xl p-6 w-full max-w-7xl">
-    <table>
-      <thead>
-        <tr class="py-2">
-          <th class="px-2">Usuario</th>
-          <th class="px-2">Correo</th>
-          <th class="px-2">Rol</th>
-          <th class="px-2">Validado</th>
-          <th class="px-2"></th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (user of users(); track $index) {
-        <tr class="py-2">
-          <td class="px-2">{{ user.username }}</td>
-          <td class="px-2">{{ user.email }}</td>
-          <td class="px-2">
-            @if (user.rol === "admin") {Admin} @else if (user.rol === "doctor")
-            {Doctor} @else {Paciente}
-          </td>
-          <td class="px-2">@if (user.validated) {Sí} @else {No}</td>
-          <td class="px-2">
-            <a [routerLink]="'/admin/users/' + user._id">
-              <app-button class="inline-block">Editar</app-button>
-            </a>
-            <app-button class="inline-block" (click)="borrarUsuario(user._id)"
-              >Borrar</app-button
-            >
-          </td>
-        </tr>
-        }
-      </tbody>
-    </table>
-    <a routerLink="/admin/users/new">
-      <app-button>Nuevo</app-button>
-    </a>
+    <h1 class="text-2xl font-bold text-center mb-4">Administración de Usuarios</h1>
+    
+    <div class="mb-4">
+      <div class="flex justify-between items-center mb-2">
+        <h2 class="text-lg font-semibold">Filtros</h2>
+        <select [(ngModel)]="filterStatus" (change)="applyFilters()" class="p-2 rounded border border-gray-300">
+          <option value="all">Todos los usuarios</option>
+          <option value="pending">Pendientes de activación</option>
+          <option value="active">Usuarios activos</option>
+        </select>
+      </div>
+      <div class="flex space-x-2">
+        <input 
+          type="text" 
+          [(ngModel)]="searchTerm" 
+          (input)="applyFilters()" 
+          placeholder="Buscar por email" 
+          class="p-2 rounded border border-gray-300 flex-grow"
+        />
+        <select [(ngModel)]="filterRole" (change)="applyFilters()" class="p-2 rounded border border-gray-300">
+          <option value="all">Todos los roles</option>
+          <option value="pendiente">Pendientes</option>
+          <option value="paciente">Paciente</option>
+          <option value="doctor">Doctor</option>
+          <option value="admin">Admin</option>
+          <option value="staff">Staff</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="min-w-full bg-white">
+        <thead class="bg-gray-100">
+          <tr class="text-left">
+            <th class="py-3 px-4 font-semibold">ID</th>
+            <th class="py-3 px-4 font-semibold">Usuario</th>
+            <th class="py-3 px-4 font-semibold">Correo</th>
+            <th class="py-3 px-4 font-semibold">Rol</th>
+            <th class="py-3 px-4 font-semibold">Estado</th>
+            <th class="py-3 px-4 font-semibold">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of filteredUsers(); track user._id) {
+          <tr class="border-t border-gray-200" [ngClass]="{'bg-yellow-50': user.rol === 'pendiente' || !user.activated}">
+            <td class="py-3 px-4">{{ user._id.substring(0, 6) }}...</td>
+            <td class="py-3 px-4">{{ user.username }}</td>
+            <td class="py-3 px-4">{{ user.email }}</td>
+            <td class="py-3 px-4" [ngClass]="{'text-orange-500 font-semibold': user.rol === 'pendiente'}">
+              {{ user.rol === 'pendiente' ? 'Pendiente' : 
+                 user.rol === 'admin' ? 'Admin' : 
+                 user.rol === 'doctor' ? 'Doctor' : 
+                 user.rol === 'staff' ? 'Staff' : 'Paciente' }}
+            </td>
+            <td class="py-3 px-4">
+              <span *ngIf="user.activated" class="px-2 py-1 bg-green-100 text-green-800 rounded">Activo</span>
+              <span *ngIf="!user.activated" class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded">Pendiente</span>
+            </td>
+            <td class="py-3 px-4 flex space-x-2">
+              <a [routerLink]="'/admin/users/' + user._id" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                Editar
+              </a>
+              <button *ngIf="!user.activated" (click)="activateUser(user._id)" 
+                  class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm">
+                Activar
+              </button>
+              <button (click)="borrarUsuario(user._id)" 
+                  class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
+                Borrar
+              </button>
+            </td>
+          </tr>
+          }
+          @if(filteredUsers().length === 0) {
+          <tr>
+            <td colspan="6" class="py-4 text-center text-gray-500">No se encontraron usuarios con los filtros aplicados</td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="mt-6 flex justify-between items-center">
+      <p>Mostrando {{ filteredUsers().length }} de {{ users().length }} usuarios</p>
+      <a routerLink="/admin/users/new" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
+        Nuevo Usuario
+      </a>
+    </div>
   </div>
 </div>

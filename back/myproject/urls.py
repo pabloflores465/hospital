@@ -23,6 +23,7 @@ from django.urls import path, include
 # from myproject.views import obtener_csrf
 from .views import (
     actualizar_paciente,
+    activar_usuario,
     borrar_paciente,
     insertar_paciente,
     login_paciente,
@@ -169,12 +170,12 @@ urlpatterns = [
     # path('api/send-msg/<int:chat_id>/', send_message, name='send_message'),  # Comentamos esta ruta que usa una función que no existe
     # path('obtener_csrf/', obtener_csrf, name='obtener_csrf'),
     path("registrar_usuario/", registrar_paciente, name="registrar_paciente"),
-    path("validar_usuario/", validar_paciente, name="validar_paciente"),
     path("insertar_usuario/", insertar_paciente, name="insertar_paciente"),
     path("login_usuario/", login_paciente, name="login_paciente"),
     path(
         "actualizar_usuario/<user_id>", actualizar_paciente, name="actualizar_paciente"
     ),
+    path("activar_usuario/<user_id>", activar_usuario, name="activar_usuario"),
     path("borrar_usuario/<user_id>", borrar_paciente, name="borrar_paciente"),
     path("lista_usuarios/", lista_pacientes, name="lista_pacientes"),
     path("obtener_usuario/<user_id>", obtener_paciente, name="obtener_paciente"),
