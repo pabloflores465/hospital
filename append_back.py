@@ -38,10 +38,19 @@ instance_number += 1
 with open(env_path, "a") as file:
     file.write(f"hospital_port_{instance_number}={hospital_port}\n")
 
+
+def delete_port():
+    with open(env_path, "r") as f:
+        lines = f.readlines()
+    with open(env_path, "w") as f:
+        for line in lines:
+            if not line.startswith(f"hospital_port_{instance_number}="):
+                f.write(line)
 try:
     while True:
         time.sleep(1)
 except KeyboardInterrupt:
+    delete_port()
     for process in processes:
         process.terminate()
     sys.exit(0)
