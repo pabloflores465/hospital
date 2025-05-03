@@ -9,7 +9,7 @@ import re
 def count_ports():
     try:
         with open(env_path, "r") as f:
-            return sum(1 for line in f if line.startswith("hospital_port_"))
+            return sum(1 for line in f if line.startswith("VITE_HOSPITAL_PORT_"))
     except FileNotFoundError:
         return 0
 
@@ -36,7 +36,7 @@ init_back_server(hospital_port)
 instance_number += 1
 
 with open(env_path, "a") as file:
-    file.write(f"hospital_port_{instance_number}={hospital_port}\n")
+    file.write(f"VITE_HOSPITAL_PORT_{instance_number}={hospital_port}\n")
 
 
 def delete_port():
@@ -44,7 +44,7 @@ def delete_port():
         lines = f.readlines()
     with open(env_path, "w") as f:
         for line in lines:
-            if not line.startswith(f"hospital_port_{instance_number}="):
+            if not line.startswith(f"VITE_HOSPITAL_PORT_{instance_number}="):
                 f.write(line)
 try:
     while True:
