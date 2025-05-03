@@ -4,6 +4,17 @@ import sys
 import socket
 env_path = "../.env"
 
+import re
+
+def count_ports():
+    try:
+        with open(env_path, "r") as f:
+            return sum(1 for line in f if line.startswith("hospital_port_"))
+    except FileNotFoundError:
+        return 0
+
+instance_number = count_ports()
+
 def get_local_ip():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
@@ -22,9 +33,10 @@ def init_back_server(hospital_port):
 
 hospital_port = input("Enter the port number for the hospital: ")
 init_back_server(hospital_port)
+instance_number += 1
 
 with open(env_path, "a") as file:
-    file.write(f"hospital_port={hospital_port}\n")
+    file.write(f"hospital_port_{instance_number}={hospital_port}\n")
 
 try:
     while True:
