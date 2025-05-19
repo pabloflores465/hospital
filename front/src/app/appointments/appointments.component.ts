@@ -549,19 +549,6 @@ export class AppointmentsComponent implements OnInit {
               console.log('Todos los doctores cargados:', this.doctors);
             }
             
-            // Si no hay doctores, añadir uno de prueba
-            if (this.doctors.length === 0) {
-              console.warn('No se encontraron doctores, añadiendo doctor de prueba');
-              this.doctors = [
-                {
-                  _id: '987654321',
-                  username: 'Dr. Ejemplo',
-                  name: 'Doctor de Prueba',
-                  email: 'doctor@test.com',
-                  rol: 'doctor'
-                }
-              ];
-            }
           } else {
             console.error('Formato de respuesta inesperado al cargar doctores:', response);
             // Añadir doctores de prueba en caso de error
@@ -925,8 +912,9 @@ Motivo: ${appointment.reason || 'No especificado'}`;
 
       try {
         // Enviar solicitud para crear la cita
+        const backUrl = await back_url();
         const response = await firstValueFrom(
-          this.http.post(`${back_url}/api/appointments/create/`, appointmentData)
+          this.http.post(`${backUrl}/api/appointments/create/`, appointmentData)
         );
 
         console.log('Respuesta al crear cita:', response);
@@ -990,7 +978,7 @@ Motivo: ${appointment.reason || 'No especificado'}`;
       
       console.log('Cargando lista de pacientes para rol:', this.role);
       
-      const apiUrl = await back_url;
+      const apiUrl = await back_url();
       
       // Usar la misma URL que utiliza el componente de recetas
       this.http.get<any>(`${apiUrl}/users`).subscribe({
@@ -1065,7 +1053,7 @@ Motivo: ${appointment.reason || 'No especificado'}`;
   async getDoctorsAvailableForSlot(day: Date, time: string): Promise<any[]> {
     console.log('Obteniendo doctores disponibles para slot:', day, time);
     
-    const url = await back_url;
+    const url = await back_url();
     try {
       // Usar el mismo endpoint que utiliza el componente de recetas para obtener doctores
       return new Promise((resolve) => {
